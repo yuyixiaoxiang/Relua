@@ -870,7 +870,6 @@ namespace Relua.AST {
             writer.Write("(");
 
             var arg_start_idx = 0;
-
             if (ImplicitSelf && from_named) arg_start_idx += 1;
             // Skips the self for method defs
 
@@ -1106,4 +1105,98 @@ namespace Relua.AST {
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
     }
+    
+    
+    #region Ploop
+    /// <summary>
+    /// Module "Game.View"(function(_ENV)
+    /// </summary>
+    public class PloopModule : Node, IStatement
+    {
+        public string ModuleName;
+        public List<IStatement> Statements;
+        public override void Write(IndentAwareTextWriter writer) {
+            
+            writer.Write($"Module \"{ModuleName}\"");
+            writer.IncreaseIndent();
+            writer.WriteLine();
+            var first = true;
+            foreach (var statement in Statements)
+            {
+                if(first == false)
+                    writer.WriteLine();
+                statement.Write(writer);
+                first = false;
+            }
+            
+            writer.DecreaseIndent();
+            writer.WriteLine();
+            writer.Write("end");
+        }
+
+        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+    }
+
+    /// <summary>
+    ///  class "SuperTreeContainer"(function(_ENV)
+    ///      inherit "LuaObject"
+    /// </summary>
+    public class PloopClass : Node, IStatement
+    {
+        public string ClassName;
+        public string inheritClass;
+        public List<IStatement> Statements;
+        public override void Write(IndentAwareTextWriter writer) {
+//            
+            writer.Write("local class = require 'middleclass'");
+            writer.WriteLine();
+            writer.Write($"local {ClassName} = class('{ClassName}') ");
+            writer.IncreaseIndent();
+            writer.WriteLine();
+            var first = true;
+            foreach (var statement in Statements)
+            {
+                if(first == false)
+                    writer.WriteLine();
+                statement.Write(writer);
+                first = false;
+            }
+            writer.DecreaseIndent();
+            writer.WriteLine();
+            writer.Write("end");
+        }
+
+        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+    }
+
+    /// <summary>
+    /// class property
+    /// property "Name" { field = "__name", type = System.String, default = "unknown", set = false}
+    /// </summary>
+    public class PloopClassProperty : Node, IStatement
+    {
+        public string PropertyName;
+        public string FieldName;
+        public string PropertyType;
+        public object DefaultValue;
+        public bool SetValue;
+        public bool GetValue;
+        
+        public override void Write(IndentAwareTextWriter writer) {
+            writer.Write($"Property {PropertyName} Field {FieldName} DefaultValue {DefaultValue}");
+//            writer.IncreaseIndent();
+//            writer.WriteLine();
+//            Block.Write(writer, false);
+//            writer.DecreaseIndent();
+//            writer.WriteLine();
+//            writer.Write("until ");
+//            Condition.Write(writer);
+        }
+
+        public override void Accept(IVisitor visitor) => visitor.Visit(this);        
+    }
+
+
+    #endregion
+    
 }

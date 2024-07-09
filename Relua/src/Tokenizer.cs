@@ -40,7 +40,8 @@ namespace Relua {
             "and", "break", "do", "else", "elseif", "end",
             "false", "for", "function", "if", "in", "local",
             "nil", "not", "or", "repeat", "return", "then",
-            "true", "until", "while"
+            "true", "until", "while",
+            "Module","class","inherit","property"
         };
 
         public string Data;

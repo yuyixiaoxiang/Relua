@@ -821,6 +821,195 @@ namespace Relua {
             }
         }
 
+        #region PLOOP
+
+
+        /// <summary>
+        /// reads ploop module
+        /// </summary>
+        public PloopModule ReadPloopModule()
+        {
+            if (!CurToken.IsPunctuation("Module")) ThrowExpect("Module statement", CurToken);
+            Move();
+            var moduleName = ReadStringLiteral().Value;
+            if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
+            Move();
+            if (!CurToken.IsPunctuation("function")) ThrowExpect("function", CurToken);
+            Move();
+            Move();
+            Move();
+            Move();
+
+            //read module statements
+            var Statements = new List<IStatement>();
+            while (!CurToken.IsEOF())
+            {
+                if (CurToken.IsPunctuation("end") && PeekToken.IsPunctuation(")"))
+                {
+                    //skip module
+                    Move();
+                    break;
+                }
+
+                var statement = ReadStatement();
+                Statements.Add(statement);
+            }
+
+            Move();
+            return new PloopModule()
+            {
+                ModuleName = moduleName,
+                Statements = Statements,
+            };
+        }
+
+
+
+        /// <summary>
+        /// read ploop class 
+        /// </summary>
+        /// <returns></returns>
+        public PloopClass ReadPloopClass()
+        {
+            if (!CurToken.IsPunctuation("class")) ThrowExpect("class statement", CurToken);
+            Move();
+            var className = ReadStringLiteral().Value;
+            if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
+            Move();
+            if (!CurToken.IsPunctuation("function")) ThrowExpect("function", CurToken);
+            Move();
+            Move();
+            Move();
+            Move();
+            var inheritClass = default(string);
+            if (CurToken.IsPunctuation("inherit"))
+            {
+                Move();
+                inheritClass = ReadStringLiteral().Value;    
+            }
+            
+            var Statements = new List<IStatement>();
+            while (!CurToken.IsEOF())
+            {
+                if (CurToken.IsPunctuation("end") && PeekToken.IsPunctuation(")"))
+                {
+                    //skip class 
+                    Move();
+                    break;
+                }
+                var statement = ReadStatement();
+                Statements.Add(statement);
+            }
+
+            Move();
+            return new PloopClass()
+            {
+                ClassName = className,
+                inheritClass = inheritClass,
+                Statements = Statements, 
+            };
+        }
+
+        /// <summary>
+        /// property "Name" { field = "__name", type = System.String, set = "unknown", set = false}
+        /// </summary>
+        /// <returns></returns>
+        public PloopClassProperty ReadClassProperty()
+        {
+            if (!CurToken.IsPunctuation("property")) ThrowExpect("property statement", CurToken);
+            Move();
+            var propertyName = ReadStringLiteral().Value;
+            if (!CurToken.IsPunctuation("{")) ThrowExpect("{", CurToken);
+            Move();
+            var fieldName = default(string);
+            var propertyType = default(string);
+            var defaultValue = default(object);
+            var setValue = default(bool);
+            var getFun = default(FunctionDefinition);
+            while (CurToken.IsPunctuation("}") == false)
+            {
+                if (CurToken.IsIdentifier("field"))
+                {
+                    Move();
+                    Move();
+                    fieldName = ReadStringLiteral().Value;
+                    if(CurToken.IsPunctuation(","))
+                        Move();
+                }
+                else if (CurToken.IsIdentifier("type"))
+                {
+                    Move();
+                    Move();
+                    propertyType += ReadVariable().Name;
+                    while (CurToken.IsPunctuation("."))
+                    {
+                        Move();
+                        propertyType += ".";
+                        propertyType += ReadVariable().Name;
+                    }
+                    
+                    if(CurToken.IsPunctuation(","))
+                        Move();
+                }
+                else if (CurToken.IsIdentifier("default"))
+                {
+                    Move();
+                    Move();
+                    //这里需要判断
+                    if (CurToken.Type == TokenType.Number)
+                    {
+                        var numberLiteral = ReadNumberLiteral().Value;
+                        defaultValue = numberLiteral;
+                    }
+                    else if (CurToken.Type == TokenType.QuotedString)
+                    {
+                        var stringLiteral = ReadStringLiteral().Value;
+                        defaultValue = stringLiteral;    
+                    }
+                    else
+                    {
+                        var nilLiteral = ReadNilLiteral();
+                        defaultValue = null;
+                    }
+
+                    if(CurToken.IsPunctuation(","))
+                        Move();
+                }
+                else if (CurToken.IsIdentifier("set"))
+                {
+                    Move();
+                    Move();
+                    var boolLiteral = ReadBoolLiteral();
+                    setValue = boolLiteral.Value;
+                    if(CurToken.IsPunctuation(","))
+                        Move();
+                }
+                else if (CurToken.IsIdentifier("get"))
+                {
+                    //可能为函数
+                    Move();
+                    Move();
+                    var fun = ReadExpression();
+                    if (fun is FunctionDefinition _functionDefinition)
+                    {
+                        getFun = _functionDefinition;
+                    }
+                }
+            }
+            Move();
+            
+            return new PloopClassProperty()
+            {
+                PropertyName = propertyName,
+                FieldName =  fieldName,
+                PropertyType = propertyType,
+                SetValue = setValue,
+                DefaultValue = defaultValue,
+            };
+        }
+
+        #endregion
+        
         public IStatement ReadPrimaryStatement() {
             if (CurToken.IsPunctuation("break")) {
                 return ReadBreak();
@@ -868,6 +1057,21 @@ namespace Relua {
                     local_assign.IsLocal = true;
                     return local_assign;
                 }
+            }
+
+            if (CurToken.IsPunctuation("Module"))
+            {
+                return ReadPloopModule();
+            }
+
+            if (CurToken.IsPunctuation("class"))
+            {
+                return ReadPloopClass();
+            }
+
+            if (CurToken.IsPunctuation("property"))
+            {
+                return ReadClassProperty();
             }
 
             var expr_token = CurToken;

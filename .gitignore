@@ -531,3 +531,4 @@ test-results/
 
 # Doxygen
 docs
+.idea

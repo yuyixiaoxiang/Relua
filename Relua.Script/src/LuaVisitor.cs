@@ -162,5 +162,20 @@ namespace Relua.Script {
         public void Visit(GenericFor node) {
             VisitLuaFunction(node);
         }
+
+        public void Visit(PloopModule node)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public void Visit(PloopClass node)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public void Visit(PloopClassProperty node)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

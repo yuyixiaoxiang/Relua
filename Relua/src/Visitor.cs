@@ -27,6 +27,11 @@ namespace Relua {
         void Visit(Assignment node);
         void Visit(NumericFor node);
         void Visit(GenericFor node);
+
+        void Visit(PloopModule node);
+        void Visit(PloopClass node);
+
+        void Visit(PloopClassProperty node);
     }
 
     public abstract class Visitor : IVisitor {
@@ -54,6 +59,10 @@ namespace Relua {
         public virtual void Visit(Assignment node) { }
         public virtual void Visit(NumericFor node) { }
         public virtual void Visit(GenericFor node) { }
+        public virtual void Visit(PloopModule node){}
+        public virtual void Visit(PloopClass node){}
+        
+        public virtual void Visit(PloopClassProperty node){}
     }
 
 }

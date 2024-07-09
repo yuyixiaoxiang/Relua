@@ -124,7 +124,22 @@ namespace Relua.PowerTool {
             return 0;
         }
 
-        public static int Main(string[] args) {
+        public static int Main(string[] args)
+        {
+
+            Console.WriteLine("----");
+
+            
+            var tokenizer = new Tokenizer(File.ReadAllText("F:/CityWorkerNpcEntity.lua"));
+            var parser = new Parser(tokenizer);
+            
+            var expr = parser.Read();
+            Console.WriteLine($"{expr}");
+
+
+
+
+            return default;
             if (args.Length == 0) {
                 Console.WriteLine("Not enough arugments.");
                 PrintHelp();
