@@ -902,6 +902,7 @@ namespace Relua {
             }
 
             Move();
+            
             return new PloopClass()
             {
                 ClassName = className,
@@ -920,91 +921,11 @@ namespace Relua {
             Move();
             var propertyName = ReadStringLiteral().Value;
             if (!CurToken.IsPunctuation("{")) ThrowExpect("{", CurToken);
-            Move();
-            var fieldName = default(string);
-            var propertyType = default(string);
-            var defaultValue = default(object);
-            var setValue = default(bool);
-            var getFun = default(FunctionDefinition);
-            while (CurToken.IsPunctuation("}") == false)
-            {
-                if (CurToken.IsIdentifier("field"))
-                {
-                    Move();
-                    Move();
-                    fieldName = ReadStringLiteral().Value;
-                    if(CurToken.IsPunctuation(","))
-                        Move();
-                }
-                else if (CurToken.IsIdentifier("type"))
-                {
-                    Move();
-                    Move();
-                    propertyType += ReadVariable().Name;
-                    while (CurToken.IsPunctuation("."))
-                    {
-                        Move();
-                        propertyType += ".";
-                        propertyType += ReadVariable().Name;
-                    }
-                    
-                    if(CurToken.IsPunctuation(","))
-                        Move();
-                }
-                else if (CurToken.IsIdentifier("default"))
-                {
-                    Move();
-                    Move();
-                    //这里需要判断
-                    if (CurToken.Type == TokenType.Number)
-                    {
-                        var numberLiteral = ReadNumberLiteral().Value;
-                        defaultValue = numberLiteral;
-                    }
-                    else if (CurToken.Type == TokenType.QuotedString)
-                    {
-                        var stringLiteral = ReadStringLiteral().Value;
-                        defaultValue = stringLiteral;    
-                    }
-                    else
-                    {
-                        var nilLiteral = ReadNilLiteral();
-                        defaultValue = null;
-                    }
-
-                    if(CurToken.IsPunctuation(","))
-                        Move();
-                }
-                else if (CurToken.IsIdentifier("set"))
-                {
-                    Move();
-                    Move();
-                    var boolLiteral = ReadBoolLiteral();
-                    setValue = boolLiteral.Value;
-                    if(CurToken.IsPunctuation(","))
-                        Move();
-                }
-                else if (CurToken.IsIdentifier("get"))
-                {
-                    //可能为函数
-                    Move();
-                    Move();
-                    var fun = ReadExpression();
-                    if (fun is FunctionDefinition _functionDefinition)
-                    {
-                        getFun = _functionDefinition;
-                    }
-                }
-            }
-            Move();
-            
+            var propertyStruct = ReadTableConstructor();
             return new PloopClassProperty()
             {
-                PropertyName = propertyName,
-                FieldName =  fieldName,
-                PropertyType = propertyType,
-                SetValue = setValue,
-                DefaultValue = defaultValue,
+                PropertyName =  propertyName,
+                PropertyStruct = propertyStruct,
             };
         }
 

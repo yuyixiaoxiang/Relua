@@ -8,7 +8,7 @@ namespace Relua.AST {
     /// Base class of all Lua AST node.
     /// </summary>
     public abstract class Node {
-        public abstract void Write(IndentAwareTextWriter writer);
+        public abstract void Write(IndentAwareTextWriter writer,object data = null);
         public abstract void Accept(IVisitor visitor);
 
         public override string ToString() {
@@ -29,7 +29,7 @@ namespace Relua.AST {
     /// Interface (used as a sort of "type tag") for Lua AST nodes that are statements.
     /// </summary>
     public interface IStatement {
-        void Write(IndentAwareTextWriter writer);
+        void Write(IndentAwareTextWriter writer,object data = null);
         void Accept(IVisitor visitor);
         string ToString(bool one_line);
     }
@@ -38,7 +38,7 @@ namespace Relua.AST {
     /// Interface (used as a sort of "type tag") for Lua AST nodes that are expressions.
     /// </summary>
     public interface IExpression {
-        void Write(IndentAwareTextWriter writer);
+        void Write(IndentAwareTextWriter writer,object data = null);
         void Accept(IVisitor visitor);
         string ToString(bool one_line);
     }
@@ -48,7 +48,7 @@ namespace Relua.AST {
     /// (variables and table access).
     /// </summary>
     public interface IAssignable {
-        void Write(IndentAwareTextWriter writer);
+        void Write(IndentAwareTextWriter writer,object data);
         void Accept(IVisitor visitor);
         string ToString(bool one_line);
     }
@@ -63,7 +63,7 @@ namespace Relua.AST {
     public class Variable : Node, IExpression, IAssignable {
         public string Name;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write(Name);
         }
 
@@ -80,7 +80,7 @@ namespace Relua.AST {
     public class NilLiteral : Node, IExpression {
         public static NilLiteral Instance = new NilLiteral();
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("nil");
         }
 
@@ -101,7 +101,7 @@ namespace Relua.AST {
     public class VarargsLiteral : Node, IExpression {
         public static VarargsLiteral Instance = new VarargsLiteral();
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("...");
         }
 
@@ -121,7 +121,7 @@ namespace Relua.AST {
         public static BoolLiteral FalseInstance = new BoolLiteral { Value = false };
         public bool Value;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write(Value ? "true" : "false");
         }
 
@@ -161,7 +161,7 @@ namespace Relua.AST {
             }
         }
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("(");
             WriteUnaryOp(Type, writer);
             (Expression as Node).Write(writer);
@@ -248,7 +248,7 @@ namespace Relua.AST {
         public IExpression Left;
         public IExpression Right;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("(");
             (Left as Node).Write(writer);
             writer.Write(" ");
@@ -293,7 +293,7 @@ namespace Relua.AST {
 
         public string Value;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             Quote(writer, Value);
         }
 
@@ -313,7 +313,7 @@ namespace Relua.AST {
         public double Value;
         public bool HexFormat = false;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             if (HexFormat) {
                 writer.Write("0x");
                 writer.Write(((long)Value).ToString("X"));
@@ -338,7 +338,7 @@ namespace Relua.AST {
         public long Value;
         public bool HexFormat = false;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             if (HexFormat) {
                 writer.Write("0x");
                 writer.Write(Value.ToString("X4"));
@@ -411,7 +411,7 @@ namespace Relua.AST {
             writer.Write("]");
         }
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             if (Index is StringLiteral && ((StringLiteral)Index).Value.IsIdentifier()) {
                 WriteDotStyle(writer, ((StringLiteral)Index).Value);
             } else {
@@ -483,7 +483,7 @@ namespace Relua.AST {
             writer.Write(")");
         }
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer, object data) {
             if (ForceTruncateReturnValues) writer.Write("(");
 
             if (Function is TableAccess && Arguments.Count > 0) {
@@ -558,7 +558,7 @@ namespace Relua.AST {
                 Value.Write(writer);
             }
 
-            public override void Write(IndentAwareTextWriter writer) {
+            public override void Write(IndentAwareTextWriter writer,object data) {
                 Write(writer, false);
             }
 
@@ -580,7 +580,7 @@ namespace Relua.AST {
 
         public List<Entry> Entries = new List<Entry>();
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             if (Entries.Count == 0) {
                 writer.Write("{}");
                 return;
@@ -628,7 +628,7 @@ namespace Relua.AST {
     /// ```
     /// </summary>
     public class Break : Node, IStatement {
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("break");
         }
 
@@ -645,7 +645,7 @@ namespace Relua.AST {
     public class Return : Node, IStatement {
         public List<IExpression> Expressions = new List<IExpression>();
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("return");
             if (Expressions.Count > 0) writer.Write(" ");
             for (var i = 0; i < Expressions.Count; i++) {
@@ -676,7 +676,7 @@ namespace Relua.AST {
 
         public bool IsEmpty => Statements.Count == 0;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             Write(writer, true);
         }
 
@@ -716,7 +716,7 @@ namespace Relua.AST {
         public IExpression Condition;
         public Block Block;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data = null) {
             writer.Write("if ");
             Condition.Write(writer);
             writer.Write(" then");
@@ -747,7 +747,7 @@ namespace Relua.AST {
         public List<ConditionalBlock> ElseIfs = new List<ConditionalBlock>();
         public Block Else;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             MainIf.Write(writer);
             for (var i = 0; i < ElseIfs.Count; i++) {
                 writer.Write("else");
@@ -780,7 +780,7 @@ namespace Relua.AST {
         public IExpression Condition;
         public Block Block;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer, object data) {
             writer.Write("while ");
             Condition.Write(writer);
             writer.Write(" do");
@@ -808,7 +808,7 @@ namespace Relua.AST {
         public IExpression Condition;
         public Block Block;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("repeat");
             writer.IncreaseIndent();
             writer.WriteLine();
@@ -856,16 +856,34 @@ namespace Relua.AST {
     /// ```
     /// </summary>
     public class FunctionDefinition : Node, IExpression, IStatement {
+        
+        public class FunctionDefinitionData
+        {
+            public PloopClass PloopClass;
+            public bool from_named;
+            public bool ImplicitSelf;
+        }
+        
         public List<string> ArgumentNames = new List<string>();
         public Block Block;
         public bool AcceptsVarargs = false;
         public bool ImplicitSelf = false;
+        public PloopClass PloopClass;
 
-        public override void Write(IndentAwareTextWriter writer) {
-            Write(writer, false);
+        public override void Write(IndentAwareTextWriter writer,object data = null) {
+            if (data != null && data is FunctionDefinitionData _data)
+            {
+                PloopClass = _data.PloopClass;
+                ImplicitSelf = _data.ImplicitSelf;
+                Write(writer, _data.from_named);
+            }
+            else
+            {
+                Write(writer, false);    
+            }
         }
 
-        public void Write(IndentAwareTextWriter writer, bool from_named) {
+        private void Write(IndentAwareTextWriter writer, bool from_named) {
             if (!from_named) writer.Write("function");
             writer.Write("(");
 
@@ -940,7 +958,9 @@ namespace Relua.AST {
     /// end
     /// ```
     /// </summary>
-    public class Assignment : Node, IStatement {
+    public class Assignment : Node, IStatement
+    {
+        public PloopClass PloopClass;
         public bool IsLocal;
         public bool ForceExplicitLocalNil;
         public List<IAssignable> Targets = new List<IAssignable>();
@@ -948,8 +968,21 @@ namespace Relua.AST {
 
         public void WriteNamedFunctionStyle(IndentAwareTextWriter writer, string name, FunctionDefinition func) {
             writer.Write("function ");
-            writer.Write(name);
-            func.Write(writer, from_named: true);
+            if (PloopClass != null)
+            {
+                writer.Write($"{PloopClass.ClassName}:{name}");
+            }
+            else
+            {
+                writer.Write(name);    
+            }
+
+            func.Write(writer,new FunctionDefinition.FunctionDefinitionData()
+            {
+                PloopClass = PloopClass,
+                from_named = true,
+                ImplicitSelf = PloopClass != null,
+            });
         }
 
         public void WriteGenericStyle(IndentAwareTextWriter writer) {
@@ -997,7 +1030,13 @@ namespace Relua.AST {
             }
         }
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
+            if(data != null && data is PloopClass _ploopClass)
+            {
+                this.PloopClass = _ploopClass;
+            }
+
+
             if (IsLocal) writer.Write("local ");
 
             if (Targets.Count == 1 && Values.Count == 1 && Values[0] is FunctionDefinition) {
@@ -1047,7 +1086,7 @@ namespace Relua.AST {
         public IExpression EndPoint;
         public IExpression Step;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("for ");
             writer.Write(VariableName);
             writer.Write(" = ");
@@ -1086,7 +1125,7 @@ namespace Relua.AST {
         public List<string> VariableNames = new List<string>();
         public IExpression Iterator;
 
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write("for ");
             for (var i = 0; i < VariableNames.Count; i++) {
                 writer.Write(VariableNames[i]);
@@ -1115,10 +1154,10 @@ namespace Relua.AST {
     {
         public string ModuleName;
         public List<IStatement> Statements;
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
             
-            writer.Write($"Module \"{ModuleName}\"");
-            writer.IncreaseIndent();
+//            writer.Write($"Module \"{ModuleName}\"");
+//            writer.IncreaseIndent();
             writer.WriteLine();
             var first = true;
             foreach (var statement in Statements)
@@ -1129,9 +1168,9 @@ namespace Relua.AST {
                 first = false;
             }
             
-            writer.DecreaseIndent();
+//            writer.DecreaseIndent();
             writer.WriteLine();
-            writer.Write("end");
+//            writer.Write("end");
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
@@ -1146,7 +1185,7 @@ namespace Relua.AST {
         public string ClassName;
         public string inheritClass;
         public List<IStatement> Statements;
-        public override void Write(IndentAwareTextWriter writer) {
+        public override void Write(IndentAwareTextWriter writer,object data) {
 //            
             writer.Write("local class = require 'middleclass'");
             writer.WriteLine();
@@ -1156,14 +1195,15 @@ namespace Relua.AST {
             var first = true;
             foreach (var statement in Statements)
             {
-                if(first == false)
+//                if(first == false)
                     writer.WriteLine();
-                statement.Write(writer);
+                statement.Write(writer,this);
                 first = false;
+                writer.WriteLine();
             }
             writer.DecreaseIndent();
             writer.WriteLine();
-            writer.Write("end");
+            writer.Write($"return {ClassName}");
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
@@ -1175,22 +1215,56 @@ namespace Relua.AST {
     /// </summary>
     public class PloopClassProperty : Node, IStatement
     {
+        private PloopClass PloopClass;
         public string PropertyName;
-        public string FieldName;
-        public string PropertyType;
-        public object DefaultValue;
-        public bool SetValue;
-        public bool GetValue;
-        
-        public override void Write(IndentAwareTextWriter writer) {
-            writer.Write($"Property {PropertyName} Field {FieldName} DefaultValue {DefaultValue}");
-//            writer.IncreaseIndent();
-//            writer.WriteLine();
-//            Block.Write(writer, false);
-//            writer.DecreaseIndent();
-//            writer.WriteLine();
-//            writer.Write("until ");
-//            Condition.Write(writer);
+        public TableConstructor PropertyStruct;
+
+        public override void Write(IndentAwareTextWriter writer,object data) {
+            if(data is PloopClass _ploopClass)
+            {
+                PloopClass = _ploopClass;
+            }
+            var dic = new Dictionary<string,IExpression>();
+            foreach (var entry in PropertyStruct.Entries)
+            {
+                var key = entry.Key;
+                var value = entry.Value;
+                if (key is StringLiteral stringLiteral)
+                {
+                    dic.Add(stringLiteral.Value,value);  
+                }
+            }
+            //write field
+            var field = default(string);
+            if (dic.TryGetValue("field", out var _field) && (_field is StringLiteral _fieldLiteral))
+            {
+                field = _fieldLiteral.Value;
+            }
+            dic.TryGetValue("type", out var _type);
+            dic.TryGetValue("default", out var _default);
+            dic.TryGetValue("get", out var _get);
+
+            writer.Write($"{PloopClass.ClassName}.{field} = ");
+            _default.Write(writer);
+            writer.WriteLine();
+            
+            if (_get is FunctionDefinition _function)
+            {
+                writer.WriteLine();
+                writer.Write($"function {PloopClass.ClassName}:Get{PropertyName}");
+                _function.Write(writer,new FunctionDefinition.FunctionDefinitionData()
+                {
+                    PloopClass = PloopClass,
+                    from_named =  true,
+                    ImplicitSelf = true,
+                });
+                writer.WriteLine();
+            }
+            else if(_get is null)
+            {
+                writer.WriteLine();
+                writer.WriteLine($"function {PloopClass.ClassName}:Get{PropertyName}() return self.{field} end");
+            }
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);        
