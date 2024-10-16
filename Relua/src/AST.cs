@@ -10,6 +10,7 @@ namespace Relua.AST {
     public abstract class Node {
         public abstract void Write(IndentAwareTextWriter writer,object data = null);
         public abstract void Accept(IVisitor visitor);
+        public abstract  void Write2TS(IndentAwareTextWriter writer,object data = null);
 
         public override string ToString() {
             return ToString(false);
@@ -31,6 +32,7 @@ namespace Relua.AST {
     public interface IStatement {
         void Write(IndentAwareTextWriter writer,object data = null);
         void Accept(IVisitor visitor);
+        void Write2TS(IndentAwareTextWriter writer,object data = null);
         string ToString(bool one_line);
     }
 
@@ -40,6 +42,7 @@ namespace Relua.AST {
     public interface IExpression {
         void Write(IndentAwareTextWriter writer,object data = null);
         void Accept(IVisitor visitor);
+        void Write2TS(IndentAwareTextWriter writer,object data = null);
         string ToString(bool one_line);
     }
 
@@ -50,6 +53,8 @@ namespace Relua.AST {
     public interface IAssignable {
         void Write(IndentAwareTextWriter writer,object data);
         void Accept(IVisitor visitor);
+        
+        void Write2TS(IndentAwareTextWriter writer,object data);
         string ToString(bool one_line);
     }
 
@@ -66,8 +71,12 @@ namespace Relua.AST {
         public override void Write(IndentAwareTextWriter writer,object data) {
             writer.Write(Name);
         }
-
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -85,6 +94,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -106,6 +119,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -126,6 +143,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -169,6 +190,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -259,6 +284,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -298,6 +327,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -321,6 +354,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -347,6 +384,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -420,6 +461,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -498,6 +543,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -576,6 +625,10 @@ namespace Relua.AST {
             }
 
             public override void Accept(IVisitor visitor) => visitor.Visit(this);
+            public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public List<Entry> Entries = new List<Entry>();
@@ -618,6 +671,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -633,6 +690,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -657,6 +718,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -705,6 +770,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -728,6 +797,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -765,6 +838,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -793,6 +870,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -820,6 +901,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -913,6 +998,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -1057,6 +1146,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -1107,6 +1200,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -1143,6 +1240,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
     
     
@@ -1174,6 +1275,10 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -1196,7 +1301,7 @@ namespace Relua.AST {
             foreach (var statement in Statements)
             {
 //                if(first == false)
-                    writer.WriteLine();
+                writer.WriteLine();
                 statement.Write(writer,this);
                 first = false;
                 writer.WriteLine();
@@ -1206,6 +1311,25 @@ namespace Relua.AST {
             writer.Write($"return {ClassName}");
         }
 
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            writer.Write($"class {ClassName}");
+            writer.WriteLine(" {");
+            writer.IncreaseIndent();
+            writer.WriteLine();
+            var first = true;
+            foreach (var statement in Statements)
+            {
+//                if(first == false)
+                writer.WriteLine();
+                statement.Write(writer,this);
+                first = false;
+                writer.WriteLine();
+            }
+            writer.DecreaseIndent();
+            writer.WriteLine();
+            writer.Write("}");
+        }
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
     }
 
@@ -1268,9 +1392,11 @@ namespace Relua.AST {
         }
 
         public override void Accept(IVisitor visitor) => visitor.Visit(this);        
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
     }
-
-
     #endregion
     
 }

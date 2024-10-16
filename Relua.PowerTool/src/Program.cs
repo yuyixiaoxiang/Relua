@@ -126,51 +126,16 @@ namespace Relua.PowerTool {
 
         public static int Main(string[] args)
         {
-
             Console.WriteLine("----");
-
-            
-            var tokenizer = new Tokenizer(File.ReadAllText("F:/CityWorkerNpcEntity.lua"));
+            var testluafile = @"f:/inputfile.lua";
+            var tokenizer = new Tokenizer(File.ReadAllText(testluafile));
             var parser = new Parser(tokenizer);
-            
             var expr = parser.Read();
             Console.WriteLine($"{expr}");
-
-
-
-
+            var outpath = "f:/outputfile.lua";
+            File.WriteAllText(outpath,expr.ToString());
+            Console.WriteLine(outpath);
             return default;
-            if (args.Length == 0) {
-                Console.WriteLine("Not enough arugments.");
-                PrintHelp();
-                return 1;
-            }
-
-            var subcmd = args[0];
-            var options = new Options();
-            var paramargs = new List<string>();
-
-            for (var i = 1; i < args.Length; i++) {
-                var arg = args[i];
-                if (arg == "--help") {
-                    options.Help = true;
-                } else if (arg == "-v" || arg == "--verbose") {
-                    options.Verbose = true;
-                } else {
-                    paramargs.Add(arg);
-                }
-            }
-
-            switch (subcmd) {
-            case "help": case "--help": PrintHelp(); return 0;
-            case "parse": return ParseMain(options, paramargs);
-            case "script": return ScriptMain(options, paramargs);
-            case "expr": return ExprMain(options, paramargs);
-            }
-
-            Console.WriteLine($"Unknown subcommand: '{subcmd}'");
-            PrintHelp();
-            return 1;
         }
     }
 }
