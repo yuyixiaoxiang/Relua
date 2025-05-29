@@ -32,15 +32,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\ComplexExpressions.cs" />
-    <Compile Include="src\TableConstructors.cs" />
-    <Compile Include="src\FunctionCalls.cs" />
-    <Compile Include="src\Statements.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="src\" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Relua\Relua.csproj">
       <Project>{47566D06-A688-4E97-83B4-BE04F254E304}</Project>
