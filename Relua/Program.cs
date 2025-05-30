@@ -12,7 +12,7 @@ namespace Relua {
             var parser = new Parser(tokenizer);
             var expr = parser.Read();
             Console.WriteLine($"{expr}");
-            var outpath = "f:/lua2ts/outputfile.ts";
+            var outpath = "f:/lua2ts/outputfile.lua";
             File.WriteAllText(outpath,expr.ToString());
             Console.WriteLine(outpath);
             

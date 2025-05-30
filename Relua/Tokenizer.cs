@@ -361,7 +361,7 @@ namespace Relua {
                 Region reg;
                 var val = ReadIdentifier(out reg);
                 if (RESERVED_KEYWORDS.Contains(val)) {
-                    return new Token(TokenType.Punctuation, val, reg);
+                    return new Token(TokenType.Keyword, val, reg);
                 } else {
                     return new Token(TokenType.Identifier, val, reg);
                 }

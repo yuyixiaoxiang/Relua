@@ -5,7 +5,8 @@ namespace Relua {
         Identifier,
         QuotedString,
         Number,
-        Punctuation
+        Punctuation,
+        Keyword,
     }
 
     public struct Token {
@@ -47,6 +48,10 @@ namespace Relua {
 
         public bool IsPunctuation(string value) {
             return Is(TokenType.Punctuation, value);
+        }
+        
+        public bool IsKeyword(string value) {
+            return Is(TokenType.Keyword, value);
         }
     }
 }
