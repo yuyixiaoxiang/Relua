@@ -378,17 +378,17 @@ namespace Relua {
             return op.Value;
         }
 
+        //读取次要表达式
         // Secondary expression:
         // - Depends on (alters the value of) *one* expression.
         public IExpression ReadSecondaryExpression() {
+            //判断是一元还是二元操作符
             var unary_op = OperatorInfo.FromToken(CurToken);
 
             if (unary_op != null && unary_op.Value.IsUnary) {
                 Move();
             }
-
             IExpression expr;
-
             if (CurToken.IsPunctuation("(")) {
                 Move();
                 var complex = ReadComplexExpression(ReadSecondaryExpression(), 0, true);
@@ -402,61 +402,61 @@ namespace Relua {
                 }
             } else expr = ReadPrimaryExpression();
 
-            while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation("[")) {
-                if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+                while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation("[")) {
+                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
-                if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
-                    Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                        Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
+                    }
+                    expr = ReadTableAccess(expr);
                 }
-                expr = ReadTableAccess(expr);
-            }
 
-            while (CurToken.IsPunctuation(":")) {
-                if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+                while (CurToken.IsPunctuation(":")) {
+                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
-                if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
-                   Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                       Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
+                    }
+                    var self_expr = expr;
+                    expr = ReadTableAccess(expr, allow_colon: true);
+                    expr = ReadFunctionCall(expr, self_expr);
                 }
-                var self_expr = expr;
-                expr = ReadTableAccess(expr, allow_colon: true);
-                expr = ReadFunctionCall(expr, self_expr);
-            }
 
-            if (CurToken.IsPunctuation("(")) {
-                if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+                if (CurToken.IsPunctuation("(")) {
+                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
-                if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
-                    Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken); 
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                        Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken); 
+                    }
+                    expr = ReadFunctionCall(expr);
+                } else if (CurToken.IsPunctuation("{")) {
+                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                        Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken);
+                    }
+                    expr = new FunctionCall {
+                        Function = expr,
+                        Arguments = new List<IExpression> { ReadTableConstructor() }
+                    };
+                } else if (CurToken.Type == TokenType.QuotedString) {
+                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                        Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken);
+                    }
+                    expr = new FunctionCall {
+                        Function = expr,
+                        Arguments = new List<IExpression> { ReadStringLiteral() }
+                    };
                 }
-                expr = ReadFunctionCall(expr);
-            } else if (CurToken.IsPunctuation("{")) {
-                if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
-                if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
-                    Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken);
+                if (unary_op != null && unary_op.Value.IsUnary) {
+                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+
+                    expr = new UnaryOp(unary_op.Value.UnaryOpType.Value, expr);
                 }
-                expr = new FunctionCall {
-                    Function = expr,
-                    Arguments = new List<IExpression> { ReadTableConstructor() }
-                };
-            } else if (CurToken.Type == TokenType.QuotedString) {
-                if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
-
-                if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
-                    Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken);
-                }
-                expr = new FunctionCall {
-                    Function = expr,
-                    Arguments = new List<IExpression> { ReadStringLiteral() }
-                };
-            }
-
-            if (unary_op != null && unary_op.Value.IsUnary) {
-                if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
-
-                expr = new UnaryOp(unary_op.Value.UnaryOpType.Value, expr);
-            }
-
+                
             return expr;
         }
 
@@ -934,6 +934,11 @@ namespace Relua {
 
         #endregion
         
+        /// <summary>
+        /// 读取主表达式
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public IStatement ReadPrimaryStatement() {
             if (CurToken.IsKeyword("break")) {
                 return ReadBreak();
