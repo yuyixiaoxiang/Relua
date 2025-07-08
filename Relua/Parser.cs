@@ -402,27 +402,31 @@ namespace Relua {
                     ((FunctionCall)expr).ForceTruncateReturnValues = true;
                 }
             } else expr = ReadPrimaryExpression();
+          
+                
 
-                while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation("[")) {
+                do
+                {
+                    while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation("[")) {
+                        if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+
+                        if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                            Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
+                        }
+                        expr = ReadTableAccess(expr);
+                    }
+
+                    while (CurToken.IsPunctuation(":")) {
                     if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
                     if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
                         Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
                     }
-                    expr = ReadTableAccess(expr);
-                }
-
-                while (CurToken.IsPunctuation(":")) {
-                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
-
-                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
-                       Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
-                    }
                     var self_expr = expr;
                     expr = ReadTableAccess(expr, allow_colon: true);
                     expr = ReadFunctionCall(expr, self_expr);
                 }
-
+                
                 if (CurToken.IsPunctuation("(")) {
                     if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
@@ -451,7 +455,13 @@ namespace Relua {
                         Arguments = new List<IExpression> { ReadStringLiteral() }
                     };
                 }
+                } while (CurToken.IsPunctuation(".")||CurToken.IsPunctuation(":"));
+                
+                
 
+                
+                
+                
                 if (unary_op != null && unary_op.Value.IsUnary) {
                     if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
