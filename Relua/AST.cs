@@ -1369,7 +1369,7 @@ namespace Relua.AST {
             dic.TryGetValue("get", out var _get);
 
             writer.Write($"{PloopClass.ClassName}.{field} = ");
-            _default.Write(writer);
+            _default?.Write(writer);
             writer.WriteLine();
             
             if (_get is FunctionDefinition _function)

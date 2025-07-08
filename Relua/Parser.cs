@@ -332,6 +332,7 @@ namespace Relua {
             };
         }
 
+        //主表达式 
         // Primary expression:
         // - Does not depend on any expressions.
         public IExpression ReadPrimaryExpression() {
@@ -517,6 +518,10 @@ namespace Relua {
             if (!CurToken.IsKeyword("return")) ThrowExpect("return statement", CurToken);
             Move();
 
+            //fix error
+            while (CurToken.IsPunctuation(";")) {
+                Move();
+            }
             var ret_vals = new List<IExpression>();
 
             if (!CurToken.IsKeyword("end")) {
@@ -838,11 +843,13 @@ namespace Relua {
             if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
             Move();
             if (!CurToken.IsKeyword("function")) ThrowExpect("function", CurToken);
+            
+            //skip (_ENV) 
             Move();
             Move();
             Move();
             Move();
-
+            
             //read module statements
             var Statements = new List<IStatement>();
             while (!CurToken.IsEOF())
@@ -874,16 +881,19 @@ namespace Relua {
         /// <returns></returns>
         public PloopClass ReadPloopClass()
         {
-            if (!CurToken.IsKeyword("class")) ThrowExpect("class statement", CurToken);
+            if (!CurToken.IsKeyword("class")) ThrowExpect("ploop class statement", CurToken);
             Move();
             var className = ReadStringLiteral().Value;
             if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
             Move();
             if (!CurToken.IsKeyword("function")) ThrowExpect("function", CurToken);
+            
+            //skip (_ENV)
             Move();
             Move();
             Move();
             Move();
+            
             var inheritClass = default(string);
             if (CurToken.IsKeyword("inherit"))
             {
@@ -915,6 +925,7 @@ namespace Relua {
         }
 
         /// <summary>
+        /// read ploop class property 
         /// property "Name" { field = "__name", type = System.String, set = "unknown", set = false}
         /// </summary>
         /// <returns></returns>
@@ -924,7 +935,9 @@ namespace Relua {
             Move();
             var propertyName = ReadStringLiteral().Value;
             if (!CurToken.IsPunctuation("{")) ThrowExpect("{", CurToken);
+            
             var propertyStruct = ReadTableConstructor();
+            
             return new PloopClassProperty()
             {
                 PropertyName =  propertyName,
@@ -935,7 +948,7 @@ namespace Relua {
         #endregion
         
         /// <summary>
-        /// 读取主表达式
+        /// 读取主语句
         /// </summary>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
