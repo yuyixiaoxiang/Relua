@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using Relua.AST;
 
-namespace Relua {
-    public class Parser {
+namespace Relua
+{
+    public class Parser
+    {
         /// <summary>
         /// Settings which control certain behavior of the parser.
         /// </summary>
-        public class Settings {
+        public class Settings
+        {
             /// <summary>
             /// Automatically creates NumberLiterals for sequential elements in
             /// a table constructor (ones that do not have a key specified).
@@ -58,44 +61,55 @@ namespace Relua {
 
         public Token CurToken;
 
-        public void Move() {
+        public void Move()
+        {
             if (CurToken.Type == TokenType.EOF) return;
             CurToken = Tokenizer.NextToken();
         }
 
         public Token PeekToken => Tokenizer.PeekToken;
 
-        public void Throw(string msg, Token tok) {
+        public void Throw(string msg, Token tok)
+        {
             throw new ParserException(msg, tok.Region);
         }
 
-        public void ThrowExpect(string expected, Token tok) {
+        public void ThrowExpect(string expected, Token tok)
+        {
             throw new ParserException($"Expected {expected}, got {tok.Type} ({tok.Value.Inspect()})", tok.Region);
         }
 
-        public Parser(string data, Settings settings = null) : this(new Tokenizer(data, settings), settings) { }
+        public Parser(string data, Settings settings = null) : this(new Tokenizer(data, settings), settings)
+        {
+        }
 
-        public Parser(StreamReader r, Settings settings = null) : this(new Tokenizer(r.ReadToEnd(), settings), settings) { }
+        public Parser(StreamReader r, Settings settings = null) : this(new Tokenizer(r.ReadToEnd(), settings), settings)
+        {
+        }
 
-        public Parser(Tokenizer tokenizer, Settings settings = null) {
+        public Parser(Tokenizer tokenizer, Settings settings = null)
+        {
             ParserSettings = settings ?? new Settings();
             Tokenizer = tokenizer;
             CurToken = tokenizer.NextToken();
         }
 
-        public NilLiteral ReadNilLiteral() {
+        public NilLiteral ReadNilLiteral()
+        {
             if (CurToken.Value != "nil") ThrowExpect("nil", CurToken);
             Move();
             return NilLiteral.Instance;
         }
 
-        public VarargsLiteral ReadVarargsLiteral() {
+        public VarargsLiteral ReadVarargsLiteral()
+        {
             if (CurToken.Value != "...") ThrowExpect("varargs literal", CurToken);
             Move();
             return VarargsLiteral.Instance;
         }
 
-        public BoolLiteral ReadBoolLiteral() {
+        public BoolLiteral ReadBoolLiteral()
+        {
             var value = false;
             if (CurToken.Value == "true") value = true;
             else if (CurToken.Value == "false") value = false;
@@ -104,9 +118,11 @@ namespace Relua {
             return value ? BoolLiteral.TrueInstance : BoolLiteral.FalseInstance;
         }
 
-        public Variable ReadVariable() {
+        public Variable ReadVariable()
+        {
             if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
-            if (Tokenizer.RESERVED_KEYWORDS.Contains(CurToken.Value)) Throw($"Cannot use reserved keyword '{CurToken.Value}' as variable name", CurToken);
+            if (Tokenizer.RESERVED_KEYWORDS.Contains(CurToken.Value))
+                Throw($"Cannot use reserved keyword '{CurToken.Value}' as variable name", CurToken);
 
             var name = CurToken.Value;
 
@@ -114,18 +130,23 @@ namespace Relua {
             return new Variable { Name = name };
         }
 
-        public StringLiteral ReadStringLiteral() {
+        public StringLiteral ReadStringLiteral()
+        {
             if (CurToken.Type != TokenType.QuotedString) ThrowExpect("quoted string", CurToken);
             var value = CurToken.Value;
             Move();
             return new StringLiteral { Value = value };
         }
 
-        public NumberLiteral ReadNumberLiteral() {
+        public NumberLiteral ReadNumberLiteral()
+        {
             if (CurToken.Type != TokenType.Number) ThrowExpect("number", CurToken);
 
-            if (CurToken.Value.StartsWith("0x", StringComparison.InvariantCulture)) {
-                if (!int.TryParse(CurToken.Value.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, null, out int hexvalue)) {
+            if (CurToken.Value.StartsWith("0x", StringComparison.InvariantCulture))
+            {
+                if (!int.TryParse(CurToken.Value.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier,
+                        null, out int hexvalue))
+                {
                     ThrowExpect("hex number", CurToken);
                 }
 
@@ -134,7 +155,8 @@ namespace Relua {
                 return new NumberLiteral { Value = hexvalue, HexFormat = true };
             }
 
-            if (!double.TryParse(CurToken.Value, out double value)) {
+            if (!double.TryParse(CurToken.Value, out double value))
+            {
                 ThrowExpect("number", CurToken);
             }
 
@@ -142,10 +164,15 @@ namespace Relua {
             return new NumberLiteral { Value = value };
         }
 
-        public LuaJITLongLiteral ReadLuaJITLongLiteral() {
+        public LuaJITLongLiteral ReadLuaJITLongLiteral()
+        {
             if (CurToken.Type != TokenType.Number) ThrowExpect("long number", CurToken);
-            if (CurToken.Value.StartsWith("0x", StringComparison.InvariantCulture)) {
-                if (!long.TryParse(CurToken.Value, System.Globalization.NumberStyles.HexNumber | System.Globalization.NumberStyles.AllowHexSpecifier, null, out long hexvalue)) {
+            if (CurToken.Value.StartsWith("0x", StringComparison.InvariantCulture))
+            {
+                if (!long.TryParse(CurToken.Value,
+                        System.Globalization.NumberStyles.HexNumber |
+                        System.Globalization.NumberStyles.AllowHexSpecifier, null, out long hexvalue))
+                {
                     ThrowExpect("hex number", CurToken);
                 }
 
@@ -154,7 +181,8 @@ namespace Relua {
                 return new LuaJITLongLiteral { Value = hexvalue, HexFormat = true };
             }
 
-            if (!long.TryParse(CurToken.Value, out long value)) {
+            if (!long.TryParse(CurToken.Value, out long value))
+            {
                 ThrowExpect("number", CurToken);
             }
 
@@ -164,44 +192,54 @@ namespace Relua {
             return new LuaJITLongLiteral { Value = value };
         }
 
-        public TableAccess ReadTableAccess(IExpression table_expr, bool allow_colon = false) {
+        public TableAccess ReadTableAccess(IExpression table_expr, bool allow_colon = false)
+        {
             TableAccess table_node = null;
 
-            if (CurToken.IsPunctuation(".") || (allow_colon && CurToken.IsPunctuation(":"))) {
+            if (CurToken.IsPunctuation(".") || (allow_colon && CurToken.IsPunctuation(":")))
+            {
                 Move();
                 if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
                 var index = new StringLiteral { Value = CurToken.Value };
                 Move();
                 table_node = new TableAccess { Table = table_expr, Index = index };
-            } else if (CurToken.IsPunctuation("[")) {
+            }
+            else if (CurToken.IsPunctuation("["))
+            {
                 Move();
                 var index = ReadExpression();
                 if (!CurToken.IsPunctuation("]")) ThrowExpect("closing bracket", CurToken);
                 Move();
                 table_node = new TableAccess { Table = table_expr, Index = index };
-            } else ThrowExpect("table access", CurToken);
+            }
+            else ThrowExpect("table access", CurToken);
 
             return table_node;
         }
 
-        public FunctionCall ReadFunctionCall(IExpression func_expr, IExpression self_expr = null) {
+        public FunctionCall ReadFunctionCall(IExpression func_expr, IExpression self_expr = null)
+        {
             if (!CurToken.IsPunctuation("(")) ThrowExpect("start of argument list", CurToken);
             Move();
 
             var args = new List<IExpression>();
 
-            if (self_expr != null) {
+            if (self_expr != null)
+            {
                 args.Add(self_expr);
             }
 
             if (!CurToken.IsPunctuation(")")) args.Add(ReadExpression());
 
-            while (CurToken.IsPunctuation(",")) {
+            while (CurToken.IsPunctuation(","))
+            {
                 Move();
                 var expr = ReadExpression();
                 args.Add(expr);
-                if (!CurToken.IsPunctuation(",") && !CurToken.IsPunctuation(")")) ThrowExpect("comma or end of argument list", CurToken);
+                if (!CurToken.IsPunctuation(",") && !CurToken.IsPunctuation(")"))
+                    ThrowExpect("comma or end of argument list", CurToken);
             }
+
             if (!CurToken.IsPunctuation(")")) ThrowExpect("end of argument list", CurToken);
             Move();
 
@@ -209,10 +247,13 @@ namespace Relua {
         }
 
 
-        public TableConstructor.Entry ReadTableConstructorEntry() {
-            if (CurToken.Type == TokenType.Identifier) {
+        public TableConstructor.Entry ReadTableConstructorEntry()
+        {
+            if (CurToken.Type == TokenType.Identifier)
+            {
                 var eq = PeekToken;
-                if (eq.IsPunctuation("=")) {
+                if (eq.IsPunctuation("="))
+                {
                     // { a = ... }
 
                     var key = new StringLiteral { Value = CurToken.Value };
@@ -220,14 +261,18 @@ namespace Relua {
                     Move(); // =
                     var value = ReadExpression();
                     return new TableConstructor.Entry { ExplicitKey = true, Key = key, Value = value };
-                } else {
+                }
+                else
+                {
                     // { a }
                     var value = ReadExpression();
                     return new TableConstructor.Entry { ExplicitKey = false, Value = value };
                     // Note - Key is null
                     // This is filled in in ReadTableConstructor
                 }
-            } else if (CurToken.IsPunctuation("[")) {
+            }
+            else if (CurToken.IsPunctuation("["))
+            {
                 // { [expr] = ... }
                 Move();
                 var key = ReadExpression();
@@ -237,7 +282,9 @@ namespace Relua {
                 Move();
                 var value = ReadExpression();
                 return new TableConstructor.Entry { ExplicitKey = true, Key = key, Value = value };
-            } else {
+            }
+            else
+            {
                 // { expr }
                 return new TableConstructor.Entry { ExplicitKey = false, Value = ReadExpression() };
                 // Note - Key is null
@@ -245,7 +292,8 @@ namespace Relua {
             }
         }
 
-        public TableConstructor ReadTableConstructor() {
+        public TableConstructor ReadTableConstructor()
+        {
             if (!CurToken.IsPunctuation("{")) ThrowExpect("table constructor", CurToken);
             Move();
 
@@ -253,25 +301,32 @@ namespace Relua {
 
             var cur_sequential_idx = 1;
 
-            if (!CurToken.IsPunctuation("}")) {
+            if (!CurToken.IsPunctuation("}"))
+            {
                 var ent = ReadTableConstructorEntry();
-                if (ParserSettings.AutofillSequentialKeysInTableConstructor && ent.Key == null) {
+                if (ParserSettings.AutofillSequentialKeysInTableConstructor && ent.Key == null)
+                {
                     ent.Key = new NumberLiteral { Value = cur_sequential_idx };
                     cur_sequential_idx += 1;
                 }
+
                 entries.Add(ent);
             }
 
-            while (CurToken.IsPunctuation(",")) {
+            while (CurToken.IsPunctuation(","))
+            {
                 Move();
                 if (CurToken.IsPunctuation("}")) break; // trailing comma
                 var ent = ReadTableConstructorEntry();
-                if (ParserSettings.AutofillSequentialKeysInTableConstructor && ent.Key == null) {
+                if (ParserSettings.AutofillSequentialKeysInTableConstructor && ent.Key == null)
+                {
                     ent.Key = new NumberLiteral { Value = cur_sequential_idx };
                     cur_sequential_idx += 1;
                 }
+
                 entries.Add(ent);
-                if (!CurToken.IsPunctuation(",") && !CurToken.IsPunctuation("}")) ThrowExpect("comma or end of entry list", CurToken);
+                if (!CurToken.IsPunctuation(",") && !CurToken.IsPunctuation("}"))
+                    ThrowExpect("comma or end of entry list", CurToken);
             }
 
             if (!CurToken.IsPunctuation("}")) ThrowExpect("end of entry list", CurToken);
@@ -280,8 +335,10 @@ namespace Relua {
             return new TableConstructor { Entries = entries };
         }
 
-        public FunctionDefinition ReadFunctionDefinition(bool start_from_params = false, bool self = false) {
-            if (!start_from_params) {
+        public FunctionDefinition ReadFunctionDefinition(bool start_from_params = false, bool self = false)
+        {
+            if (!start_from_params)
+            {
                 if (!CurToken.IsKeyword("function")) ThrowExpect("function", CurToken);
                 Move();
             }
@@ -294,19 +351,23 @@ namespace Relua {
 
             if (self) args.Add("self");
 
-            if (!CurToken.IsPunctuation(")")) {
+            if (!CurToken.IsPunctuation(")"))
+            {
                 if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
                 args.Add(CurToken.Value);
                 Move();
             }
 
-            while (CurToken.IsPunctuation(",")) {
+            while (CurToken.IsPunctuation(","))
+            {
                 Move();
-                if (CurToken.IsPunctuation("...")) {
+                if (CurToken.IsPunctuation("..."))
+                {
                     varargs = true;
                     Move();
                     break;
                 }
+
                 if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
                 args.Add(CurToken.Value);
                 Move();
@@ -318,13 +379,15 @@ namespace Relua {
             SkipSemicolons();
 
             var statements = new List<IStatement>();
-            while (!CurToken.IsKeyword("end") && !CurToken.IsEOF()) {
+            while (!CurToken.IsKeyword("end") && !CurToken.IsEOF())
+            {
                 statements.Add(ReadStatement());
             }
 
             Move();
 
-            return new FunctionDefinition {
+            return new FunctionDefinition
+            {
                 ArgumentNames = args,
                 Block = new Block { Statements = statements },
                 AcceptsVarargs = varargs,
@@ -335,34 +398,45 @@ namespace Relua {
         //主表达式 
         // Primary expression:
         // - Does not depend on any expressions.
-        public IExpression ReadPrimaryExpression() {
-            if (CurToken.Type == TokenType.QuotedString) {
+        public IExpression ReadPrimaryExpression()
+        {
+            if (CurToken.Type == TokenType.QuotedString)
+            {
                 return ReadStringLiteral();
             }
 
-            if (CurToken.Type == TokenType.Number) {
-                if (ParserSettings.EnableLuaJITLongs && PeekToken.IsIdentifier("LL")) {
+            if (CurToken.Type == TokenType.Number)
+            {
+                if (ParserSettings.EnableLuaJITLongs && PeekToken.IsIdentifier("LL"))
+                {
                     return ReadLuaJITLongLiteral();
-                } else {
+                }
+                else
+                {
                     return ReadNumberLiteral();
                 }
             }
 
-            if (CurToken.Type == TokenType.Punctuation) {
+            if (CurToken.Type == TokenType.Punctuation)
+            {
                 if (CurToken.Value == "{") return ReadTableConstructor();
                 if (CurToken.Value == "...") return ReadVarargsLiteral();
             }
             else if (CurToken.Type == TokenType.Keyword)
             {
                 if (CurToken.Value == "nil") return ReadNilLiteral();
-                if (CurToken.Value == "true" || CurToken.Value == "false") {
+                if (CurToken.Value == "true" || CurToken.Value == "false")
+                {
                     return ReadBoolLiteral();
                 }
-                if (CurToken.Value == "function") {
+
+                if (CurToken.Value == "function")
+                {
                     return ReadFunctionDefinition();
-                } 
+                }
             }
-            else if (CurToken.Type == TokenType.Identifier) {
+            else if (CurToken.Type == TokenType.Identifier)
+            {
                 return ReadVariable();
             }
 
@@ -370,7 +444,8 @@ namespace Relua {
             throw new Exception("unreachable");
         }
 
-        public OperatorInfo? GetBinaryOperator(Token tok) {
+        public OperatorInfo? GetBinaryOperator(Token tok)
+        {
             if (tok.Value == null) return null;
             var op = OperatorInfo.FromToken(tok);
             if (op == null) return null;
@@ -382,121 +457,152 @@ namespace Relua {
         //读取次要表达式
         // Secondary expression:
         // - Depends on (alters the value of) *one* expression.
-        public IExpression ReadSecondaryExpression() {
+        public IExpression ReadSecondaryExpression()
+        {
             //判断是一元还是二元操作符
             var unary_op = OperatorInfo.FromToken(CurToken);
 
-            if (unary_op != null && unary_op.Value.IsUnary) {
+            if (unary_op != null && unary_op.Value.IsUnary)
+            {
                 Move();
             }
+
             IExpression expr;
-            if (CurToken.IsPunctuation("(")) {
+            if (CurToken.IsPunctuation("("))
+            {
                 Move();
                 var complex = ReadComplexExpression(ReadSecondaryExpression(), 0, true);
-                if (!CurToken.IsPunctuation(")")) {
+                if (!CurToken.IsPunctuation(")"))
+                {
                     ThrowExpect("closing parenthesis", CurToken);
                 }
+
                 Move();
                 expr = complex;
-                if (expr is FunctionCall) {
+                if (expr is FunctionCall)
+                {
                     ((FunctionCall)expr).ForceTruncateReturnValues = true;
                 }
-            } else expr = ReadPrimaryExpression();
-          
-                
+            }
+            else expr = ReadPrimaryExpression();
 
-                do
+
+            do
+            {
+                while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation("["))
                 {
-                    while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation("[")) {
-                        if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
-
-                        if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
-                            Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
-                        }
-                        expr = ReadTableAccess(expr);
-                    }
-
-                    while (CurToken.IsPunctuation(":")) {
                     if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
-                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility)
+                    {
                         Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
                     }
+
+                    expr = ReadTableAccess(expr);
+                }
+
+                while (CurToken.IsPunctuation(":"))
+                {
+                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility)
+                    {
+                        Throw($"syntax error compat: can't directly index strings, use parentheses", CurToken);
+                    }
+
                     var self_expr = expr;
                     expr = ReadTableAccess(expr, allow_colon: true);
                     expr = ReadFunctionCall(expr, self_expr);
                 }
-                
-                if (CurToken.IsPunctuation("(")) {
+
+                if (CurToken.IsPunctuation("("))
+                {
                     if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
-                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
-                        Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken); 
-                    }
-                    expr = ReadFunctionCall(expr);
-                } else if (CurToken.IsPunctuation("{")) {
-                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
-
-                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility)
+                    {
                         Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken);
                     }
-                    expr = new FunctionCall {
+
+                    expr = ReadFunctionCall(expr);
+                }
+                else if (CurToken.IsPunctuation("{"))
+                {
+                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility)
+                    {
+                        Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken);
+                    }
+
+                    expr = new FunctionCall
+                    {
                         Function = expr,
                         Arguments = new List<IExpression> { ReadTableConstructor() }
                     };
-                } else if (CurToken.Type == TokenType.QuotedString) {
+                }
+                else if (CurToken.Type == TokenType.QuotedString)
+                {
                     if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
-                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility) {
+                    if (expr is StringLiteral && ParserSettings.MaintainSyntaxErrorCompatibility)
+                    {
                         Throw($"syntax error compat: can't directly call strings, use parentheses", CurToken);
                     }
-                    expr = new FunctionCall {
+
+                    expr = new FunctionCall
+                    {
                         Function = expr,
                         Arguments = new List<IExpression> { ReadStringLiteral() }
                     };
                 }
-                } while (CurToken.IsPunctuation(".")||CurToken.IsPunctuation(":"));
-                
-                
+            } while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation(":"));
 
-                
-                
-                
-                if (unary_op != null && unary_op.Value.IsUnary) {
-                    if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
 
-                    expr = new UnaryOp(unary_op.Value.UnaryOpType.Value, expr);
-                }
-                
+            if (unary_op != null && unary_op.Value.IsUnary)
+            {
+                if (expr is FunctionCall) ((FunctionCall)expr).ForceTruncateReturnValues = false;
+
+                expr = new UnaryOp(unary_op.Value.UnaryOpType.Value, expr);
+            }
+
             return expr;
         }
 
         // Complex expression:
         // - Depends on (alters the value of) *two* expressions.
-        public IExpression ReadComplexExpression(IExpression lhs, int prev_op_prec, bool in_parens, int depth = 0) {
+        public IExpression ReadComplexExpression(IExpression lhs, int prev_op_prec, bool in_parens, int depth = 0)
+        {
             var lookahead = GetBinaryOperator(CurToken);
             if (lookahead == null) return lhs;
 
             //Console.WriteLine($"{new string(' ', depth)}RCE: lhs = {lhs} lookahead = {lookahead.Value.TokenValue} prev_op_prec = {prev_op_prec}");
 
-            if (lhs is FunctionCall) {
+            if (lhs is FunctionCall)
+            {
                 ((FunctionCall)lhs).ForceTruncateReturnValues = false;
                 // No need to force this (and produce extra parens),
                 // because the binop truncates the return value anyway
             }
 
-            while (lookahead.Value.Precedence >= prev_op_prec) {
+            while (lookahead.Value.Precedence >= prev_op_prec)
+            {
                 var op = lookahead;
                 Move();
                 var rhs = ReadSecondaryExpression();
-                if (rhs is FunctionCall) {
+                if (rhs is FunctionCall)
+                {
                     ((FunctionCall)rhs).ForceTruncateReturnValues = false;
                 }
+
                 lookahead = GetBinaryOperator(CurToken);
                 if (lookahead == null) return new BinaryOp(op.Value.BinaryOpType.Value, lhs, rhs);
                 //Console.WriteLine($"{new string(' ', depth)}OUT rhs = {rhs} lookahead = {lookahead.Value.TokenValue} prec = {lookahead.Value.Precedence}");
 
-                while (lookahead.Value.RightAssociative ? (lookahead.Value.Precedence == op.Value.Precedence) : (lookahead.Value.Precedence > op.Value.Precedence)) {
+                while (lookahead.Value.RightAssociative
+                           ? (lookahead.Value.Precedence == op.Value.Precedence)
+                           : (lookahead.Value.Precedence > op.Value.Precedence))
+                {
                     rhs = ReadComplexExpression(rhs, lookahead.Value.Precedence, in_parens, depth + 1);
                     //Console.WriteLine($"{new string(' ', depth)}IN rhs = {rhs} lookahead = {lookahead.Value.TokenValue}");
                     lookahead = GetBinaryOperator(CurToken);
@@ -513,32 +619,39 @@ namespace Relua {
         /// Reads a single expression.
         /// </summary>
         /// <returns>The expression.</returns>
-        public IExpression ReadExpression() {
+        public IExpression ReadExpression()
+        {
             var expr = ReadSecondaryExpression();
             return ReadComplexExpression(expr, 0, false);
         }
 
-        public Break ReadBreak() {
+        public Break ReadBreak()
+        {
             if (!CurToken.IsKeyword("break")) ThrowExpect("break statement", CurToken);
             Move();
             return new Break();
         }
 
-        public Return ReadReturn() {
+        public Return ReadReturn()
+        {
             if (!CurToken.IsKeyword("return")) ThrowExpect("return statement", CurToken);
             Move();
 
             //fix error
-            while (CurToken.IsPunctuation(";")) {
+            while (CurToken.IsPunctuation(";"))
+            {
                 Move();
             }
+
             var ret_vals = new List<IExpression>();
 
-            if (!CurToken.IsKeyword("end")) {
+            if (!CurToken.IsKeyword("end"))
+            {
                 ret_vals.Add(ReadExpression());
             }
 
-            while (CurToken.IsPunctuation(",")) {
+            while (CurToken.IsPunctuation(","))
+            {
                 Move();
                 ret_vals.Add(ReadExpression());
             }
@@ -546,7 +659,8 @@ namespace Relua {
             return new Return { Expressions = ret_vals };
         }
 
-        public If ReadIf() {
+        public If ReadIf()
+        {
             if (!CurToken.IsKeyword("if")) ThrowExpect("if statement", CurToken);
 
             Move();
@@ -558,28 +672,35 @@ namespace Relua {
 
             var statements = new List<IStatement>();
 
-            while (!CurToken.IsKeyword("else") && !CurToken.IsKeyword("elseif") && !CurToken.IsKeyword("end") && !CurToken.IsEOF()) {
+            while (!CurToken.IsKeyword("else") && !CurToken.IsKeyword("elseif") && !CurToken.IsKeyword("end") &&
+                   !CurToken.IsEOF())
+            {
                 statements.Add(ReadStatement());
             }
 
-            var mainif_cond_block = new ConditionalBlock {
+            var mainif_cond_block = new ConditionalBlock
+            {
                 Block = new Block { Statements = statements },
                 Condition = cond
             };
 
             var elseifs = new List<ConditionalBlock>();
 
-            while (CurToken.IsKeyword("elseif")) {
+            while (CurToken.IsKeyword("elseif"))
+            {
                 Move();
                 var elseif_cond = ReadExpression();
                 if (!CurToken.IsKeyword("then")) ThrowExpect("'then' keyword", CurToken);
                 Move();
                 var elseif_statements = new List<IStatement>();
-                while (!CurToken.IsKeyword("else") && !CurToken.IsKeyword("elseif") && !CurToken.IsKeyword("end") && !CurToken.IsEOF()) {
+                while (!CurToken.IsKeyword("else") && !CurToken.IsKeyword("elseif") && !CurToken.IsKeyword("end") &&
+                       !CurToken.IsEOF())
+                {
                     elseif_statements.Add(ReadStatement());
                 }
 
-                elseifs.Add(new ConditionalBlock {
+                elseifs.Add(new ConditionalBlock
+                {
                     Block = new Block { Statements = elseif_statements },
                     Condition = elseif_cond
                 });
@@ -587,10 +708,12 @@ namespace Relua {
 
             Block else_block = null;
 
-            if (CurToken.IsKeyword("else")) {
+            if (CurToken.IsKeyword("else"))
+            {
                 Move();
                 var else_statements = new List<IStatement>();
-                while (!CurToken.IsKeyword("end") && !CurToken.IsEOF()) {
+                while (!CurToken.IsKeyword("end") && !CurToken.IsEOF())
+                {
                     else_statements.Add(ReadStatement());
                 }
 
@@ -600,18 +723,21 @@ namespace Relua {
             if (!CurToken.IsKeyword("end")) ThrowExpect("'end' keyword", CurToken);
             Move();
 
-            return new If {
+            return new If
+            {
                 MainIf = mainif_cond_block,
                 ElseIfs = elseifs,
                 Else = else_block
             };
         }
 
-        public void SkipSemicolons() {
+        public void SkipSemicolons()
+        {
             while (CurToken.IsPunctuation(";")) Move();
         }
 
-        public While ReadWhile() {
+        public While ReadWhile()
+        {
             if (!CurToken.IsKeyword("while")) ThrowExpect("while statement", CurToken);
 
             Move();
@@ -624,29 +750,35 @@ namespace Relua {
 
             var statements = new List<IStatement>();
 
-            while (!CurToken.IsKeyword("end") && !CurToken.IsEOF()) {
+            while (!CurToken.IsKeyword("end") && !CurToken.IsEOF())
+            {
                 statements.Add(ReadStatement());
             }
+
             Move();
 
-            return new While {
+            return new While
+            {
                 Condition = cond,
                 Block = new Block { Statements = statements }
             };
         }
 
-        public Assignment TryReadFullAssignment(bool certain_assign, IExpression start_expr, Token expr_token) {
+        public Assignment TryReadFullAssignment(bool certain_assign, IExpression start_expr, Token expr_token)
+        {
             // certain_assign should be set to true if we know that
             // what we have is definitely an assignment
             // that allows us to handle implicit nil assignments (local
             // declarations without a value) as an Assignment node
 
-            if (certain_assign || (CurToken.IsPunctuation("=") || CurToken.IsPunctuation(","))) {
+            if (certain_assign || (CurToken.IsPunctuation("=") || CurToken.IsPunctuation(",")))
+            {
                 if (!(start_expr is IAssignable)) ThrowExpect("assignable expression", expr_token);
 
                 var assign_exprs = new List<IAssignable> { start_expr as IAssignable };
 
-                while (CurToken.IsPunctuation(",")) {
+                while (CurToken.IsPunctuation(","))
+                {
                     Move();
                     start_expr = ReadExpression();
                     if (!(start_expr is IAssignable)) ThrowExpect("assignable expression", expr_token);
@@ -654,17 +786,21 @@ namespace Relua {
                     assign_exprs.Add(start_expr as IAssignable);
                 }
 
-                if (certain_assign && !CurToken.IsPunctuation("=")) {
+                if (certain_assign && !CurToken.IsPunctuation("="))
+                {
                     // implicit nil assignment/local declaration
 
-                    var local_decl = new Assignment {
+                    var local_decl = new Assignment
+                    {
                         IsLocal = true,
                         Targets = assign_exprs
                     };
 
-                    if (ParserSettings.AutofillValuesInLocalDeclaration) {
+                    if (ParserSettings.AutofillValuesInLocalDeclaration)
+                    {
                         // Match Values with NilLiterals
-                        for (var i = 0; i < assign_exprs.Count; i++) {
+                        for (var i = 0; i < assign_exprs.Count; i++)
+                        {
                             local_decl.Values.Add(NilLiteral.Instance);
                         }
                     }
@@ -676,66 +812,78 @@ namespace Relua {
             }
 
 
-
             return null;
         }
 
-        public Assignment ReadAssignment(List<IAssignable> assignable_exprs, bool local = false) {
+        public Assignment ReadAssignment(List<IAssignable> assignable_exprs, bool local = false)
+        {
             if (!CurToken.IsPunctuation("=")) ThrowExpect("assignment", CurToken);
             Move();
             var value_exprs = new List<IExpression> { ReadExpression() };
 
-            while (CurToken.IsPunctuation(",")) {
+            while (CurToken.IsPunctuation(","))
+            {
                 Move();
                 value_exprs.Add(ReadExpression());
             }
 
-            return new Assignment {
+            return new Assignment
+            {
                 IsLocal = local,
                 Targets = assignable_exprs,
                 Values = value_exprs,
             };
         }
 
-        public Assignment ReadNamedFunctionDefinition() {
+        public Assignment ReadNamedFunctionDefinition()
+        {
             if (!CurToken.IsKeyword("function")) ThrowExpect("function", CurToken);
             Move();
             if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
             IAssignable expr = new Variable { Name = CurToken.Value };
             Move();
-            while (CurToken.IsPunctuation(".")) {
+            while (CurToken.IsPunctuation("."))
+            {
                 Move();
                 if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
-                expr = new TableAccess {
+                expr = new TableAccess
+                {
                     Table = expr as IExpression,
                     Index = new StringLiteral { Value = CurToken.Value }
                 };
                 Move();
             }
+
             var is_method_def = false;
-            if (CurToken.IsPunctuation(":")) {
+            if (CurToken.IsPunctuation(":"))
+            {
                 is_method_def = true;
                 Move();
                 if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
-                expr = new TableAccess {
+                expr = new TableAccess
+                {
                     Table = expr as IExpression,
                     Index = new StringLiteral { Value = CurToken.Value }
                 };
                 Move();
             }
+
             var func_def = ReadFunctionDefinition(start_from_params: true, self: is_method_def);
-            return new Assignment {
+            return new Assignment
+            {
                 Targets = new List<IAssignable> { expr },
                 Values = new List<IExpression> { func_def }
             };
         }
 
-        public Repeat ReadRepeat() {
+        public Repeat ReadRepeat()
+        {
             if (!CurToken.IsKeyword("repeat")) ThrowExpect("repeat statement", CurToken);
             Move();
             SkipSemicolons();
             var statements = new List<IStatement>();
-            while (!CurToken.IsKeyword("until") && !CurToken.IsEOF()) {
+            while (!CurToken.IsKeyword("until") && !CurToken.IsEOF())
+            {
                 statements.Add(ReadStatement());
             }
 
@@ -744,19 +892,22 @@ namespace Relua {
 
             var cond = ReadExpression();
 
-            return new Repeat {
+            return new Repeat
+            {
                 Condition = cond,
                 Block = new Block { Statements = statements }
             };
         }
 
-        public Block ReadBlock(bool alone = false) {
+        public Block ReadBlock(bool alone = false)
+        {
             if (!CurToken.IsKeyword("do")) ThrowExpect("block", CurToken);
             Move();
             SkipSemicolons();
 
             var statements = new List<IStatement>();
-            while (!CurToken.IsKeyword("end") && !CurToken.IsEOF()) {
+            while (!CurToken.IsKeyword("end") && !CurToken.IsEOF())
+            {
                 statements.Add(ReadStatement());
             }
 
@@ -765,13 +916,15 @@ namespace Relua {
             return new Block { Statements = statements };
         }
 
-        public GenericFor ReadGenericFor() {
+        public GenericFor ReadGenericFor()
+        {
             if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
 
             var var_names = new List<string> { CurToken.Value };
             Move();
 
-            while (CurToken.IsPunctuation(",")) {
+            while (CurToken.IsPunctuation(","))
+            {
                 Move();
                 if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
                 var_names.Add(CurToken.Value);
@@ -784,14 +937,16 @@ namespace Relua {
             var iterator = ReadExpression();
             var block = ReadBlock();
 
-            return new GenericFor {
+            return new GenericFor
+            {
                 VariableNames = var_names,
                 Iterator = iterator,
                 Block = block
             };
         }
 
-        public NumericFor ReadNumericFor() {
+        public NumericFor ReadNumericFor()
+        {
             if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
 
             var var_name = CurToken.Value;
@@ -806,18 +961,21 @@ namespace Relua {
             var end_pos = ReadExpression();
 
             IExpression step = null;
-            if (CurToken.IsPunctuation(",")) {
+            if (CurToken.IsPunctuation(","))
+            {
                 Move();
                 step = ReadExpression();
             }
 
-            if (step == null && ParserSettings.AutofillNumericForStep) {
+            if (step == null && ParserSettings.AutofillNumericForStep)
+            {
                 step = new NumberLiteral { Value = 1 };
             }
 
             var block = ReadBlock();
 
-            return new NumericFor {
+            return new NumericFor
+            {
                 VariableName = var_name,
                 StartPoint = start_pos,
                 EndPoint = end_pos,
@@ -826,21 +984,24 @@ namespace Relua {
             };
         }
 
-        public For ReadFor() {
+        public For ReadFor()
+        {
             if (!CurToken.IsKeyword("for")) ThrowExpect("for statement", CurToken);
 
             Move();
 
             var peek = PeekToken;
-            if (peek.IsPunctuation(",") || peek.IsKeyword("in")) {
+            if (peek.IsPunctuation(",") || peek.IsKeyword("in"))
+            {
                 return ReadGenericFor();
-            } else {
+            }
+            else
+            {
                 return ReadNumericFor();
             }
         }
 
         #region PLOOP
-
 
         /// <summary>
         /// reads ploop module
@@ -853,13 +1014,13 @@ namespace Relua {
             if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
             Move();
             if (!CurToken.IsKeyword("function")) ThrowExpect("function", CurToken);
-            
+
             //skip (_ENV) 
             Move();
             Move();
             Move();
             Move();
-            
+
             //read module statements
             var Statements = new List<IStatement>();
             while (!CurToken.IsEOF())
@@ -884,7 +1045,6 @@ namespace Relua {
         }
 
 
-
         /// <summary>
         /// read ploop class 
         /// </summary>
@@ -897,20 +1057,20 @@ namespace Relua {
             if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
             Move();
             if (!CurToken.IsKeyword("function")) ThrowExpect("function", CurToken);
-            
+
             //skip (_ENV)
             Move();
             Move();
             Move();
             Move();
-            
+
             var inheritClass = default(string);
             if (CurToken.IsKeyword("inherit"))
             {
                 Move();
-                inheritClass = ReadStringLiteral().Value;    
+                inheritClass = ReadStringLiteral().Value;
             }
-            
+
             var Statements = new List<IStatement>();
             while (!CurToken.IsEOF())
             {
@@ -920,17 +1080,18 @@ namespace Relua {
                     Move();
                     break;
                 }
+
                 var statement = ReadStatement();
                 Statements.Add(statement);
             }
 
             Move();
-            
+
             return new PloopClass()
             {
                 ClassName = className,
                 inheritClass = inheritClass,
-                Statements = Statements, 
+                Statements = Statements,
             };
         }
 
@@ -945,63 +1106,76 @@ namespace Relua {
             Move();
             var propertyName = ReadStringLiteral().Value;
             if (!CurToken.IsPunctuation("{")) ThrowExpect("{", CurToken);
-            
+
             var propertyStruct = ReadTableConstructor();
-            
+
             return new PloopClassProperty()
             {
-                PropertyName =  propertyName,
+                PropertyName = propertyName,
                 PropertyStruct = propertyStruct,
             };
         }
 
         #endregion
-        
+
         /// <summary>
         /// 读取主语句
         /// </summary>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public IStatement ReadPrimaryStatement() {
-            if (CurToken.IsKeyword("break")) {
+        public IStatement ReadPrimaryStatement()
+        {
+            if (CurToken.IsKeyword("break"))
+            {
                 return ReadBreak();
             }
 
-            if (CurToken.IsKeyword("return")) {
+            if (CurToken.IsKeyword("return"))
+            {
                 return ReadReturn();
             }
 
-            if (CurToken.IsKeyword("if")) {
+            if (CurToken.IsKeyword("if"))
+            {
                 return ReadIf();
             }
 
-            if (CurToken.IsKeyword("while")) {
+            if (CurToken.IsKeyword("while"))
+            {
                 return ReadWhile();
             }
 
-            if (CurToken.IsKeyword("function")) {
+            if (CurToken.IsKeyword("function"))
+            {
                 return ReadNamedFunctionDefinition();
             }
 
-            if (CurToken.IsKeyword("repeat")) {
+            if (CurToken.IsKeyword("repeat"))
+            {
                 return ReadRepeat();
             }
 
-            if (CurToken.IsKeyword("for")) {
+            if (CurToken.IsKeyword("for"))
+            {
                 return ReadFor();
             }
 
-            if (CurToken.IsKeyword("do")) {
+            if (CurToken.IsKeyword("do"))
+            {
                 return ReadBlock(alone: true);
             }
 
-            if (CurToken.IsKeyword("local")) {
+            if (CurToken.IsKeyword("local"))
+            {
                 Move();
-                if (CurToken.IsKeyword("function")) {
+                if (CurToken.IsKeyword("function"))
+                {
                     var local_assign = ReadNamedFunctionDefinition();
                     local_assign.IsLocal = true;
                     return local_assign;
-                } else {
+                }
+                else
+                {
                     var local_expr_token = CurToken;
                     var local_expr = ReadExpression();
                     var local_assign = TryReadFullAssignment(true, local_expr, local_expr_token);
@@ -1031,7 +1205,8 @@ namespace Relua {
             var assign = TryReadFullAssignment(false, expr, expr_token);
             if (assign != null) return assign;
 
-            if (expr is FunctionCall) {
+            if (expr is FunctionCall)
+            {
                 return expr as FunctionCall;
             }
 
@@ -1043,7 +1218,8 @@ namespace Relua {
         /// Reads a single statement.
         /// </summary>
         /// <returns>The statement.</returns>
-        public IStatement ReadStatement() {
+        public IStatement ReadStatement()
+        {
             var stat = ReadPrimaryStatement();
             SkipSemicolons();
             return stat;
@@ -1053,10 +1229,12 @@ namespace Relua {
         /// Reads a list of statements.
         /// </summary>
         /// <returns>`Block` node (`TopLevel` = `true`).</returns>
-        public Block Read() {
+        public Block Read()
+        {
             var statements = new List<IStatement>();
 
-            while (!CurToken.IsEOF()) {
+            while (!CurToken.IsEOF())
+            {
                 statements.Add(ReadStatement());
             }
 
