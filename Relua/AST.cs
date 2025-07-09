@@ -1478,7 +1478,10 @@ namespace Relua.AST
             writer.WriteLine();
             // ---@class Car : Transport @define class Car extends Transport
             writer.WriteLine($"---@class {ClassName}");
-            writer.Write($"local {ClassName} = class('{ClassName}') ");
+            if(string.IsNullOrEmpty(inheritClass))
+                writer.Write($"local {ClassName} = class('{ClassName}') ");
+            else 
+                writer.Write($"local {ClassName} = class('{ClassName}', {inheritClass}) ");
             // writer.IncreaseIndent();
             writer.WriteLine();
             var first = true;
