@@ -41,7 +41,7 @@ namespace Relua {
             "false", "for", "function", "if", "in", "local",
             "nil", "not", "or", "repeat", "return", "then",
             "true", "until", "while",
-            "Module","class","inherit","property"
+            "Module","class","inherit","property","enum"
         };
 
         public string Data;

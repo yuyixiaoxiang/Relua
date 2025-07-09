@@ -1247,7 +1247,7 @@ namespace Relua.AST {
     }
     
     
-    #region Ploop
+    #region Ploop [https://github.com/kurapica/PLoop/blob/master/README-zh.md]
     /// <summary>
     /// Module "Game.View"(function(_ENV)
     /// </summary>
@@ -1290,12 +1290,13 @@ namespace Relua.AST {
         public string ClassName;
         public string inheritClass;
         public List<IStatement> Statements;
-        public override void Write(IndentAwareTextWriter writer,object data) {
-//            
-            writer.Write("local class = require 'middleclass'");
+        public override void Write(IndentAwareTextWriter writer,object data) {            
+            writer.Write("local class = require(\"middleclass\")");
             writer.WriteLine();
+            // ---@class Car : Transport @define class Car extends Transport
+            writer.WriteLine($"---@class {ClassName}");
             writer.Write($"local {ClassName} = class('{ClassName}') ");
-            writer.IncreaseIndent();
+            // writer.IncreaseIndent();
             writer.WriteLine();
             var first = true;
             foreach (var statement in Statements)
@@ -1306,7 +1307,7 @@ namespace Relua.AST {
                 first = false;
                 writer.WriteLine();
             }
-            writer.DecreaseIndent();
+            // writer.DecreaseIndent();
             writer.WriteLine();
             writer.Write($"return {ClassName}");
         }
@@ -1337,7 +1338,7 @@ namespace Relua.AST {
     /// class property
     /// property "Name" { field = "__name", type = System.String, default = "unknown", set = false}
     /// </summary>
-    public class PloopClassProperty : Node, IStatement
+    public class PloopProperty : Node, IStatement
     {
         private PloopClass PloopClass;
         public string PropertyName;
@@ -1397,6 +1398,45 @@ namespace Relua.AST {
             throw new NotImplementedException();
         }
     }
+    
+    
+    /// <summary>
+    /// parse ploop enum type
+    /// enum "name" { -- key-value pairs }
+    /// enum "Direction" { North = 1, East = 2, South = 3, West = 4 }
+    /// </summary>
+    public class PloopEnum : Node, IStatement
+    {
+        public string EnumName;
+        public TableConstructor enumStruct;
+
+        public override void Write(IndentAwareTextWriter writer,object data) {
+            var dic = new Dictionary<string,IExpression>();
+            foreach (var entry in enumStruct.Entries)
+            {
+                var key = entry.Key;
+                var value = entry.Value;
+                if (key is StringLiteral stringLiteral)
+                {
+                    dic.Add(stringLiteral.Value,value);  
+                }
+            }
+            
+            writer.Write($"{EnumName} = ");
+            writer.Write($"{EnumName} = ");
+            enumStruct.Write(writer,null);
+            writer.WriteLine();
+            
+           
+        }
+
+        public override void Accept(IVisitor visitor) => visitor.Visit(this);        
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
     #endregion
     
 }

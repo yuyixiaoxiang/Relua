@@ -1001,7 +1001,7 @@ namespace Relua
             }
         }
 
-        #region PLOOP
+        #region PLOOP [https://github.com/kurapica/PLoop/blob/master/README-zh.md]
 
         /// <summary>
         /// reads ploop module
@@ -1100,7 +1100,7 @@ namespace Relua
         /// property "Name" { field = "__name", type = System.String, set = "unknown", set = false}
         /// </summary>
         /// <returns></returns>
-        public PloopClassProperty ReadClassProperty()
+        public PloopProperty ReadPloopProperty()
         {
             if (!CurToken.IsKeyword("property")) ThrowExpect("property statement", CurToken);
             Move();
@@ -1109,13 +1109,34 @@ namespace Relua
 
             var propertyStruct = ReadTableConstructor();
 
-            return new PloopClassProperty()
+            return new PloopProperty()
             {
                 PropertyName = propertyName,
                 PropertyStruct = propertyStruct,
             };
         }
 
+        /// <summary>
+        /// read enum
+        /// enum "name" { -- key-value pairs }
+        /// enum "Direction" { North = 1, East = 2, South = 3, West = 4 }
+        /// </summary>
+        /// <returns></returns>
+        public PloopEnum ReadPloopEnum()
+        {
+            if (!CurToken.IsKeyword("enum")) ThrowExpect("property statement", CurToken);
+            Move();
+            var enumName = ReadStringLiteral().Value;
+            if (!CurToken.IsPunctuation("{")) ThrowExpect("{", CurToken);
+
+            var enumStruct = ReadTableConstructor();
+
+            return new PloopEnum()
+            {
+                EnumName = enumName,
+                enumStruct = enumStruct,
+            };
+        }
         #endregion
 
         /// <summary>
@@ -1197,7 +1218,12 @@ namespace Relua
 
             if (CurToken.IsKeyword("property"))
             {
-                return ReadClassProperty();
+                return ReadPloopProperty();
+            }
+
+            if (CurToken.IsKeyword("enum"))
+            {
+                return ReadPloopEnum();
             }
 
             var expr_token = CurToken;

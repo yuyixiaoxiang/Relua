@@ -31,7 +31,8 @@ namespace Relua {
         void Visit(PloopModule node);
         void Visit(PloopClass node);
 
-        void Visit(PloopClassProperty node);
+        void Visit(PloopProperty node);
+        void Visit(PloopEnum node);
     }
 
     public abstract class Visitor : IVisitor {
@@ -62,7 +63,8 @@ namespace Relua {
         public virtual void Visit(PloopModule node){}
         public virtual void Visit(PloopClass node){}
         
-        public virtual void Visit(PloopClassProperty node){}
+        public virtual void Visit(PloopProperty node){}
+        public virtual void Visit(PloopEnum node){}
     }
 
 }
