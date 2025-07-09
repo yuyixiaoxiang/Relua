@@ -1,5 +1,9 @@
  已知问题
- 1. 多not的问题
- local show = not VIEW.HideMainUIFlag
- 2. return;的问题
+ 1. hoster的问题
+ 2. property的问题
+ 
+ 
  3. 字符串..拼接的问题 
+ 4. 没有用,可以注释掉
+ struct "ProductionData"
+ 

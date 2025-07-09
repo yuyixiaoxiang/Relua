@@ -203,7 +203,7 @@ namespace Lua
                 {
                     var err = true;
                     //fix like ui.property
-                    if (CurToken.Value == "property")
+                    if (CurToken.Value == "property" || CurToken.Value == "Module")
                     {
                         CurToken.Type = TokenType.Identifier;
                         err = false;
@@ -242,12 +242,12 @@ namespace Lua
                 args.Add(self_expr);
             }
 
-            if (!CurToken.IsPunctuation(")")) args.Add(ReadExpression());
+            if (!CurToken.IsPunctuation(")")) args.Add(ReadExpression(true));
 
             while (CurToken.IsPunctuation(","))
             {
                 Move();
-                var expr = ReadExpression();
+                var expr = ReadExpression(true);
                 args.Add(expr);
                 if (!CurToken.IsPunctuation(",") && !CurToken.IsPunctuation(")"))
                     ThrowExpect("comma or end of argument list", CurToken);
@@ -329,7 +329,7 @@ namespace Lua
             //fix error use ; not ,
             if (CurToken.IsPunctuation(";"))
                 CurToken.Value = ",";
-            
+
             while (CurToken.IsPunctuation(","))
             {
                 Move();
@@ -342,11 +342,11 @@ namespace Lua
                 }
 
                 entries.Add(ent);
-                
+
                 //fix error use ; not ,
                 if (CurToken.IsPunctuation(";"))
                     CurToken.Value = ",";
-                
+
                 if (!CurToken.IsPunctuation(",") && !CurToken.IsPunctuation("}"))
                     ThrowExpect("comma or end of entry list", CurToken);
             }
@@ -479,14 +479,24 @@ namespace Lua
         //读取次要表达式
         // Secondary expression:
         // - Depends on (alters the value of) *one* expression.
-        public IExpression ReadSecondaryExpression()
+        // fix fun_args whether is function args
+        public IExpression ReadSecondaryExpression(bool fun_args = false)
         {
             //判断是一元还是二元操作符
             var unary_op = OperatorInfo.FromToken(CurToken);
 
             if (unary_op != null && unary_op.Value.IsUnary)
             {
-                Move();
+                var realUnaryOp = true;
+                //fix [aa("+")]
+                if (fun_args && (PeekToken.IsPunctuation(")") || PeekToken.IsPunctuation(",")) )  
+                {
+                    unary_op = null;
+                    realUnaryOp = false;
+                }
+
+                if (realUnaryOp)
+                    Move();
             }
 
             IExpression expr;
@@ -641,9 +651,9 @@ namespace Lua
         /// Reads a single expression.
         /// </summary>
         /// <returns>The expression.</returns>
-        public IExpression ReadExpression()
+        public IExpression ReadExpression(bool fun_args = false)
         {
-            var expr = ReadSecondaryExpression();
+            var expr = ReadSecondaryExpression(fun_args);
             return ReadComplexExpression(expr, 0, false);
         }
 
