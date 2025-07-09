@@ -199,7 +199,18 @@ namespace Lua
             if (CurToken.IsPunctuation(".") || (allow_colon && CurToken.IsPunctuation(":")))
             {
                 Move();
-                if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
+                if (CurToken.Type != TokenType.Identifier)
+                {
+                    var err = true;
+                    //fix like ui.property
+                    if (CurToken.Value == "property")
+                    {
+                        CurToken.Type = TokenType.Identifier;
+                        err = false;
+                    }
+                    if(err)
+                        ThrowExpect("identifier", CurToken);
+                }
                 var index = new StringLiteral { Value = CurToken.Value };
                 Move();
                 table_node = new TableAccess { Table = table_expr, Index = index };
@@ -643,8 +654,8 @@ namespace Lua
                 Move();
             }
 
-            //fix error
-            if (CurToken.IsKeyword("else"))
+            //fix error [return else] or [return elseif]
+            if (CurToken.IsKeyword("else") || CurToken.IsKeyword("elseif"))
             {
                 return new Return { Redundant = true};
             }
