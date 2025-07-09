@@ -326,6 +326,10 @@ namespace Lua
                 entries.Add(ent);
             }
 
+            //fix error use ; not ,
+            if (CurToken.IsPunctuation(";"))
+                CurToken.Value = ",";
+            
             while (CurToken.IsPunctuation(","))
             {
                 Move();
@@ -338,6 +342,11 @@ namespace Lua
                 }
 
                 entries.Add(ent);
+                
+                //fix error use ; not ,
+                if (CurToken.IsPunctuation(";"))
+                    CurToken.Value = ",";
+                
                 if (!CurToken.IsPunctuation(",") && !CurToken.IsPunctuation("}"))
                     ThrowExpect("comma or end of entry list", CurToken);
             }
