@@ -208,9 +208,11 @@ namespace Lua
                         CurToken.Type = TokenType.Identifier;
                         err = false;
                     }
-                    if(err)
+
+                    if (err)
                         ThrowExpect("identifier", CurToken);
                 }
+
                 var index = new StringLiteral { Value = CurToken.Value };
                 Move();
                 table_node = new TableAccess { Table = table_expr, Index = index };
@@ -567,7 +569,7 @@ namespace Lua
                         Arguments = new List<IExpression> { ReadStringLiteral() }
                     };
                 }
-            } while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation(":"));
+            } while (CurToken.IsPunctuation(".") || CurToken.IsPunctuation(":") || CurToken.IsPunctuation("["));
 
 
             if (unary_op != null && unary_op.Value.IsUnary)
@@ -657,7 +659,7 @@ namespace Lua
             //fix error [return else] or [return elseif]
             if (CurToken.IsKeyword("else") || CurToken.IsKeyword("elseif"))
             {
-                return new Return { Redundant = true};
+                return new Return { Redundant = true };
             }
 
             var ret_vals = new List<IExpression>();
@@ -1018,7 +1020,7 @@ namespace Lua
             }
         }
 
-        #region PLOOP [https://github.com/kurapica/PLoop/blob/master/README-zh.md]
+        #region PLOOP [https: //github.com/kurapica/PLoop/blob/master/README-zh.md]
 
         /// <summary>
         /// reads ploop module
@@ -1154,6 +1156,7 @@ namespace Lua
                 enumStruct = enumStruct,
             };
         }
+
         #endregion
 
         /// <summary>
