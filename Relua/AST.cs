@@ -1618,7 +1618,6 @@ namespace Lua.AST
             }
 
             writer.Write($"{EnumName} = ");
-            writer.Write($"{EnumName} = ");
             enumStruct.Write(writer, null);
             writer.WriteLine();
         }
