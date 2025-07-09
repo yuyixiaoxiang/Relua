@@ -11,7 +11,7 @@ namespace Lua.AST
     public abstract class Node
     {
         public abstract void Write(IndentAwareTextWriter writer, object data = null);
-        public abstract void Accept(IVisitor visitor);
+        // public abstract void Accept(IVisitor visitor);
         public abstract void Write2TS(IndentAwareTextWriter writer, object data = null);
 
         public override string ToString()
@@ -36,7 +36,7 @@ namespace Lua.AST
     public interface IStatement
     {
         void Write(IndentAwareTextWriter writer, object data = null);
-        void Accept(IVisitor visitor);
+        // void Accept(IVisitor visitor);
         void Write2TS(IndentAwareTextWriter writer, object data = null);
         string ToString(bool one_line);
     }
@@ -47,7 +47,7 @@ namespace Lua.AST
     public interface IExpression
     {
         void Write(IndentAwareTextWriter writer, object data = null);
-        void Accept(IVisitor visitor);
+        // void Accept(IVisitor visitor);
         void Write2TS(IndentAwareTextWriter writer, object data = null);
         string ToString(bool one_line);
     }
@@ -59,7 +59,7 @@ namespace Lua.AST
     public interface IAssignable
     {
         void Write(IndentAwareTextWriter writer, object data);
-        void Accept(IVisitor visitor);
+        // void Accept(IVisitor visitor);
 
         void Write2TS(IndentAwareTextWriter writer, object data);
         string ToString(bool one_line);
@@ -81,7 +81,7 @@ namespace Lua.AST
             writer.Write(Name);
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -105,7 +105,7 @@ namespace Lua.AST
             writer.Write("nil");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -133,7 +133,7 @@ namespace Lua.AST
             writer.Write("...");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -160,7 +160,7 @@ namespace Lua.AST
             writer.Write(Value ? "true" : "false");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -216,7 +216,7 @@ namespace Lua.AST
             writer.Write(")");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -319,7 +319,7 @@ namespace Lua.AST
             writer.Write(")");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -368,7 +368,7 @@ namespace Lua.AST
             Quote(writer, Value);
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -400,7 +400,7 @@ namespace Lua.AST
             else writer.Write(Value);
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -436,7 +436,7 @@ namespace Lua.AST
             writer.Write("LL");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -531,7 +531,7 @@ namespace Lua.AST
             }
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -627,7 +627,7 @@ namespace Lua.AST
             if (ForceTruncateReturnValues) writer.Write(")");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -720,7 +720,7 @@ namespace Lua.AST
                 }
             }
 
-            public override void Accept(IVisitor visitor) => visitor.Visit(this);
+            // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
             public override void Write2TS(IndentAwareTextWriter writer, object data = null)
             {
@@ -774,7 +774,7 @@ namespace Lua.AST
             writer.Write("}");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -796,7 +796,7 @@ namespace Lua.AST
             writer.Write("break");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -828,7 +828,7 @@ namespace Lua.AST
             }
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -889,7 +889,7 @@ namespace Lua.AST
             }
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -919,7 +919,7 @@ namespace Lua.AST
             writer.WriteLine();
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -967,7 +967,7 @@ namespace Lua.AST
             writer.Write("end");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1002,7 +1002,7 @@ namespace Lua.AST
             writer.Write("end");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1036,7 +1036,7 @@ namespace Lua.AST
             Condition.Write(writer);
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1142,7 +1142,7 @@ namespace Lua.AST
             writer.Write("end");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1311,7 +1311,7 @@ namespace Lua.AST
             }
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1371,7 +1371,7 @@ namespace Lua.AST
             writer.Write("end");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1416,7 +1416,7 @@ namespace Lua.AST
             writer.Write("end");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1454,7 +1454,7 @@ namespace Lua.AST
 //            writer.Write("end");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1520,7 +1520,7 @@ namespace Lua.AST
             writer.Write("}");
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
     }
 
     /// <summary>
@@ -1585,7 +1585,7 @@ namespace Lua.AST
             }
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1623,7 +1623,7 @@ namespace Lua.AST
             writer.WriteLine();
         }
 
-        public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
