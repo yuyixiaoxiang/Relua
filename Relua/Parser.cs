@@ -643,6 +643,12 @@ namespace Lua
                 Move();
             }
 
+            //fix error
+            if (CurToken.IsKeyword("else"))
+            {
+                return new Return { Redundant = true};
+            }
+
             var ret_vals = new List<IExpression>();
 
             if (!CurToken.IsKeyword("end"))

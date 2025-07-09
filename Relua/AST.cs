@@ -814,9 +814,18 @@ namespace Lua.AST
     public class Return : Node, IStatement
     {
         public List<IExpression> Expressions = new List<IExpression>();
+        /// <summary>
+        /// redundant return ,so skip it
+        /// </summary>
+        public bool Redundant;
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
+            if (Redundant)
+            {
+                writer.Write("--return");
+                return;
+            }
             writer.Write("return");
             if (Expressions.Count > 0) writer.Write(" ");
             for (var i = 0; i < Expressions.Count; i++)
