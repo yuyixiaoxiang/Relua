@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace Relua {
+namespace Lua {
     /// <summary>
     /// Collection of extension methods used internally by Relua.
     /// </summary>

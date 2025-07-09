@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Relua.AST;
+using Lua.AST;
 
-namespace Relua
+namespace Lua
 {
     public class Parser
     {

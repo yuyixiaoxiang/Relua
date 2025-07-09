@@ -1,7 +1,7 @@
 ﻿using System;
-using Relua.AST;
+using Lua.AST;
 
-namespace Relua {
+namespace Lua {
     public interface IVisitor {
         void Visit(Variable node);
         void Visit(NilLiteral node);

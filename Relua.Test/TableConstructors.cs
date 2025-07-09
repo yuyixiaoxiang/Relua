@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using NUnit.Framework;
 
-namespace Relua.Tests {
+namespace Lua.Tests {
     [TestFixture]
     public class TableConstructors {
         [Test]

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Relua {
+namespace Lua {
     public class Tokenizer {
         public struct Region {
             public Tokenizer Tokenizer;

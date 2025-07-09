@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Relua.AST;
+using Lua.AST;
 
-namespace Relua {
+namespace Lua {
     /// <summary>
     /// Struct representing a Lua operator (unary and/or binary), along with
     /// its precedence and associativity.

@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Relua {
+namespace Lua {
     /// <summary>
     /// Base class for Relua exceptions. By catching this type, you can
     /// catch both types of exceptions (while tokenizing and while parsing).

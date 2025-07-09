@@ -1,7 +1,7 @@
 ﻿using System;
 using NUnit.Framework;
 
-namespace Relua.Tests {
+namespace Lua.Tests {
     [TestFixture]
     public class Statements {
         [Test]

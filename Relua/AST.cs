@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Relua.AST
+namespace Lua.AST
 {
     /// <summary>
     /// Base class of all Lua AST node.

@@ -1,4 +1,4 @@
-namespace Relua.Test;
+namespace Lua.Test;
 
 public class Tests
 {

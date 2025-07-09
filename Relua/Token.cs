@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Relua {
+namespace Lua {
     public enum TokenType {
         EOF,
         Identifier,

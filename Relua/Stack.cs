@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Relua {
+namespace Lua {
     public class Stack<T> {
         protected List<T> BackingList = new List<T>();
 
