@@ -60,10 +60,12 @@ namespace Lua
         public Settings ParserSettings;
 
         public Token CurToken;
+        public Token LastToken;
 
         public void Move()
         {
             if (CurToken.Type == TokenType.EOF) return;
+            LastToken = CurToken;
             CurToken = Tokenizer.NextToken();
         }
 
@@ -242,12 +244,12 @@ namespace Lua
                 args.Add(self_expr);
             }
 
-            if (!CurToken.IsPunctuation(")")) args.Add(ReadExpression(true));
+            if (!CurToken.IsPunctuation(")")) args.Add(ReadExpression());
 
             while (CurToken.IsPunctuation(","))
             {
                 Move();
-                var expr = ReadExpression(true);
+                var expr = ReadExpression();
                 args.Add(expr);
                 if (!CurToken.IsPunctuation(",") && !CurToken.IsPunctuation(")"))
                     ThrowExpect("comma or end of argument list", CurToken);
@@ -375,6 +377,13 @@ namespace Lua
 
             if (!CurToken.IsPunctuation(")"))
             {
+                //fix function(...)
+                if (CurToken.IsPunctuation("..."))
+                {
+                    varargs = true;
+                    CurToken.Type = TokenType.Identifier;
+                }
+
                 if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
                 args.Add(CurToken.Value);
                 Move();
@@ -388,6 +397,13 @@ namespace Lua
                     varargs = true;
                     Move();
                     break;
+                }
+
+                //fix params has ploop class keyword
+                // function AddTypeClass(self,type,class) 
+                if (CurToken.IsKeyword("class"))
+                {
+                    CurToken.Type = TokenType.Identifier;
                 }
 
                 if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
@@ -480,7 +496,7 @@ namespace Lua
         // Secondary expression:
         // - Depends on (alters the value of) *one* expression.
         // fix fun_args whether is function args
-        public IExpression ReadSecondaryExpression(bool fun_args = false)
+        public IExpression ReadSecondaryExpression()
         {
             //判断是一元还是二元操作符
             var unary_op = OperatorInfo.FromToken(CurToken);
@@ -489,7 +505,8 @@ namespace Lua
             {
                 var realUnaryOp = true;
                 //fix [aa("+")]
-                if (fun_args && (PeekToken.IsPunctuation(")") || PeekToken.IsPunctuation(",")) )  
+                if ( (PeekToken.IsPunctuation(")") || PeekToken.IsPunctuation(",") || PeekToken.IsPunctuation("..")||
+                                 (LastToken.IsPunctuation(".."))) )  
                 {
                     unary_op = null;
                     realUnaryOp = false;
@@ -651,9 +668,9 @@ namespace Lua
         /// Reads a single expression.
         /// </summary>
         /// <returns>The expression.</returns>
-        public IExpression ReadExpression(bool fun_args = false)
+        public IExpression ReadExpression()
         {
-            var expr = ReadSecondaryExpression(fun_args);
+            var expr = ReadSecondaryExpression();
             return ReadComplexExpression(expr, 0, false);
         }
 

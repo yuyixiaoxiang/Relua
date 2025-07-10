@@ -18,10 +18,14 @@ public class PloopScanner
     );
 
     // 需要跳过的目录名称
-    private static readonly HashSet<string> SkipDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly List<string> SkipPaths = new List<string>()
     {
         "3rd",
-        "DataTable"
+        "DataTable",
+        "GameNet\\Core",
+        "GamePlay\\GameModule.lua",
+        "GamePlay\\GameData.lua"
+        
     };
 
 
@@ -110,14 +114,19 @@ public class PloopScanner
             var directoryPath = Path.GetDirectoryName(filePath);
             if (string.IsNullOrEmpty(directoryPath))
                 return false;
+            var skip = false;
+            SkipPaths.ForEach((s =>
+            {
+                if(filePath.Contains(s))
+                    skip = true;
+            }));
 
-            var pathSegments = directoryPath.Split(
-                new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
-                StringSplitOptions.RemoveEmptyEntries
-            );
+            if (skip)
+            {
+                Console.WriteLine($"------------------------skip: {filePath}");
+            }
 
-            // 检查路径中是否包含需要跳过的目录
-            return pathSegments.Any(segment => SkipDirectories.Contains(segment));
+            return skip;
         }
         catch
         {

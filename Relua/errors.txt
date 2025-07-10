@@ -1,9 +1,38 @@
  已知问题
  1. hoster的问题
  2. property的问题
+ 3.需要预处理的情况
+ self:SetTextValue(self.UI.txt_alliance_title_01 ,string.get("legionpatrol_ui_11").."("..#self.allyBoss..")" )
+ 将#self.allyBoss用括号包裹一下
+ self:SetTextValue(self.UI.txt_alliance_title_01 ,string.get("legionpatrol_ui_11").."("..(#self.allyBoss)..")" )
  
  
  3. 字符串..拼接的问题 
  4. 没有用,可以注释掉
  struct "ProductionData"
  
+ 
+ 手动处理 
+ GameNet/Core.lua
+  
+ -- 深度拷贝函数
+local function deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
+
+function CheckSystem:GetChild(, ...)
+    return (self.root and self.root:GetChild(...))
+end
+
