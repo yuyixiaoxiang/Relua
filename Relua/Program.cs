@@ -41,7 +41,7 @@ namespace Lua
                 {
                     var tokenizer = new Tokenizer(File.ReadAllText(srcPath));
                     var parser = new Parser(tokenizer);
-                    var expr = parser.Read();
+                    var expr = parser.ReadAndPostProcess();
                     // Console.WriteLine($"{expr}");
                     // var outpath = "f:/lua2ts/outputfile.lua";
                     if(File.Exists(outpath))

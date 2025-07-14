@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using Lua.AST;
 
 namespace Lua
@@ -1167,7 +1169,7 @@ namespace Lua
             return new PloopProperty()
             {
                 PropertyName = propertyName,
-                PropertyStruct = propertyStruct,
+                PropertyTable = propertyStruct,
             };
         }
 
@@ -1193,6 +1195,20 @@ namespace Lua
             };
         }
 
+        /// <summary>
+        /// read ploop atrbibute
+        /// </summary>
+        /// <returns></returns>
+        public PloopAttribute ReadPloopAttribute()
+        { 
+            if(!Regex.IsMatch(CurToken.Value, @"^__[_a-zA-Z][_a-zA-Z0-9]*__$")) ThrowExpect("attribte statement", CurToken);
+            var expression = ReadExpression();
+            Debug.Assert(expression is FunctionCall,"expression is FunctionCall");
+            return new PloopAttribute()
+            {
+                FunctionCall = expression as FunctionCall,
+            };
+        }
         #endregion
 
         /// <summary>
@@ -1282,6 +1298,12 @@ namespace Lua
                 return ReadPloopEnum();
             }
 
+            if (CurToken.Type == TokenType.Identifier && Regex.IsMatch(CurToken.Value, @"^__[_a-zA-Z][_a-zA-Z0-9]*__$"))
+            {
+                return ReadPloopAttribute();
+            }
+
+
             var expr_token = CurToken;
             var expr = ReadExpression();
             var assign = TryReadFullAssignment(false, expr, expr_token);
@@ -1321,6 +1343,12 @@ namespace Lua
             }
 
             return new Block { Statements = statements, TopLevel = true };
+        }
+
+        public Block ReadAndPostProcess()
+        {
+            var block = Read();
+            return block;
         }
     }
 }

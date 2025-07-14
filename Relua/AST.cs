@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Reflection.Emit;
 using System.Text;
 
 namespace Lua.AST
@@ -1535,12 +1537,24 @@ namespace Lua.AST
     /// <summary>
     /// class property
     /// property "Name" { field = "__name", type = System.String, default = "unknown", set = false}
+    ///
+    /// ------get----- 
+    /// get = "GetName" / get = function(self) return self.__name end
+    /// -----set
+    /// set = false / set = function(self, idx, value) self[idx] = value end, / set = "SetName",
+    /// 
     /// </summary>
     public class PloopProperty : Node, IStatement
     {
         private PloopClass PloopClass;
         public string PropertyName;
-        public TableConstructor PropertyStruct;
+        public TableConstructor PropertyTable;
+
+        private StringLiteral fieldStringLiteral;
+        private StringLiteral defaultStringLiteral;
+        private FunctionDefinition defaultFunction;
+        private StringLiteral typeStringLiteral;
+        private FunctionDefinition handlerFunction;
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
@@ -1550,36 +1564,60 @@ namespace Lua.AST
             }
 
             var dic = new Dictionary<string, IExpression>();
-            foreach (var entry in PropertyStruct.Entries)
+            foreach (var entry in PropertyTable.Entries)
             {
                 var key = entry.Key;
                 var value = entry.Value;
+                Debug.Assert(key is StringLiteral, $"key is StringLiteral,{PloopClass.ClassName} {PropertyName}");
                 if (key is StringLiteral stringLiteral)
                 {
                     dic.Add(stringLiteral.Value, value);
                 }
             }
 
-            //write field
-            var field = default(string);
-            if (dic.TryGetValue("field", out var _field) && (_field is StringLiteral _fieldLiteral))
-            {
-                field = _fieldLiteral.Value;
-            }
 
+
+
+
+
+            //write field
+            dic.TryGetValue("field", out var _field);
             dic.TryGetValue("type", out var _type);
             dic.TryGetValue("default", out var _default);
             dic.TryGetValue("get", out var _get);
-
-            writer.Write($"{PloopClass.ClassName}.{field} = ");
-            _default?.Write(writer);
-            writer.WriteLine();
-
-            if (_get is FunctionDefinition _function)
+            dic.TryGetValue("set", out var _set);
+            dic.TryGetValue("handler", out var _handler);
+            
+            // type 
+            if (_type is StringLiteral _typeStringLiteral)
             {
+                typeStringLiteral = _typeStringLiteral;
+            }
+            
+            //field 
+            if (_field is StringLiteral _fieldStringLiteral)
+            {
+                fieldStringLiteral = _fieldStringLiteral;   
+            }
+            
+            if (_default is StringLiteral _defaultStringLiteral)
+            {
+                defaultStringLiteral = _defaultStringLiteral;
+            }
+            
+            if (_default is FunctionDefinition _defaultFunction)
+            {
+                defaultFunction = _defaultFunction;
+            }
+
+            if(_handler != null)
+                Debug.Assert(_handler is FunctionDefinition, "handler is FunctionDefinition");
+            if (_handler is FunctionDefinition _handlerFunction)
+            {
+                handlerFunction = _handlerFunction;
                 writer.WriteLine();
-                writer.Write($"function {PloopClass.ClassName}:Get{PropertyName}");
-                _function.Write(writer, new FunctionDefinition.FunctionDefinitionData()
+                writer.Write($"function {PloopClass?.ClassName ?? "DefaultClass"}:On{PropertyName}Handler");
+                _handlerFunction.Write(writer, new FunctionDefinition.FunctionDefinitionData()
                 {
                     PloopClass = PloopClass,
                     from_named = true,
@@ -1587,15 +1625,59 @@ namespace Lua.AST
                 });
                 writer.WriteLine();
             }
-            else if (_get is null)
+
+            // writer.WriteLine();
+
+            //get is a function 
+            if (_get is FunctionDefinition _getFunction)
             {
                 writer.WriteLine();
-                writer.WriteLine($"function {PloopClass.ClassName}:Get{PropertyName}() return self.{field} end");
+                writer.Write($"function {PloopClass?.ClassName ?? "DefaultClass"}:Get{PropertyName}");
+                _getFunction.Write(writer, new FunctionDefinition.FunctionDefinitionData()
+                {
+                    PloopClass = PloopClass,
+                    from_named = true,
+                    ImplicitSelf = true,
+                });
+                writer.WriteLine();
+            }
+            else if (_get is StringLiteral _getStringLiteral)
+            {
+                // writer.WriteLine();
+                // writer.WriteLine($"function {PloopClass.ClassName}:Get{PropertyName}() return self.{field} end");
+            }
+            else if (_get is BoolLiteral _getBoolLiteral)
+            {
+                //
+            } 
+            else if (_get is null && fieldStringLiteral != null)
+            {
+                // writer.WriteLine();
+                writer.WriteLine($"function {PloopClass?.ClassName ?? "DefaultClass"}:Get{PropertyName}() \r\n \treturn self.{fieldStringLiteral.Value} \r\nend");
+            }
+            
+            if (_set is FunctionDefinition _setFunction)
+            {
+                writer.WriteLine();
+                writer.Write($"function {PloopClass?.ClassName ?? "DefaultClass"}:Set{PropertyName}");
+                _setFunction.Write(writer, new FunctionDefinition.FunctionDefinitionData()
+                {
+                    PloopClass = PloopClass,
+                    from_named = true,
+                    ImplicitSelf = true,
+                });
+                writer.WriteLine();
+            }
+            else if (_set is BoolLiteral _boolLiteral)
+            {
+                //   
+            }
+            else if (_set is StringLiteral _stringLiteral)
+            {
+             
             }
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1632,6 +1714,27 @@ namespace Lua.AST
         }
 
         // public override void Accept(IVisitor visitor) => visitor.Visit(this);
+
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
+    /// <summary>
+    /// __Static__()
+    /// __Indexer__(String)
+    /// __Abstract__()
+    /// __Sealed__()
+    /// __AutoIndex__()
+    /// </summary>
+    public class PloopAttribute : Node, IStatement
+    {
+        public FunctionCall FunctionCall; 
+        public override void Write(IndentAwareTextWriter writer, object data)
+        {
+            
+        }
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
