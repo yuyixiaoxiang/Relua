@@ -1348,6 +1348,16 @@ namespace Lua
         public Block ReadAndPostProcess()
         {
             var block = Read();
+            
+            //1. process partial class 
+            
+            
+            
+            
+            
+            
+            
+            
             return block;
         }
     }

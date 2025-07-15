@@ -1482,19 +1482,37 @@ namespace Lua.AST
         public string ClassName;
         public string inheritClass;
         public List<IStatement> Statements;
-
+        //----partial class ---
+        public bool IsPartialClass = false;
+        public bool IsMainPartialClass = false;
+        public string RequirePath = string.Empty;
+        public string MainPartialRequirePath = string.Empty;
+        public List<string> SubPartialRequirePaths = new List<string>();
+        public PloopClass MainPartialClass;
+        
         public override void Write(IndentAwareTextWriter writer, object data)
         {
-            writer.Write("local class = require(\"middleclass\")");
-            writer.WriteLine();
-            // ---@class Car : Transport @define class Car extends Transport
-            writer.WriteLine($"---@class {ClassName}");
-            if(string.IsNullOrEmpty(inheritClass))
-                writer.Write($"local {ClassName} = class('{ClassName}') ");
-            else 
-                writer.Write($"local {ClassName} = class('{ClassName}', {inheritClass}) ");
+            writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");
+            if (IsMainPartialClass || !IsPartialClass)
+            {
+                writer.WriteLine("local class = require(\"middleclass\")");
+                // ---@class Car : Transport @define class Car extends Transport
+                writer.WriteLine($"---@class {ClassName}");
+                if(string.IsNullOrEmpty(inheritClass))
+                    writer.WriteLine($"local {ClassName} = class('{ClassName}') ");
+                else 
+                    writer.WriteLine($"local {ClassName} = class('{ClassName}', {inheritClass}) ");
+            }
+            else
+            {
+                //sub partial class
+                writer.WriteLine($"local {ClassName} = require(\"{MainPartialRequirePath}\")");
+            }
+
+            
+            
             // writer.IncreaseIndent();
-            writer.WriteLine();
+            
             var first = true;
             foreach (var statement in Statements)
             {
@@ -1507,6 +1525,20 @@ namespace Lua.AST
 
             // writer.DecreaseIndent();
             writer.WriteLine();
+
+            if (IsMainPartialClass)
+            {
+                writer.WriteLine("---------auto include sub partial class--------------------");
+                writer.WriteLine($"package.loaded[\"{RequirePath}\"] = {ClassName}");
+                foreach (var subPartialRequirePath in SubPartialRequirePaths)
+                {
+                    writer.WriteLine($"require(\"{subPartialRequirePath}\")  ");
+                }
+                writer.WriteLine("---------auto include sub partial class--------------------");
+                writer.WriteLine();
+            }
+
+
             writer.Write($"return {ClassName}");
         }
 
@@ -1553,17 +1585,19 @@ namespace Lua.AST
         private StringLiteral fieldStringLiteral;
         private StringLiteral defaultStringLiteral;
         private FunctionDefinition defaultFunction;
-        private StringLiteral typeStringLiteral;
+        private string typeString;
         private FunctionDefinition handlerFunction;
 
-        public override void Write(IndentAwareTextWriter writer, object data)
-        {
-            if (data is PloopClass _ploopClass)
-            {
-                PloopClass = _ploopClass;
-            }
+        /// <summary>
+        /// property expressions 
+        /// </summary>
+        private Dictionary<string,IExpression> propertyExpressions;
 
-            var dic = new Dictionary<string, IExpression>();
+        private void AnalysisExpressions()
+        {
+            if(propertyExpressions != null)
+                return;
+            propertyExpressions = new Dictionary<string, IExpression>();
             foreach (var entry in PropertyTable.Entries)
             {
                 var key = entry.Key;
@@ -1571,27 +1605,20 @@ namespace Lua.AST
                 Debug.Assert(key is StringLiteral, $"key is StringLiteral,{PloopClass.ClassName} {PropertyName}");
                 if (key is StringLiteral stringLiteral)
                 {
-                    dic.Add(stringLiteral.Value, value);
+                    propertyExpressions.Add(stringLiteral.Value, value);
                 }
             }
-
-
-
-
-
-
-            //write field
-            dic.TryGetValue("field", out var _field);
-            dic.TryGetValue("type", out var _type);
-            dic.TryGetValue("default", out var _default);
-            dic.TryGetValue("get", out var _get);
-            dic.TryGetValue("set", out var _set);
-            dic.TryGetValue("handler", out var _handler);
+            propertyExpressions.TryGetValue("field", out var _field);
+            propertyExpressions.TryGetValue("type", out var _type);
+            propertyExpressions.TryGetValue("default", out var _default);
+            propertyExpressions.TryGetValue("get", out var _get);
+            propertyExpressions.TryGetValue("set", out var _set);
+            propertyExpressions.TryGetValue("handler", out var _handler);
             
             // type 
-            if (_type is StringLiteral _typeStringLiteral)
+            if (_type != null)
             {
-                typeStringLiteral = _typeStringLiteral;
+                typeString = _type.ToString();
             }
             
             //field 
@@ -1609,15 +1636,143 @@ namespace Lua.AST
             {
                 defaultFunction = _defaultFunction;
             }
-
             if(_handler != null)
                 Debug.Assert(_handler is FunctionDefinition, "handler is FunctionDefinition");
             if (_handler is FunctionDefinition _handlerFunction)
             {
                 handlerFunction = _handlerFunction;
+            }
+        }
+        
+        /// <summary>
+        /// get self.__field assignment
+        /// </summary>
+        public Assignment GetFieldAssignment()
+        {
+            AnalysisExpressions();
+            if (fieldStringLiteral != null)
+            {
+                if (defaultFunction != null)
+                {
+                    var assignment = new Assignment()
+                    {
+                        Targets = new ()
+                        {
+                            new TableAccess()
+                            {
+                                Table = new Variable()
+                                {
+                                    Name   = "self"
+                                },
+                                Index = fieldStringLiteral,
+                            }
+                        },
+                        Values = new ()
+                        {
+                            new FunctionCall()
+                            {
+                                Function = defaultFunction
+                            }
+                        },
+                        
+                    };
+                    return assignment;
+                }
+                else if (defaultStringLiteral != null)
+                {
+                    var assignment = new Assignment()
+                    {
+                        Targets = new ()
+                        {
+                            new TableAccess()
+                            {
+                                Table = new Variable()
+                                {
+                                    Name   = "self"
+                                },
+                                Index = fieldStringLiteral,
+                            }
+                        },
+                        Values = new ()
+                        {
+                            defaultStringLiteral
+                        },
+                        
+                    };
+                    return assignment;
+                }
+                else
+                {
+                    IExpression defaultValueExpression = new NilLiteral();
+                    if (string.IsNullOrEmpty(typeString) == false)
+                    {
+                        if (typeString == "System.Integer" ||
+                            typeString == "Integer")
+                        {
+                            defaultValueExpression = new NumberLiteral()
+                            {
+                                Value = 0,
+                            };
+                        }
+                        else if (typeString == "System.String" ||
+                                 typeString == "String")
+                        {
+                            defaultValueExpression = new StringLiteral()
+                            {
+                                Value = "",
+                            };
+                        }
+                        else if (typeString == "System.Table")
+                        {
+                            defaultValueExpression = new TableConstructor()
+                            {
+                            };
+                        }
+                        else
+                        {
+                            throw new NotImplementedException();
+                        }
+                    }
+
+                    var assignment = new Assignment()
+                    {
+                        Targets = new ()
+                        {
+                            new TableAccess()
+                            {
+                                Table = new Variable()
+                                {
+                                    Name   = "self"
+                                },
+                                Index = fieldStringLiteral,
+                            }
+                        },
+                        Values = new ()
+                        {
+                            defaultValueExpression
+                        },
+                        
+                    };
+                    return assignment;   
+                }
+            }
+
+            return null;
+        }
+
+        public override void Write(IndentAwareTextWriter writer, object data)
+        {
+            AnalysisExpressions();
+            if (data is PloopClass _ploopClass)
+            {
+                PloopClass = _ploopClass;
+            }
+            
+            if (handlerFunction != null)
+            {
                 writer.WriteLine();
                 writer.Write($"function {PloopClass?.ClassName ?? "DefaultClass"}:On{PropertyName}Handler");
-                _handlerFunction.Write(writer, new FunctionDefinition.FunctionDefinitionData()
+                handlerFunction.Write(writer, new FunctionDefinition.FunctionDefinitionData()
                 {
                     PloopClass = PloopClass,
                     from_named = true,
@@ -1625,10 +1780,9 @@ namespace Lua.AST
                 });
                 writer.WriteLine();
             }
-
-            // writer.WriteLine();
-
+            
             //get is a function 
+            propertyExpressions.TryGetValue("get", out var _get);
             if (_get is FunctionDefinition _getFunction)
             {
                 writer.WriteLine();
@@ -1655,7 +1809,7 @@ namespace Lua.AST
                 // writer.WriteLine();
                 writer.WriteLine($"function {PloopClass?.ClassName ?? "DefaultClass"}:Get{PropertyName}() \r\n \treturn self.{fieldStringLiteral.Value} \r\nend");
             }
-            
+            propertyExpressions.TryGetValue("set", out var _set);
             if (_set is FunctionDefinition _setFunction)
             {
                 writer.WriteLine();

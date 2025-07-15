@@ -6,7 +6,6 @@ namespace Lua
 {
     public static class Program
     {
-
         public static int Main(string[] args)
         {
             FilterAllPloopClass();
@@ -28,35 +27,28 @@ namespace Lua
             Console.WriteLine(topLuaDir);
             var resut = PloopScanner.ScanLuaFiles(topLuaDir);
             var errCnt = 0;
+            var processor = new Processor();
             foreach (var file in resut)
             {
-                if (file.FileName != "GameView.lua")
+                if (file.FileName.Contains("LoginModule") == false)
                 {
-                    continue;
+                    // continue;
                 }
 
                 var srcPath = file.FilePath;
-                var outpath =srcPath.Insert(srcPath.LastIndexOf(".lua"),"_ploop");
-                try
-                {
-                    var tokenizer = new Tokenizer(File.ReadAllText(srcPath));
-                    var parser = new Parser(tokenizer);
-                    var expr = parser.ReadAndPostProcess();
-                    // Console.WriteLine($"{expr}");
-                    // var outpath = "f:/lua2ts/outputfile.lua";
-                    if(File.Exists(outpath))
-                        File.Delete(outpath);
-                    File.WriteAllText(outpath, expr.ToString());
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"{srcPath} \n {e} \n");
-                    // Console.WriteLine(outpath);
-                    errCnt++;
-                }
+                var requirePath =Path.GetRelativePath(topLuaDir,srcPath).Replace(Path.GetExtension(srcPath),"").Replace("\\","/");
+                var outpath = srcPath.Insert(srcPath.LastIndexOf(".lua", StringComparison.Ordinal), "");
+                processor.AddFile(srcPath, requirePath,outpath);
             }
-            
-            Console.WriteLine($"errCnt: {errCnt}");
+
+            var outfiles = processor.Process();
+
+            foreach (var outfile in outfiles)
+            {
+                if (File.Exists(outfile.path))
+                    File.Delete(outfile.path);
+                File.WriteAllText(outfile.path, outfile.content);
+            }
         }
     }
 }

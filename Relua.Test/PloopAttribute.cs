@@ -19,9 +19,7 @@ namespace Lua.Tests
             var expr = parser.Read();
             Assert.Pass(expr.ToString());
         }
-        
-        
-        
+
 
         [Test]
         public void PloopPropertyAttribute2()
@@ -34,8 +32,8 @@ namespace Lua.Tests
             var expr = parser.Read();
             Assert.Pass(expr.ToString());
         }
-        
-        
+
+
         [Test]
         public void PloopPropertyAttribute3()
         {
@@ -50,6 +48,7 @@ namespace Lua.Tests
             var expr = parser.Read();
             Assert.Pass(expr.ToString());
         }
+
         [Test]
         public void PloopPropertyAttribute4()
         {

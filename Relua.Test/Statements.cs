@@ -63,5 +63,25 @@ namespace Lua.Tests {
             var stat = parser.ReadStatement() as AST.Node;
             Assert.AreEqual("function test(a, b) print(a) print(b) end", stat.ToString(one_line: true));
         }
+        
+        [Test]
+        public void Assignment2() {
+            var tokenizer = new Tokenizer("self.a = 1");
+            var parser = new Parser(tokenizer);
+            var stat = parser.ReadStatement() as AST.Node;
+            var str = stat.ToString();
+            Assert.Pass();
+            // Assert.AreEqual("a, b = (3 * 3), 2", stat.ToString(one_line: true));
+        }
+        
+        [Test]
+        public void Assignment3() {
+            var tokenizer = new Tokenizer("local a = function () return 1 end");
+            var parser = new Parser(tokenizer);
+            var stat = parser.ReadStatement() as AST.Node;
+            var str = stat.ToString();
+            Assert.Pass();
+            // Assert.AreEqual("a, b = (3 * 3), 2", stat.ToString(one_line: true));
+        }
     }
 }
