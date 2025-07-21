@@ -1224,11 +1224,14 @@ namespace Lua.AST
                 writer.Write(name);
             }
 
+            // Debug.Assert(func.ArgumentNames.FirstOrDefault() != null);
+            var firstArgSelf = func.ArgumentNames.FirstOrDefault() != null && func.ArgumentNames.FirstOrDefault() == "self";
+            
             func.Write(writer, new FunctionDefinition.FunctionDefinitionData()
             {
                 PloopClass = PloopClass,
                 from_named = true,
-                ImplicitSelf = PloopClass != null,
+                ImplicitSelf = PloopClass != null && firstArgSelf,
             });
         }
 
@@ -1434,22 +1437,18 @@ namespace Lua.AST
             throw new NotImplementedException();
         }
     }
-
-
-    #region Ploop [https: //github.com/kurapica/PLoop/blob/master/README-zh.md]
-
+    
+    #region Ploop [https://github.com/kurapica/PLoop/blob/master/README-zh.md]
     /// <summary>
     /// Module "Game.View"(function(_ENV)
+    /// namespace "Game.Net"
+    /// import "Game.Module"
     /// </summary>
-    public class PloopModule : Node, IStatement
+    public class Ploop : Node, IStatement
     {
-        public string ModuleName;
         public List<IStatement> Statements;
-
         public override void Write(IndentAwareTextWriter writer, object data)
         {
-//            writer.Write($"Module \"{ModuleName}\"");
-//            writer.IncreaseIndent();
             writer.WriteLine();
             var first = true;
             foreach (var statement in Statements)
@@ -1459,13 +1458,41 @@ namespace Lua.AST
                 statement.Write(writer);
                 first = false;
             }
-
-//            writer.DecreaseIndent();
             writer.WriteLine();
-//            writer.Write("end");
         }
 
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
+    /// <summary>
+    /// Module "Game.View"(function(_ENV)
+    /// namespace "Game.Net"
+    /// import "Game.Module"
+    /// </summary>
+    public class PloopModule : Node, IStatement
+    {
+        public string ModuleName;
+        public FunctionCall NamespaceFunction;
+        // public string DeterministicNamespace;
+        public List<FunctionCall> ImportFunctions = new List<FunctionCall>();
+        public List<IStatement> Statements;
+
+        public override void Write(IndentAwareTextWriter writer, object data)
+        {
+            writer.WriteLine();
+            var first = true;
+            foreach (var statement in Statements)
+            {
+                if (first == false)
+                    writer.WriteLine();
+                statement.Write(writer);
+                first = false;
+            }
+            writer.WriteLine();
+        }
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
@@ -1480,12 +1507,19 @@ namespace Lua.AST
     public class PloopClass : Node, IStatement
     {
         public string ClassName;
-        public string inheritClass;
+        public string InheritClass;
+        public string InheritRequirePath = string.Empty;
         public List<IStatement> Statements;
+        public string RequirePath = string.Empty;
+        /// <summary>
+        /// file name 
+        /// </summary>
+        public string FileName;
+        //---namespace
+        // public string Namespace;
         //----partial class ---
         public bool IsPartialClass = false;
         public bool IsMainPartialClass = false;
-        public string RequirePath = string.Empty;
         public string MainPartialRequirePath = string.Empty;
         public List<string> SubPartialRequirePaths = new List<string>();
         public PloopClass MainPartialClass;
@@ -1497,15 +1531,23 @@ namespace Lua.AST
             {
                 writer.WriteLine("local class = require(\"middleclass\")");
                 // ---@class Car : Transport @define class Car extends Transport
-                writer.WriteLine($"---@class {ClassName}");
-                if(string.IsNullOrEmpty(inheritClass))
+                if (string.IsNullOrEmpty(InheritClass))
+                {
+                    writer.WriteLine($"---@class {ClassName}");
                     writer.WriteLine($"local {ClassName} = class('{ClassName}') ");
-                else 
-                    writer.WriteLine($"local {ClassName} = class('{ClassName}', {inheritClass}) ");
+                }
+                else
+                {
+                    // Debug.Assert(InheritRequirePath != string.Empty,"InheritRequirePath != string.Empty");
+                    writer.WriteLine($"local {InheritClass} = require(\"{InheritRequirePath}\")");
+                    writer.WriteLine($"---@class {ClassName} : {InheritClass}");
+                    writer.WriteLine($"local {ClassName} = class('{ClassName}', {InheritClass}) ");
+                }
             }
             else
             {
                 //sub partial class
+                writer.WriteLine($"---@type {ClassName}");
                 writer.WriteLine($"local {ClassName} = require(\"{MainPartialRequirePath}\")");
             }
 
@@ -1578,13 +1620,15 @@ namespace Lua.AST
     /// </summary>
     public class PloopProperty : Node, IStatement
     {
-        private PloopClass PloopClass;
+        public PloopClass PloopClass;
         public string PropertyName;
         public TableConstructor PropertyTable;
 
         private StringLiteral fieldStringLiteral;
-        private StringLiteral defaultStringLiteral;
+        // default 
+        private IExpression defaultLiteral;
         private FunctionDefinition defaultFunction;
+        private FunctionCall defaultFunctionCall;
         private string typeString;
         private FunctionDefinition handlerFunction;
 
@@ -1627,15 +1671,19 @@ namespace Lua.AST
                 fieldStringLiteral = _fieldStringLiteral;   
             }
             
-            if (_default is StringLiteral _defaultStringLiteral)
-            {
-                defaultStringLiteral = _defaultStringLiteral;
-            }
-            
             if (_default is FunctionDefinition _defaultFunction)
             {
                 defaultFunction = _defaultFunction;
             }
+            else if (_default is FunctionCall _defaultFunctionCall)
+            {
+                defaultFunctionCall = _defaultFunctionCall;
+            }
+            else if (_default is StringLiteral || _default is NilLiteral || _default is BoolLiteral || _default is NumberLiteral || _default is TableConstructor)
+            {
+                defaultLiteral = _default;
+            }
+            
             if(_handler != null)
                 Debug.Assert(_handler is FunctionDefinition, "handler is FunctionDefinition");
             if (_handler is FunctionDefinition _handlerFunction)
@@ -1678,7 +1726,33 @@ namespace Lua.AST
                     };
                     return assignment;
                 }
-                else if (defaultStringLiteral != null)
+                if (defaultFunctionCall != null)
+                {
+                    //todo only luaobject
+                    Debug.Assert(PloopClass.ClassName == "LuaObject");
+                    
+                    var assignment = new Assignment()
+                    {
+                        Targets = new ()
+                        {
+                            new TableAccess()
+                            {
+                                Table = new Variable()
+                                {
+                                    Name   = "self"
+                                },
+                                Index = fieldStringLiteral,
+                            }
+                        },
+                        Values = new ()
+                        {
+                            defaultFunctionCall
+                        },
+                        
+                    };
+                    return assignment;
+                }
+                else if (defaultLiteral != null)
                 {
                     var assignment = new Assignment()
                     {
@@ -1695,7 +1769,7 @@ namespace Lua.AST
                         },
                         Values = new ()
                         {
-                            defaultStringLiteral
+                            defaultLiteral
                         },
                         
                     };
@@ -1707,7 +1781,7 @@ namespace Lua.AST
                     if (string.IsNullOrEmpty(typeString) == false)
                     {
                         if (typeString == "System.Integer" ||
-                            typeString == "Integer")
+                            typeString == "Integer" || typeString == "System.Number" || typeString == "System.number")
                         {
                             defaultValueExpression = new NumberLiteral()
                             {
@@ -1722,11 +1796,22 @@ namespace Lua.AST
                                 Value = "",
                             };
                         }
-                        else if (typeString == "System.Table")
+                        else if (typeString == "System.Table" || typeString == "Table")
                         {
                             defaultValueExpression = new TableConstructor()
                             {
                             };
+                        }
+                        else if (typeString == "System.Boolean" || typeString == "Boolean")
+                        {
+                            defaultValueExpression = new BoolLiteral()
+                            {
+                                Value = false,
+                            };
+                        }
+                        else if (typeString == "System.Class")
+                        {
+                            defaultValueExpression = new NilLiteral();
                         }
                         else
                         {
@@ -1797,8 +1882,19 @@ namespace Lua.AST
             }
             else if (_get is StringLiteral _getStringLiteral)
             {
-                // writer.WriteLine();
-                // writer.WriteLine($"function {PloopClass.ClassName}:Get{PropertyName}() return self.{field} end");
+                // function SetName(self, name)
+                //  self.__name = name
+                // end
+                //
+                //function GetName(self)
+                //   return self.__name
+                //end
+                //
+                //property "Name" {
+                //  get = "GetName", -- or getmethod = "GetName"
+                //  set = "SetName", -- or setmethod = "SetName"
+                //}
+                
             }
             else if (_get is BoolLiteral _getBoolLiteral)
             {
@@ -1806,8 +1902,8 @@ namespace Lua.AST
             } 
             else if (_get is null && fieldStringLiteral != null)
             {
-                // writer.WriteLine();
                 writer.WriteLine($"function {PloopClass?.ClassName ?? "DefaultClass"}:Get{PropertyName}() \r\n \treturn self.{fieldStringLiteral.Value} \r\nend");
+                writer.WriteLine();
             }
             propertyExpressions.TryGetValue("set", out var _set);
             if (_set is FunctionDefinition _setFunction)
@@ -1828,7 +1924,12 @@ namespace Lua.AST
             }
             else if (_set is StringLiteral _stringLiteral)
             {
-             
+                
+            }
+            else if (_set is null && fieldStringLiteral != null)
+            {
+                writer.WriteLine($"function {PloopClass?.ClassName ?? "DefaultClass"}:Set{PropertyName}(value) \r\n \t self.{fieldStringLiteral.Value} = value \r\nend");
+                writer.WriteLine();
             }
         }
         

@@ -51,7 +51,7 @@ public class Processor
         }
 
         //post process
-        PostprocessPartialClass();
+        PostprocessModuleAndPartialClass();
         PostprocessProperties();
         //outout 
         List<(string path, string content)> outputs = new List<(string path, string content)>();
@@ -73,11 +73,15 @@ public class Processor
     {
         foreach (var file in this.files)
         {
+            Ploop? ploop = file.Block.Statements.Find((statement => statement is Ploop)) as Ploop;
             PloopModule? module = file.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
             List<IStatement> allclasses = file.Block.Statements.FindAll((statement => statement is PloopClass));
             var class__ = module?.Statements.FindAll((statement => statement is PloopClass));
             if (class__ != null)
                 allclasses.AddRange(class__);
+            var class__2 = ploop?.Statements.FindAll((statement => statement is PloopClass));
+            if (class__2 != null)
+                allclasses.AddRange(class__2);
             foreach (var class_ in allclasses)
             {
                 if (class_ is PloopClass _ploopClass)
@@ -89,36 +93,66 @@ public class Processor
                     else
                         mainCtorClass = _ploopClass.MainPartialClass;
                     Debug.Assert(mainCtorClass != null, nameof(mainCtorClass) + " != null");
-                    
-                    var _ctor = mainCtorClass.Statements.Find((statement=>
+
+                    var _ctor = mainCtorClass.Statements.Find((statement =>
                     {
                         if (statement is Assignment assignment)
                         {
                             return assignment.Targets.Exists(assignable =>
-                                {
-                                    if (assignable is Variable _variable)
-                                    {
-                                        if (_variable.Name == "__ctor")
-                                            return true;
-                                    }
-                                    return false;
-                                }) &&
-                                assignment.Values.Exists(assignable =>
-                                {
-                                    return assignable is FunctionDefinition;
-                                });
+                                   {
+                                       if (assignable is Variable _variable)
+                                       {
+                                           if (_variable.Name == "__ctor")
+                                               return true;
+                                       }
+
+                                       return false;
+                                   }) &&
+                                   assignment.Values.Exists(assignable => { return assignable is FunctionDefinition; });
                         }
+
                         return false;
                     }));
+
+                    if (_ctor == null)
+                    {
+                        _ctor = new Assignment()
+                        {
+                            PloopClass = _ploopClass,
+                            Targets = new List<IAssignable>()
+                            {
+                                new Variable()
+                                {
+                                    Name = "__ctor",
+                                },
+                            },
+                            Values = new List<IExpression>()
+                            {
+                                new FunctionDefinition()
+                                {
+                                    ArgumentNames = new List<string>()
+                                    {
+                                        "self"
+                                    },
+                                    Block = new Block(),
+                                    ImplicitSelf = true,
+                                    PloopClass = _ploopClass,
+                                },
+                            },
+                        };
+                        mainCtorClass.Statements.Insert(0, _ctor);
+                    }
+
                     Debug.Assert(_ctor != null, nameof(_ctor) + " != null");
-                    
+
                     Debug.Assert(_ctor is Assignment);
-                    
+
                     FunctionDefinition ctorDefinition = null;
                     if (_ctor is Assignment _ctorAssignment)
                     {
                         ctorDefinition = _ctorAssignment.Values[0] as FunctionDefinition;
                     }
+
                     Debug.Assert(ctorDefinition != null, nameof(ctorDefinition) + " != null");
 
                     List<IStatement> properties =
@@ -129,10 +163,11 @@ public class Processor
                     {
                         if (property is PloopProperty _ploopProperty)
                         {
+                            _ploopProperty.PloopClass = _ploopClass;
                             var fieldAssignment = _ploopProperty.GetFieldAssignment();
                             if (fieldAssignment != null)
                             {
-                                ctorDefinition.Block.Statements.Insert(_index++,fieldAssignment);
+                                ctorDefinition.Block.Statements.Insert(_index++, fieldAssignment);
                             }
                         }
                     }
@@ -141,97 +176,205 @@ public class Processor
         }
     }
 
-    private void GetStateMents(IStatement statement)
+    /// <summary>
+    /// define module/class aggregation
+    /// </summary>
+    public class ModuleAndClass
     {
+        public LuaArtifact file;
+        public List<PloopModule> Modules = new List<PloopModule>();
+        public Ploop Ploop;
+        public List<PloopClass> Classes = new List<PloopClass>();
     }
 
-    public class PartialClass
-    {
-        public class InternalClass
-        {
-            public LuaArtifact file;
-            public PloopClass PloopClass;
-        }
-
-        public string className;
-        public List<InternalClass> internalClasses = new List<InternalClass>();
-    }
-
-    private void PostprocessPartialClass()
+    /// <summary>
+    /// post process module and class
+    /// </summary>
+    /// <exception cref="Exception"></exception>
+    private void PostprocessModuleAndPartialClass()
     {
         //process partial class
-        var tmpDic = new Dictionary<string, PartialClass>();
+        List<ModuleAndClass> moduleAndClasses = new List<ModuleAndClass>();
         foreach (var file in files)
         {
             Debug.Assert(file.Block != null, nameof(file.Block) + " != null");
-            PloopModule? module = file.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
-            PloopClass? class_ = file.Block.Statements.Find((statement => statement is PloopClass)) as PloopClass;
-            var key = string.Empty;
-            if (module != null && module is PloopModule _ploopModule)
+            //skip the empty file 
+            if (file.Block.Statements.Count <= 0)
+                continue;
+            List<IStatement> allmodules = file.Block.Statements.FindAll((statement => statement is PloopModule));
+            Ploop? ploop = file.Block.Statements.Find((statement => statement is Ploop)) as Ploop;
+
+            var moduleAndClasse = new ModuleAndClass();
+            moduleAndClasse.file = file;
+            //find all the ploop class 
+            List<IStatement> allPloopClasses = file.Block.Statements.FindAll((statement => statement is PloopClass));
+
+            if (ploop != null)
             {
-                key = _ploopModule.ModuleName;
-                class_ = _ploopModule.Statements.Find((statement => statement is PloopClass)) as PloopClass;
+                moduleAndClasse.Ploop = ploop;
+                allPloopClasses.AddRange(ploop.Statements.FindAll((statement => statement is PloopClass)));
+            }
+            
+            foreach(var module in allmodules)
+            {
+                var module_ = module as PloopModule;
+                moduleAndClasse.Modules.Add(module_);
+                allPloopClasses.AddRange(module_.Statements.FindAll((statement => statement is PloopClass)));
             }
 
-            if (class_ != null && class_ is PloopClass _class)
+            foreach (var tmpclass in allPloopClasses)
             {
-                key += "." + _class.ClassName;
+                var ploopClass = tmpclass as PloopClass;
+                ploopClass.RequirePath = file.requirePath;
+                ploopClass.FileName = file.fileName;
+                moduleAndClasse.Classes.Add(ploopClass);
             }
 
-            if (class_ != null)
+            moduleAndClasses.Add(moduleAndClasse);
+        }
+        
+        //test same name ploop class 
+        var sameclassKeys = new Dictionary<string, List<PloopClass>>();
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var _ploopClass in moduleAndClass.Classes)
             {
-                // fulfile the require path 
-                class_.RequirePath = file.requirePath;
-                var tmpClass = new PartialClass.InternalClass()
+                var classname = _ploopClass.ClassName;
+                if (sameclassKeys.ContainsKey(classname) == false)
+                    sameclassKeys.Add(classname, new List<PloopClass>());
+                sameclassKeys[classname].Add(_ploopClass);
+            }
+        }
+
+        var sameClassNameButNotPartial = new List<PloopClass>();
+        // var partialClasses = new List<PloopClass>();
+        foreach (var kv in sameclassKeys)
+        {
+            if (kv.Value.Count < 2)
+                continue;
+            Console.WriteLine($"{kv.Key}");
+            var isPartialClass = false;
+            PloopClass mainPartialClass = null;
+            List<PloopClass> subPartialClasses = new List<PloopClass>();
+            foreach (var _class in kv.Value)
+            {
+                Console.WriteLine($"=>{_class.RequirePath}");
+                if (_class.ClassName == _class.FileName)
                 {
-                    file = file,
-                    PloopClass = class_,
-                };
-                if (tmpDic.ContainsKey(key))
-                {
-                    tmpDic[key].internalClasses.Add(tmpClass);
+                    mainPartialClass = _class;
                 }
                 else
                 {
-                    tmpDic.Add(key, new PartialClass
+                    string prefix = $"{_class.ClassName}";
+                    //CUSTOM 
+                    if(kv.Key == "ActionSystem")
+                        prefix = "Action";
+                    if(kv.Key == "ConditionSystem")
+                        prefix = "Condition_";
+                    
+                    if (_class.FileName.StartsWith(prefix))
                     {
-                        className = class_.ClassName,
-                        internalClasses = new List<PartialClass.InternalClass>()
-                        {
-                            tmpClass
-                        },
-                    });
-                }
-            }
-        }
-
-        foreach (var kv in tmpDic)
-        {
-            if (kv.Value.internalClasses.Count > 1)
-            {
-                try
-                {
-                    var mainPartialClass =
-                        kv.Value.internalClasses.Find((@class => @class.PloopClass.ClassName == @class.file.fileName));
-                    var subPartialClass =
-                        kv.Value.internalClasses.FindAll(
-                            (@class => @class.PloopClass.ClassName != @class.file.fileName));
-                    mainPartialClass.PloopClass.IsPartialClass = true;
-                    mainPartialClass.PloopClass.IsMainPartialClass = true;
-
-                    foreach (var internalClass in subPartialClass)
+                        subPartialClasses.Add(_class);
+                    }
+                    //CUSTOM
+                    if (kv.Key == "MapCityNodeView" && _class.FileName == "CityBuildingView_Scaffold")
                     {
-                        internalClass.PloopClass.IsPartialClass = true;
-                        internalClass.PloopClass.MainPartialRequirePath = mainPartialClass.PloopClass.RequirePath;
-                        internalClass.PloopClass.MainPartialClass = mainPartialClass.PloopClass;
-                        mainPartialClass.PloopClass.SubPartialRequirePaths.Add(internalClass.PloopClass.RequirePath);
+                        subPartialClasses.Add(_class);
                     }
                 }
-                catch (Exception e)
+            }
+
+            if (mainPartialClass != null && subPartialClasses.Count > 0)
+            {
+                isPartialClass = true;
+            }
+
+            if (isPartialClass == false)
+            {
+                sameClassNameButNotPartial.AddRange(kv.Value);
+            }
+            
+            //
+            if (isPartialClass)
+            {
+                mainPartialClass.IsPartialClass = true;
+                mainPartialClass.IsMainPartialClass = true;
+                foreach (var subPartialClass in subPartialClasses)
                 {
-                    Console.WriteLine($"{kv.Key} \n{kv.Value.className} \n{e}");
+                    subPartialClass.IsPartialClass = true;
+                    subPartialClass.MainPartialClass = mainPartialClass;
+                    subPartialClass.MainPartialRequirePath = mainPartialClass.RequirePath;
+                    
+                    mainPartialClass.SubPartialRequirePaths.Add(subPartialClass.RequirePath);
                 }
             }
         }
+
+        Console.WriteLine($"-------------------------------sameClassNameButNotPartial---------------");
+        foreach (var _class in sameClassNameButNotPartial)
+        {
+            Console.WriteLine($"{_class.ClassName} {_class.RequirePath}");
+        }
+        Console.WriteLine($"-------------------------------sameClassNameButNotPartial---------------");
+
+        
+        //process inheriate
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var _ploopClass in moduleAndClass.Classes)
+            {
+                var inheritClassName = _ploopClass.InheritClass;
+                if (string.IsNullOrEmpty(inheritClassName) == false)
+                {
+                    //CUSTOM
+                    if (inheritClassName == "Common.StateMachine.IContext")
+                        inheritClassName = "IContext";
+                    if (sameclassKeys.ContainsKey(inheritClassName))
+                    {
+                        if (sameclassKeys[inheritClassName].Count > 1)
+                        {
+                            var classes = sameclassKeys[inheritClassName];
+                            var partialClass = true;
+                            foreach (var _class in classes)
+                            {
+                                if (_class.IsPartialClass == false)
+                                    partialClass = false;
+                            }
+                            if(partialClass == false)
+                                throw new Exception($"find multy base class,{_ploopClass.InheritClass}");    
+                        }
+
+                        PloopClass inheritClass = null; 
+                        foreach (var _inheritClass in sameclassKeys[inheritClassName])
+                        {
+                            if (_inheritClass.IsPartialClass == false)
+                            {
+                                inheritClass = _inheritClass;
+                                break;
+                            }
+                            else if (_inheritClass.IsMainPartialClass)
+                            {
+                                inheritClass = _inheritClass;
+                                break;
+                            }
+                        }
+                        Debug.Assert(inheritClass != null, "inheritClass is null");
+                        _ploopClass.InheritRequirePath = inheritClass.RequirePath;
+                    }
+                    else
+                    {
+                        throw new Exception($"not find base class,{_ploopClass.InheritClass}");
+                    }
+                }
+            }
+        }
+        
+        
+        
+        
+        
+        
+        // throw new Exception("custom exception");
     }
+    
 }

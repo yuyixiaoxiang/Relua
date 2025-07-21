@@ -1061,6 +1061,48 @@ namespace Lua
         #region PLOOP [https: //github.com/kurapica/PLoop/blob/master/README-zh.md]
 
         /// <summary>
+        /// PLoop(function(_ENV)
+        /// </summary>
+        public Ploop ReadPloop()
+        {
+            if (!CurToken.IsKeyword("PLoop")) ThrowExpect("Module statement", CurToken);
+            Move();
+            if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
+            Move();
+            if (!CurToken.IsKeyword("function")) ThrowExpect("function", CurToken);
+
+            //skip (_ENV) 
+            Move();
+            Move();
+            Move();
+            Move();
+
+            //read module statements
+            var Statements = new List<IStatement>();
+            while (!CurToken.IsEOF())
+            {
+                if (CurToken.IsKeyword("end") && PeekToken.IsPunctuation(")"))
+                {
+                    //skip module
+                    Move();
+                    break;
+                }
+            
+                var statement = ReadStatement();
+                Statements.Add(statement);
+            }
+            
+            Move();
+            
+        
+            return new Ploop()
+            {
+                Statements = Statements,
+            };
+        }
+        
+        
+        /// <summary>
         /// reads ploop module
         /// </summary>
         public PloopModule ReadPloopModule()
@@ -1094,10 +1136,41 @@ namespace Lua
             }
 
             Move();
+
+            //filter the namespace  and import functions
+            FunctionCall _namespaceCall = null;
+            List<FunctionCall> _importFunctions = new List<FunctionCall>();
+            foreach (var statement in Statements)
+            {
+                if (statement is FunctionCall _functionCall) 
+                {
+                    if (_functionCall.Function is Variable _variable)
+                    {
+                        if (_variable.Name == "namespace")
+                        {
+                            _namespaceCall = _functionCall;
+                        }
+                        else if (_variable.Name == "import")
+                        {
+                            _importFunctions.Add(_functionCall);
+                        }
+                    }
+                }
+            }
+
+            if (_namespaceCall != null)
+                Statements.Remove(_namespaceCall);
+            foreach (var importFunction in _importFunctions)
+            {
+                Statements.Remove(importFunction);    
+            }
+            
             return new PloopModule()
             {
                 ModuleName = moduleName,
                 Statements = Statements,
+                NamespaceFunction = _namespaceCall,
+                ImportFunctions = _importFunctions,
             };
         }
 
@@ -1147,7 +1220,7 @@ namespace Lua
             return new PloopClass()
             {
                 ClassName = className,
-                inheritClass = inheritClass,
+                InheritClass = inheritClass,
                 Statements = Statements,
             };
         }
@@ -1278,6 +1351,11 @@ namespace Lua
                 }
             }
 
+            if (CurToken.IsKeyword("PLoop"))
+            {
+                return ReadPloop();
+            }
+            
             if (CurToken.IsKeyword("Module"))
             {
                 return ReadPloopModule();

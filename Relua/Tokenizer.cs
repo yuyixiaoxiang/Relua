@@ -41,7 +41,7 @@ namespace Lua {
             "false", "for", "function", "if", "in", "local",
             "nil", "not", "or", "repeat", "return", "then",
             "true", "until", "while",
-            "Module","class","inherit","property","enum"
+            "PLoop","Module","class","inherit","property","enum"
         };
 
         public string Data;
