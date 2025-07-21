@@ -221,13 +221,36 @@ public class Processor
                 moduleAndClasse.Modules.Add(module_);
                 allPloopClasses.AddRange(module_.Statements.FindAll((statement => statement is PloopClass)));
             }
-
+            
+            //process multiply class
+            var singleFileMultiClass = allPloopClasses.Count > 1;
             foreach (var tmpclass in allPloopClasses)
             {
                 var ploopClass = tmpclass as PloopClass;
                 ploopClass.RequirePath = file.requirePath;
                 ploopClass.FileName = file.fileName;
+                ploopClass.singleFileMultiClass = singleFileMultiClass;
                 moduleAndClasse.Classes.Add(ploopClass);
+            }
+
+            if (singleFileMultiClass)
+            {
+                Console.WriteLine($"Multi Class File: {file.srcPath}");
+                file.Block.Statements.Add(new Return()
+                {
+                    Expressions = new List<IExpression>()
+                    {
+                        new TableConstructor()
+                        {
+                            Entries = moduleAndClasse.Classes.ConvertAll<TableConstructor.Entry>((input => new TableConstructor.Entry()
+                            {
+                                ExplicitKey = true,
+                                Key = new StringLiteral(){Value = input.ClassName},
+                                Value = new Variable(){Name = input.ClassName},
+                            }))
+                        }
+                    }
+                });
             }
 
             moduleAndClasses.Add(moduleAndClasse);
@@ -323,7 +346,7 @@ public class Processor
         {
             foreach (var _ploopClass in moduleAndClass.Classes)
             {
-                var inheritClassName = _ploopClass.InheritClass;
+                var inheritClassName = _ploopClass.InheritClassName;
                 if (string.IsNullOrEmpty(inheritClassName) == false)
                 {
                     //CUSTOM
@@ -341,7 +364,7 @@ public class Processor
                                     partialClass = false;
                             }
                             if(partialClass == false)
-                                throw new Exception($"find multy base class,{_ploopClass.InheritClass}");    
+                                throw new Exception($"find multy base class,{_ploopClass.InheritClassName}");    
                         }
 
                         PloopClass inheritClass = null; 
@@ -360,10 +383,11 @@ public class Processor
                         }
                         Debug.Assert(inheritClass != null, "inheritClass is null");
                         _ploopClass.InheritRequirePath = inheritClass.RequirePath;
+                        _ploopClass.InheritClass = inheritClass;
                     }
                     else
                     {
-                        throw new Exception($"not find base class,{_ploopClass.InheritClass}");
+                        throw new Exception($"not find base class,{_ploopClass.InheritClassName}");
                     }
                 }
             }

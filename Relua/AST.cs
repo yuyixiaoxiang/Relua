@@ -1507,10 +1507,18 @@ namespace Lua.AST
     public class PloopClass : Node, IStatement
     {
         public string ClassName;
-        public string InheritClass;
+        public string InheritClassName;
+        /// <summary>
+        /// inherit class
+        /// </summary>
+        public PloopClass InheritClass;
         public string InheritRequirePath = string.Empty;
         public List<IStatement> Statements;
         public string RequirePath = string.Empty;
+        /// <summary>
+        /// Multy class in single file 
+        /// </summary>
+        public bool singleFileMultiClass;
         /// <summary>
         /// file name 
         /// </summary>
@@ -1531,7 +1539,7 @@ namespace Lua.AST
             {
                 writer.WriteLine("local class = require(\"middleclass\")");
                 // ---@class Car : Transport @define class Car extends Transport
-                if (string.IsNullOrEmpty(InheritClass))
+                if (string.IsNullOrEmpty(InheritClassName))
                 {
                     writer.WriteLine($"---@class {ClassName}");
                     writer.WriteLine($"local {ClassName} = class('{ClassName}') ");
@@ -1539,9 +1547,12 @@ namespace Lua.AST
                 else
                 {
                     // Debug.Assert(InheritRequirePath != string.Empty,"InheritRequirePath != string.Empty");
-                    writer.WriteLine($"local {InheritClass} = require(\"{InheritRequirePath}\")");
-                    writer.WriteLine($"---@class {ClassName} : {InheritClass}");
-                    writer.WriteLine($"local {ClassName} = class('{ClassName}', {InheritClass}) ");
+                    if(InheritClass?.singleFileMultiClass??false)
+                        writer.WriteLine($"local {InheritClassName} = require(\"{InheritRequirePath}\").{InheritClassName}");
+                    else
+                        writer.WriteLine($"local {InheritClassName} = require(\"{InheritRequirePath}\")");
+                    writer.WriteLine($"---@class {ClassName} : {InheritClassName}");
+                    writer.WriteLine($"local {ClassName} = class('{ClassName}', {InheritClassName}) ");
                 }
             }
             else
@@ -1580,8 +1591,8 @@ namespace Lua.AST
                 writer.WriteLine();
             }
 
-
-            writer.Write($"return {ClassName}");
+            if(singleFileMultiClass == false)
+                writer.Write($"return {ClassName}");
         }
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)

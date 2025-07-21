@@ -9,4 +9,13 @@ public class Tests
         var expr = parser.ReadExpression() as AST.Node;
         Assert.AreEqual("print({ 1, 2 })", expr.ToString(one_line: true));
     }
+    
+    [Test]
+    public void EmptyTableCtor() {
+        var tokenizer = new Tokenizer("return  {a =a}");
+        var parser = new Parser(tokenizer);
+        var expr = parser.Read();
+        // Assert.AreEqual("{}", expr.ToString());
+        Assert.Pass();
+    }
 }

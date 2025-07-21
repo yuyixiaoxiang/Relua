@@ -1220,7 +1220,7 @@ namespace Lua
             return new PloopClass()
             {
                 ClassName = className,
-                InheritClass = inheritClass,
+                InheritClassName = inheritClass,
                 Statements = Statements,
             };
         }
