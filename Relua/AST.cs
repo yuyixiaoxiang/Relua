@@ -1140,7 +1140,11 @@ namespace Lua.AST
 
             if (AcceptsVarargs)
             {
-                if (ArgumentNames.Count > 0) writer.Write(", ");
+                if (arg_start_idx == 0 ||　ArgumentNames.Count > 1)
+                {
+                    writer.Write(", ");
+                }
+                    
                 writer.Write("...");
             }
 

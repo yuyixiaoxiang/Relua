@@ -454,7 +454,11 @@ public class Processor
                     }
                 }
                 _ploopClass.Statements.InsertRange(0, propertyAssignments);    
+                
                 //check GetXXX/SetXXX
+                
+                
+                
                 
             }
         }
