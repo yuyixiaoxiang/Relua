@@ -351,7 +351,12 @@ public class Processor
                 {
                     //CUSTOM
                     if (inheritClassName == "Common.StateMachine.IContext")
+                    {
                         inheritClassName = "IContext";
+                        _ploopClass.InheritClassName = inheritClassName;
+                    }
+                    
+                    Debug.Assert(inheritClassName.Split(".").Length == 1,"inheritClassName.Split('.').Length == 1") ;
                     if (sameclassKeys.ContainsKey(inheritClassName))
                     {
                         if (sameclassKeys[inheritClassName].Count > 1)
@@ -392,12 +397,68 @@ public class Processor
                 }
             }
         }
-        
-        
-        
-        
-        
-        
+
+        //process the super method call
+        const string ctor = "__ctor";
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var _ploopClass in moduleAndClass.Classes)
+            {
+                if (string.IsNullOrEmpty(_ploopClass.InheritClassName) == false)
+                {
+                    var statements = _ploopClass.Statements;
+                    foreach (var statement in statements)
+                    {
+                        if (statement is Assignment assignment)
+                        {
+                            var _ctor = false;
+                            if (assignment.Targets[0] is Variable variable_)
+                            {
+                                if(variable_.Name == ctor)
+                                    _ctor = true;
+                            }
+
+                            foreach (var assignValue in assignment.Values)
+                            {
+                                if (assignValue is FunctionDefinition functionDefinition)
+                                {
+                                    foreach (var statement1 in functionDefinition.Block.Statements)
+                                    {
+                                        if (statement1 is FunctionCall functionCall)
+                                        {
+                                            if (functionCall.Function is TableAccess tableAccess)
+                                            {
+                                                if (tableAccess.Table is Variable variable)
+                                                {
+                                                    if (variable.Name == "super")
+                                                    {
+                                                        variable.Name = _ploopClass.InheritClassName;
+                                                    }    
+                                                }
+                                            }
+                                            else if (functionCall.Function is Variable variable2 && _ctor && variable2.Name == "super")
+                                            {
+                                                functionCall.Function = new TableAccess()
+                                                {
+                                                    Table =  new Variable(){Name =_ploopClass.InheritClassName },
+                                                    Index = new StringLiteral(){Value = ctor}
+                                                };
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                
+            }
+        }
+
+
+
+
         // throw new Exception("custom exception");
     }
     
