@@ -52,7 +52,7 @@ public class Processor
 
         //post process
         PostprocessModuleAndPartialClass();
-        PostprocessProperties();
+
         //outout 
         List<(string path, string content)> outputs = new List<(string path, string content)>();
         foreach (var file in files)
@@ -64,116 +64,6 @@ public class Processor
         }
 
         return outputs;
-    }
-
-    /// <summary>
-    /// post ploop properties
-    /// </summary>
-    private void PostprocessProperties()
-    {
-        foreach (var file in this.files)
-        {
-            Ploop? ploop = file.Block.Statements.Find((statement => statement is Ploop)) as Ploop;
-            PloopModule? module = file.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
-            List<IStatement> allclasses = file.Block.Statements.FindAll((statement => statement is PloopClass));
-            var class__ = module?.Statements.FindAll((statement => statement is PloopClass));
-            if (class__ != null)
-                allclasses.AddRange(class__);
-            var class__2 = ploop?.Statements.FindAll((statement => statement is PloopClass));
-            if (class__2 != null)
-                allclasses.AddRange(class__2);
-            foreach (var class_ in allclasses)
-            {
-                if (class_ is PloopClass _ploopClass)
-                {
-                    PloopClass mainCtorClass = default;
-                    //find the default ploop constructor 
-                    if (_ploopClass.IsMainPartialClass || !_ploopClass.IsPartialClass)
-                        mainCtorClass = _ploopClass;
-                    else
-                        mainCtorClass = _ploopClass.MainPartialClass;
-                    Debug.Assert(mainCtorClass != null, nameof(mainCtorClass) + " != null");
-
-                    var _ctor = mainCtorClass.Statements.Find((statement =>
-                    {
-                        if (statement is Assignment assignment)
-                        {
-                            return assignment.Targets.Exists(assignable =>
-                                   {
-                                       if (assignable is Variable _variable)
-                                       {
-                                           if (_variable.Name == "__ctor")
-                                               return true;
-                                       }
-
-                                       return false;
-                                   }) &&
-                                   assignment.Values.Exists(assignable => { return assignable is FunctionDefinition; });
-                        }
-
-                        return false;
-                    }));
-
-                    if (_ctor == null)
-                    {
-                        _ctor = new Assignment()
-                        {
-                            PloopClass = _ploopClass,
-                            Targets = new List<IAssignable>()
-                            {
-                                new Variable()
-                                {
-                                    Name = "__ctor",
-                                },
-                            },
-                            Values = new List<IExpression>()
-                            {
-                                new FunctionDefinition()
-                                {
-                                    ArgumentNames = new List<string>()
-                                    {
-                                        "self"
-                                    },
-                                    Block = new Block(),
-                                    ImplicitSelf = true,
-                                    PloopClass = _ploopClass,
-                                },
-                            },
-                        };
-                        mainCtorClass.Statements.Insert(0, _ctor);
-                    }
-
-                    Debug.Assert(_ctor != null, nameof(_ctor) + " != null");
-
-                    Debug.Assert(_ctor is Assignment);
-
-                    FunctionDefinition ctorDefinition = null;
-                    if (_ctor is Assignment _ctorAssignment)
-                    {
-                        ctorDefinition = _ctorAssignment.Values[0] as FunctionDefinition;
-                    }
-
-                    Debug.Assert(ctorDefinition != null, nameof(ctorDefinition) + " != null");
-
-                    List<IStatement> properties =
-                        _ploopClass.Statements.FindAll((statement => statement is PloopProperty));
-
-                    var _index = 0;
-                    foreach (var property in properties)
-                    {
-                        if (property is PloopProperty _ploopProperty)
-                        {
-                            _ploopProperty.PloopClass = _ploopClass;
-                            var fieldAssignment = _ploopProperty.GetFieldAssignment();
-                            if (fieldAssignment != null)
-                            {
-                                ctorDefinition.Block.Statements.Insert(_index++, fieldAssignment);
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -459,14 +349,113 @@ public class Processor
                 }
             }
         }
-        
+
         //check Nested class 
         foreach (var moduleAndClass in moduleAndClasses)
         {
             foreach (var _ploopClass in moduleAndClass.Classes)
             {
                 List<IStatement> nestedclass = _ploopClass.Statements.FindAll((statement => statement is PloopClass));
-                Debug.Assert(nestedclass.Count == 0,$"{_ploopClass.RequirePath},nestedclass.Count == 0");
+                Debug.Assert(nestedclass.Count == 0, $"{_ploopClass.RequirePath},nestedclass.Count == 0");
+            }
+        }
+
+
+        //post process property
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var _ploopClass in moduleAndClass.Classes)
+            {
+                PloopClass mainCtorClass = default;
+                //find the default ploop constructor 
+                if (_ploopClass.IsMainPartialClass || !_ploopClass.IsPartialClass)
+                    mainCtorClass = _ploopClass;
+                else
+                    mainCtorClass = _ploopClass.MainPartialClass;
+                Debug.Assert(mainCtorClass != null, nameof(mainCtorClass) + " != null");
+
+                var _ctor = mainCtorClass.Statements.Find((statement =>
+                {
+                    if (statement is Assignment assignment)
+                    {
+                        return assignment.Targets.Exists(assignable =>
+                               {
+                                   if (assignable is Variable _variable)
+                                   {
+                                       if (_variable.Name == "__ctor")
+                                           return true;
+                                   }
+
+                                   return false;
+                               }) &&
+                               assignment.Values.Exists(assignable => { return assignable is FunctionDefinition; });
+                    }
+
+                    return false;
+                }));
+
+                if (_ctor == null)
+                {
+                    _ctor = new Assignment()
+                    {
+                        PloopClass = _ploopClass,
+                        Targets = new List<IAssignable>()
+                        {
+                            new Variable()
+                            {
+                                Name = "__ctor",
+                            },
+                        },
+                        Values = new List<IExpression>()
+                        {
+                            new FunctionDefinition()
+                            {
+                                ArgumentNames = new List<string>()
+                                {
+                                    "self"
+                                },
+                                Block = new Block(),
+                                ImplicitSelf = true,
+                                PloopClass = _ploopClass,
+                            },
+                        },
+                    };
+                    mainCtorClass.Statements.Insert(0, _ctor);
+                }
+
+                Debug.Assert(_ctor != null, nameof(_ctor) + " != null");
+
+                Debug.Assert(_ctor is Assignment);
+
+                FunctionDefinition ctorDefinition = null;
+                if (_ctor is Assignment _ctorAssignment)
+                {
+                    ctorDefinition = _ctorAssignment.Values[0] as FunctionDefinition;
+                }
+
+                Debug.Assert(ctorDefinition != null, nameof(ctorDefinition) + " != null");
+
+                List<IStatement> properties =
+                    _ploopClass.Statements.FindAll((statement => statement is PloopProperty));
+
+                var _index = 0;
+                var propertyAssignments = new List<IStatement>();
+                foreach (var property in properties)
+                {
+                    if (property is PloopProperty _ploopProperty)
+                    {
+                        _ploopProperty.PloopClass = _ploopClass;
+                        var fieldAssignment = _ploopProperty.GetPropertyFieldAssignment();
+                        if (fieldAssignment != null)
+                        {
+                            ctorDefinition.Block.Statements.Insert(_index++, fieldAssignment);
+                        }
+                        propertyAssignments.AddRange(_ploopProperty.GetPropertyFunction());
+                    }
+                }
+                _ploopClass.Statements.InsertRange(0, propertyAssignments);    
+                //check GetXXX/SetXXX
+                
             }
         }
 

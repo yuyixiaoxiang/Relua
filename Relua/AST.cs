@@ -13,6 +13,7 @@ namespace Lua.AST
     public abstract class Node
     {
         public abstract void Write(IndentAwareTextWriter writer, object data = null);
+
         // public abstract void Accept(IVisitor visitor);
         public abstract void Write2TS(IndentAwareTextWriter writer, object data = null);
 
@@ -38,6 +39,7 @@ namespace Lua.AST
     public interface IStatement
     {
         void Write(IndentAwareTextWriter writer, object data = null);
+
         // void Accept(IVisitor visitor);
         void Write2TS(IndentAwareTextWriter writer, object data = null);
         string ToString(bool one_line);
@@ -49,6 +51,7 @@ namespace Lua.AST
     public interface IExpression
     {
         void Write(IndentAwareTextWriter writer, object data = null);
+
         // void Accept(IVisitor visitor);
         void Write2TS(IndentAwareTextWriter writer, object data = null);
         string ToString(bool one_line);
@@ -816,6 +819,7 @@ namespace Lua.AST
     public class Return : Node, IStatement
     {
         public List<IExpression> Expressions = new List<IExpression>();
+
         /// <summary>
         /// redundant return ,so skip it
         /// </summary>
@@ -828,6 +832,7 @@ namespace Lua.AST
                 writer.Write("--return");
                 return;
             }
+
             writer.Write("return");
             if (Expressions.Count > 0) writer.Write(" ");
             for (var i = 0; i < Expressions.Count; i++)
@@ -1225,8 +1230,9 @@ namespace Lua.AST
             }
 
             // Debug.Assert(func.ArgumentNames.FirstOrDefault() != null);
-            var firstArgSelf = func.ArgumentNames.FirstOrDefault() != null && func.ArgumentNames.FirstOrDefault() == "self";
-            
+            var firstArgSelf = func.ArgumentNames.FirstOrDefault() != null &&
+                               func.ArgumentNames.FirstOrDefault() == "self";
+
             func.Write(writer, new FunctionDefinition.FunctionDefinitionData()
             {
                 PloopClass = PloopClass,
@@ -1437,8 +1443,9 @@ namespace Lua.AST
             throw new NotImplementedException();
         }
     }
-    
-    #region Ploop [https://github.com/kurapica/PLoop/blob/master/README-zh.md]
+
+    #region Ploop [https: //github.com/kurapica/PLoop/blob/master/README-zh.md]
+
     /// <summary>
     /// Module "Game.View"(function(_ENV)
     /// namespace "Game.Net"
@@ -1447,6 +1454,7 @@ namespace Lua.AST
     public class Ploop : Node, IStatement
     {
         public List<IStatement> Statements;
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.WriteLine();
@@ -1458,6 +1466,7 @@ namespace Lua.AST
                 statement.Write(writer);
                 first = false;
             }
+
             writer.WriteLine();
         }
 
@@ -1466,7 +1475,7 @@ namespace Lua.AST
             throw new NotImplementedException();
         }
     }
-    
+
     /// <summary>
     /// Module "Game.View"(function(_ENV)
     /// namespace "Game.Net"
@@ -1475,7 +1484,9 @@ namespace Lua.AST
     public class PloopModule : Node, IStatement
     {
         public string ModuleName;
+
         public FunctionCall NamespaceFunction;
+
         // public string DeterministicNamespace;
         public List<FunctionCall> ImportFunctions = new List<FunctionCall>();
         public List<IStatement> Statements;
@@ -1491,6 +1502,7 @@ namespace Lua.AST
                 statement.Write(writer);
                 first = false;
             }
+
             writer.WriteLine();
         }
 
@@ -1508,21 +1520,26 @@ namespace Lua.AST
     {
         public string ClassName;
         public string InheritClassName;
+
         /// <summary>
         /// inherit class
         /// </summary>
         public PloopClass InheritClass;
+
         public string InheritRequirePath = string.Empty;
         public List<IStatement> Statements;
         public string RequirePath = string.Empty;
+
         /// <summary>
         /// Multy class in single file 
         /// </summary>
         public bool singleFileMultiClass;
+
         /// <summary>
         /// file name 
         /// </summary>
         public string FileName;
+
         //---namespace
         // public string Namespace;
         //----partial class ---
@@ -1531,7 +1548,7 @@ namespace Lua.AST
         public string MainPartialRequirePath = string.Empty;
         public List<string> SubPartialRequirePaths = new List<string>();
         public PloopClass MainPartialClass;
-        
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");
@@ -1547,8 +1564,9 @@ namespace Lua.AST
                 else
                 {
                     // Debug.Assert(InheritRequirePath != string.Empty,"InheritRequirePath != string.Empty");
-                    if(InheritClass?.singleFileMultiClass??false)
-                        writer.WriteLine($"local {InheritClassName} = require(\"{InheritRequirePath}\").{InheritClassName}");
+                    if (InheritClass?.singleFileMultiClass ?? false)
+                        writer.WriteLine(
+                            $"local {InheritClassName} = require(\"{InheritRequirePath}\").{InheritClassName}");
                     else
                         writer.WriteLine($"local {InheritClassName} = require(\"{InheritRequirePath}\")");
                     writer.WriteLine($"---@class {ClassName} : {InheritClassName}");
@@ -1562,10 +1580,9 @@ namespace Lua.AST
                 writer.WriteLine($"local {ClassName} = require(\"{MainPartialRequirePath}\")");
             }
 
-            
-            
+
             // writer.IncreaseIndent();
-            
+
             var first = true;
             foreach (var statement in Statements)
             {
@@ -1587,11 +1604,12 @@ namespace Lua.AST
                 {
                     writer.WriteLine($"require(\"{subPartialRequirePath}\")  ");
                 }
+
                 writer.WriteLine("---------auto include sub partial class--------------------");
                 writer.WriteLine();
             }
 
-            if(singleFileMultiClass == false)
+            if (singleFileMultiClass == false)
                 writer.Write($"return {ClassName}");
         }
 
@@ -1636,6 +1654,7 @@ namespace Lua.AST
         public TableConstructor PropertyTable;
 
         private StringLiteral fieldStringLiteral;
+
         // default 
         private IExpression defaultLiteral;
         private FunctionDefinition defaultFunction;
@@ -1646,11 +1665,14 @@ namespace Lua.AST
         /// <summary>
         /// property expressions 
         /// </summary>
-        private Dictionary<string,IExpression> propertyExpressions;
+        private Dictionary<string, IExpression> propertyExpressions;
 
+        /// <summary>
+        /// first analysis the property table 
+        /// </summary>
         private void AnalysisExpressions()
         {
-            if(propertyExpressions != null)
+            if (propertyExpressions != null)
                 return;
             propertyExpressions = new Dictionary<string, IExpression>();
             foreach (var entry in PropertyTable.Entries)
@@ -1663,25 +1685,33 @@ namespace Lua.AST
                     propertyExpressions.Add(stringLiteral.Value, value);
                 }
             }
+
             propertyExpressions.TryGetValue("field", out var _field);
             propertyExpressions.TryGetValue("type", out var _type);
             propertyExpressions.TryGetValue("default", out var _default);
             propertyExpressions.TryGetValue("get", out var _get);
             propertyExpressions.TryGetValue("set", out var _set);
             propertyExpressions.TryGetValue("handler", out var _handler);
-            
+
             // type 
             if (_type != null)
             {
                 typeString = _type.ToString();
             }
-            
+
             //field 
             if (_field is StringLiteral _fieldStringLiteral)
             {
-                fieldStringLiteral = _fieldStringLiteral;   
+                fieldStringLiteral = _fieldStringLiteral;
             }
-            
+            else if (_field is null)
+            {
+                fieldStringLiteral = new StringLiteral()
+                {
+                    Value = $"___{char.ToLower(PropertyName[0]) + PropertyName.Substring(1)}"
+                };
+            }
+
             if (_default is FunctionDefinition _defaultFunction)
             {
                 defaultFunction = _defaultFunction;
@@ -1690,23 +1720,24 @@ namespace Lua.AST
             {
                 defaultFunctionCall = _defaultFunctionCall;
             }
-            else if (_default is StringLiteral || _default is NilLiteral || _default is BoolLiteral || _default is NumberLiteral || _default is TableConstructor)
+            else if (_default is StringLiteral || _default is NilLiteral || _default is BoolLiteral ||
+                     _default is NumberLiteral || _default is TableConstructor)
             {
                 defaultLiteral = _default;
             }
-            
-            if(_handler != null)
+
+            if (_handler != null)
                 Debug.Assert(_handler is FunctionDefinition, "handler is FunctionDefinition");
             if (_handler is FunctionDefinition _handlerFunction)
             {
                 handlerFunction = _handlerFunction;
             }
         }
-        
+
         /// <summary>
         /// get self.__field assignment
         /// </summary>
-        public Assignment GetFieldAssignment()
+        public Assignment GetPropertyFieldAssignment()
         {
             AnalysisExpressions();
             if (fieldStringLiteral != null)
@@ -1715,51 +1746,50 @@ namespace Lua.AST
                 {
                     var assignment = new Assignment()
                     {
-                        Targets = new ()
+                        Targets = new()
                         {
                             new TableAccess()
                             {
                                 Table = new Variable()
                                 {
-                                    Name   = "self"
+                                    Name = "self"
                                 },
                                 Index = fieldStringLiteral,
                             }
                         },
-                        Values = new ()
+                        Values = new()
                         {
                             new FunctionCall()
                             {
                                 Function = defaultFunction
                             }
                         },
-                        
                     };
                     return assignment;
                 }
+
                 if (defaultFunctionCall != null)
                 {
                     //todo only luaobject
                     Debug.Assert(PloopClass.ClassName == "LuaObject");
-                    
+
                     var assignment = new Assignment()
                     {
-                        Targets = new ()
+                        Targets = new()
                         {
                             new TableAccess()
                             {
                                 Table = new Variable()
                                 {
-                                    Name   = "self"
+                                    Name = "self"
                                 },
                                 Index = fieldStringLiteral,
                             }
                         },
-                        Values = new ()
+                        Values = new()
                         {
                             defaultFunctionCall
                         },
-                        
                     };
                     return assignment;
                 }
@@ -1767,22 +1797,21 @@ namespace Lua.AST
                 {
                     var assignment = new Assignment()
                     {
-                        Targets = new ()
+                        Targets = new()
                         {
                             new TableAccess()
                             {
                                 Table = new Variable()
                                 {
-                                    Name   = "self"
+                                    Name = "self"
                                 },
                                 Index = fieldStringLiteral,
                             }
                         },
-                        Values = new ()
+                        Values = new()
                         {
                             defaultLiteral
                         },
-                        
                     };
                     return assignment;
                 }
@@ -1832,118 +1861,209 @@ namespace Lua.AST
 
                     var assignment = new Assignment()
                     {
-                        Targets = new ()
+                        Targets = new()
                         {
                             new TableAccess()
                             {
                                 Table = new Variable()
                                 {
-                                    Name   = "self"
+                                    Name = "self"
                                 },
                                 Index = fieldStringLiteral,
                             }
                         },
-                        Values = new ()
+                        Values = new()
                         {
                             defaultValueExpression
                         },
-                        
                     };
-                    return assignment;   
+                    return assignment;
                 }
             }
 
             return null;
         }
 
-        public override void Write(IndentAwareTextWriter writer, object data)
+        /// <summary>
+        /// get property assignment 
+        /// </summary>
+        /// <returns></returns>
+        public List<Assignment> GetPropertyFunction()
         {
             AnalysisExpressions();
-            if (data is PloopClass _ploopClass)
-            {
-                PloopClass = _ploopClass;
-            }
-            
+            var assignments = new List<Assignment>();
             if (handlerFunction != null)
             {
-                writer.WriteLine();
-                writer.Write($"function {PloopClass?.ClassName ?? "DefaultClass"}:On{PropertyName}Handler");
-                handlerFunction.Write(writer, new FunctionDefinition.FunctionDefinitionData()
+                assignments.Add(new Assignment()
                 {
                     PloopClass = PloopClass,
-                    from_named = true,
-                    ImplicitSelf = true,
+                    Targets = new List<IAssignable>()
+                    {
+                        new Variable()
+                        {
+                            Name = $"On{PropertyName}Handler",
+                        },
+                    },
+                    Values = new List<IExpression>()
+                    {
+                        handlerFunction
+                    },
                 });
-                writer.WriteLine();
             }
-            
+
             //get is a function 
             propertyExpressions.TryGetValue("get", out var _get);
             if (_get is FunctionDefinition _getFunction)
             {
-                writer.WriteLine();
-                writer.Write($"function {PloopClass?.ClassName ?? "DefaultClass"}:Get{PropertyName}");
-                _getFunction.Write(writer, new FunctionDefinition.FunctionDefinitionData()
+                assignments.Add(new Assignment()
                 {
                     PloopClass = PloopClass,
-                    from_named = true,
-                    ImplicitSelf = true,
+                    Targets = new List<IAssignable>()
+                    {
+                        new Variable()
+                        {
+                            Name = $"Get{PropertyName}",
+                        },
+                    },
+                    Values = new List<IExpression>()
+                    {
+                        _getFunction
+                    },
                 });
-                writer.WriteLine();
             }
-            else if (_get is StringLiteral _getStringLiteral)
+            else if ((_get is BoolLiteral _getBoolLiteral && _getBoolLiteral.Value != false) || _get is null)
             {
-                // function SetName(self, name)
-                //  self.__name = name
-                // end
-                //
-                //function GetName(self)
-                //   return self.__name
-                //end
-                //
-                //property "Name" {
-                //  get = "GetName", -- or getmethod = "GetName"
-                //  set = "SetName", -- or setmethod = "SetName"
-                //}
-                
+                assignments.Add(new Assignment()
+                {
+                    PloopClass = PloopClass,
+                    Targets = new List<IAssignable>()
+                    {
+                        new Variable()
+                        {
+                            Name = $"Get{PropertyName}",
+                        },
+                    },
+                    Values = new List<IExpression>()
+                    {
+                        new FunctionDefinition()
+                        {
+                            Block = new Block()
+                            {
+                                Statements = new List<IStatement>()
+                                {
+                                    new Return()
+                                    {
+                                        Expressions = new List<IExpression>()
+                                        {
+                                            new TableAccess()
+                                            {
+                                                Table = new Variable()
+                                                {
+                                                    Name = "self"
+                                                },
+                                                Index = fieldStringLiteral,
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                });
             }
-            else if (_get is BoolLiteral _getBoolLiteral)
+            else if (_get is BoolLiteral _getBoolLiteral1 && _getBoolLiteral1.Value == false)
             {
-                //
-            } 
-            else if (_get is null && fieldStringLiteral != null)
-            {
-                writer.WriteLine($"function {PloopClass?.ClassName ?? "DefaultClass"}:Get{PropertyName}() \r\n \treturn self.{fieldStringLiteral.Value} \r\nend");
-                writer.WriteLine();
             }
+            else
+            {
+                Debug.Assert(false, "_get property");
+            }
+
             propertyExpressions.TryGetValue("set", out var _set);
             if (_set is FunctionDefinition _setFunction)
             {
-                writer.WriteLine();
-                writer.Write($"function {PloopClass?.ClassName ?? "DefaultClass"}:Set{PropertyName}");
-                _setFunction.Write(writer, new FunctionDefinition.FunctionDefinitionData()
+                Debug.Assert(fieldStringLiteral != null, $"fieldStringLiteral is not null");
+                assignments.Add(new Assignment()
                 {
                     PloopClass = PloopClass,
-                    from_named = true,
-                    ImplicitSelf = true,
+                    Targets = new List<IAssignable>()
+                    {
+                        new Variable()
+                        {
+                            Name = $"Set{PropertyName}",
+                        },
+                    },
+                    Values = new List<IExpression>()
+                    {
+                        _setFunction
+                    },
                 });
-                writer.WriteLine();
             }
-            else if (_set is BoolLiteral _boolLiteral)
+            else if ((_set is BoolLiteral _boolLiteral && _boolLiteral.Value != false) || _set is null)
             {
-                //   
+                Debug.Assert(fieldStringLiteral != null, $"fieldStringLiteral is not null");
+                assignments.Add(new Assignment()
+                {
+                    PloopClass = PloopClass,
+                    Targets = new List<IAssignable>()
+                    {
+                        new Variable()
+                        {
+                            Name = $"Set{PropertyName}",
+                        }
+                    },
+                    Values = new List<IExpression>()
+                    {
+                        new FunctionDefinition()
+                        {
+                            ArgumentNames = new List<string>()
+                            {
+                                "value"
+                            },
+                            Block = new Block()
+                            {
+                                Statements = new List<IStatement>()
+                                {
+                                    new Assignment()
+                                    {
+                                        Targets = new()
+                                        {
+                                            new TableAccess()
+                                            {
+                                                Table = new Variable()
+                                                {
+                                                    Name = "self"
+                                                },
+                                                Index = fieldStringLiteral,
+                                            }
+                                        },
+                                        Values = new()
+                                        {
+                                            new Variable() { Name = "value" }
+                                        },
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
-            else if (_set is StringLiteral _stringLiteral)
+            else if (_set is BoolLiteral _boolLiteral1 && _boolLiteral1.Value == false)
             {
-                
             }
-            else if (_set is null && fieldStringLiteral != null)
+            else
             {
-                writer.WriteLine($"function {PloopClass?.ClassName ?? "DefaultClass"}:Set{PropertyName}(value) \r\n \t self.{fieldStringLiteral.Value} = value \r\nend");
-                writer.WriteLine();
+                Debug.Assert(false, "_set property");
             }
+
+            return assignments;
         }
-        
+
+        public override void Write(IndentAwareTextWriter writer, object data)
+        {
+            writer.Write($"--PLoop Property:{PropertyName}");
+        }
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1986,7 +2106,7 @@ namespace Lua.AST
             throw new NotImplementedException();
         }
     }
-    
+
     /// <summary>
     /// __Static__()
     /// __Indexer__(String)
@@ -1996,10 +2116,10 @@ namespace Lua.AST
     /// </summary>
     public class PloopAttribute : Node, IStatement
     {
-        public FunctionCall FunctionCall; 
+        public FunctionCall FunctionCall;
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
-            
         }
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
