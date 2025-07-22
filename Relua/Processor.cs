@@ -214,14 +214,14 @@ public class Processor
                 moduleAndClasse.Ploop = ploop;
                 allPloopClasses.AddRange(ploop.Statements.FindAll((statement => statement is PloopClass)));
             }
-            
-            foreach(var module in allmodules)
+
+            foreach (var module in allmodules)
             {
                 var module_ = module as PloopModule;
                 moduleAndClasse.Modules.Add(module_);
                 allPloopClasses.AddRange(module_.Statements.FindAll((statement => statement is PloopClass)));
             }
-            
+
             //process multiply class
             var singleFileMultiClass = allPloopClasses.Count > 1;
             foreach (var tmpclass in allPloopClasses)
@@ -242,12 +242,13 @@ public class Processor
                     {
                         new TableConstructor()
                         {
-                            Entries = moduleAndClasse.Classes.ConvertAll<TableConstructor.Entry>((input => new TableConstructor.Entry()
-                            {
-                                ExplicitKey = true,
-                                Key = new StringLiteral(){Value = input.ClassName},
-                                Value = new Variable(){Name = input.ClassName},
-                            }))
+                            Entries = moduleAndClasse.Classes.ConvertAll<TableConstructor.Entry>((input =>
+                                new TableConstructor.Entry()
+                                {
+                                    ExplicitKey = true,
+                                    Key = new StringLiteral() { Value = input.ClassName },
+                                    Value = new Variable() { Name = input.ClassName },
+                                }))
                         }
                     }
                 });
@@ -255,7 +256,7 @@ public class Processor
 
             moduleAndClasses.Add(moduleAndClasse);
         }
-        
+
         //test same name ploop class 
         var sameclassKeys = new Dictionary<string, List<PloopClass>>();
         foreach (var moduleAndClass in moduleAndClasses)
@@ -290,15 +291,16 @@ public class Processor
                 {
                     string prefix = $"{_class.ClassName}";
                     //CUSTOM 
-                    if(kv.Key == "ActionSystem")
+                    if (kv.Key == "ActionSystem")
                         prefix = "Action";
-                    if(kv.Key == "ConditionSystem")
+                    if (kv.Key == "ConditionSystem")
                         prefix = "Condition_";
-                    
+
                     if (_class.FileName.StartsWith(prefix))
                     {
                         subPartialClasses.Add(_class);
                     }
+
                     //CUSTOM
                     if (kv.Key == "MapCityNodeView" && _class.FileName == "CityBuildingView_Scaffold")
                     {
@@ -316,7 +318,7 @@ public class Processor
             {
                 sameClassNameButNotPartial.AddRange(kv.Value);
             }
-            
+
             //
             if (isPartialClass)
             {
@@ -327,7 +329,7 @@ public class Processor
                     subPartialClass.IsPartialClass = true;
                     subPartialClass.MainPartialClass = mainPartialClass;
                     subPartialClass.MainPartialRequirePath = mainPartialClass.RequirePath;
-                    
+
                     mainPartialClass.SubPartialRequirePaths.Add(subPartialClass.RequirePath);
                 }
             }
@@ -338,9 +340,10 @@ public class Processor
         {
             Console.WriteLine($"{_class.ClassName} {_class.RequirePath}");
         }
+
         Console.WriteLine($"-------------------------------sameClassNameButNotPartial---------------");
 
-        
+
         //process inheriate
         foreach (var moduleAndClass in moduleAndClasses)
         {
@@ -355,8 +358,8 @@ public class Processor
                         inheritClassName = "IContext";
                         _ploopClass.InheritClassName = inheritClassName;
                     }
-                    
-                    Debug.Assert(inheritClassName.Split(".").Length == 1,"inheritClassName.Split('.').Length == 1") ;
+
+                    Debug.Assert(inheritClassName.Split(".").Length == 1, "inheritClassName.Split('.').Length == 1");
                     if (sameclassKeys.ContainsKey(inheritClassName))
                     {
                         if (sameclassKeys[inheritClassName].Count > 1)
@@ -368,11 +371,12 @@ public class Processor
                                 if (_class.IsPartialClass == false)
                                     partialClass = false;
                             }
-                            if(partialClass == false)
-                                throw new Exception($"find multy base class,{_ploopClass.InheritClassName}");    
+
+                            if (partialClass == false)
+                                throw new Exception($"find multy base class,{_ploopClass.InheritClassName}");
                         }
 
-                        PloopClass inheritClass = null; 
+                        PloopClass inheritClass = null;
                         foreach (var _inheritClass in sameclassKeys[inheritClassName])
                         {
                             if (_inheritClass.IsPartialClass == false)
@@ -386,6 +390,7 @@ public class Processor
                                 break;
                             }
                         }
+
                         Debug.Assert(inheritClass != null, "inheritClass is null");
                         _ploopClass.InheritRequirePath = inheritClass.RequirePath;
                         _ploopClass.InheritClass = inheritClass;
@@ -414,7 +419,7 @@ public class Processor
                             var _ctor = false;
                             if (assignment.Targets[0] is Variable variable_)
                             {
-                                if(variable_.Name == ctor)
+                                if (variable_.Name == ctor)
                                     _ctor = true;
                             }
 
@@ -433,15 +438,16 @@ public class Processor
                                                     if (variable.Name == "super")
                                                     {
                                                         variable.Name = _ploopClass.InheritClassName;
-                                                    }    
+                                                    }
                                                 }
                                             }
-                                            else if (functionCall.Function is Variable variable2 && _ctor && variable2.Name == "super")
+                                            else if (functionCall.Function is Variable variable2 && _ctor &&
+                                                     variable2.Name == "super")
                                             {
                                                 functionCall.Function = new TableAccess()
                                                 {
-                                                    Table =  new Variable(){Name =_ploopClass.InheritClassName },
-                                                    Index = new StringLiteral(){Value = ctor}
+                                                    Table = new Variable() { Name = _ploopClass.InheritClassName },
+                                                    Index = new StringLiteral() { Value = ctor }
                                                 };
                                             }
                                         }
@@ -451,15 +457,20 @@ public class Processor
                         }
                     }
                 }
-
-                
+            }
+        }
+        
+        //check Nested class 
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var _ploopClass in moduleAndClass.Classes)
+            {
+                List<IStatement> nestedclass = _ploopClass.Statements.FindAll((statement => statement is PloopClass));
+                Debug.Assert(nestedclass.Count == 0,$"{_ploopClass.RequirePath},nestedclass.Count == 0");
             }
         }
 
 
-
-
         // throw new Exception("custom exception");
     }
-    
 }
