@@ -1568,11 +1568,19 @@ namespace Lua.AST
                 else
                 {
                     // Debug.Assert(InheritRequirePath != string.Empty,"InheritRequirePath != string.Empty");
-                    if (InheritClass?.singleFileMultiClass ?? false)
-                        writer.WriteLine(
-                            $"local {InheritClassName} = require(\"{InheritRequirePath}\").{InheritClassName}");
+                    if (InheritRequirePath != RequirePath)
+                    {
+                        if (InheritClass?.singleFileMultiClass ?? false)
+                            writer.WriteLine(
+                                $"local {InheritClassName} = require(\"{InheritRequirePath}\").{InheritClassName}");
+                        else
+                            writer.WriteLine($"local {InheritClassName} = require(\"{InheritRequirePath}\")");
+                    }
                     else
-                        writer.WriteLine($"local {InheritClassName} = require(\"{InheritRequirePath}\")");
+                    {
+                        Console.WriteLine($"InheritRequirePath = RequirePath,{InheritRequirePath}");
+                    }
+                    
                     writer.WriteLine($"---@class {ClassName} : {InheritClassName}");
                     writer.WriteLine($"local {ClassName} = class('{ClassName}', {InheritClassName}) ");
                 }
