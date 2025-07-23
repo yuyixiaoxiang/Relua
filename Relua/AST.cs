@@ -1218,6 +1218,7 @@ namespace Lua.AST
         public PloopClass PloopClass;
         public bool IsLocal;
         public bool ForceExplicitLocalNil;
+        public PloopAttribute Attribute;
         public List<IAssignable> Targets = new List<IAssignable>();
         public List<IExpression> Values = new List<IExpression>();
 
@@ -1226,7 +1227,10 @@ namespace Lua.AST
             writer.Write("function ");
             if (PloopClass != null && !IsLocal)
             {
-                writer.Write($"{PloopClass.ClassName}:{name}");
+                if(Attribute?.IsStatic ?? false)
+                    writer.Write($"{PloopClass.ClassName}.{name}");    
+                else 
+                    writer.Write($"{PloopClass.ClassName}:{name}");
             }
             else
             {
@@ -1670,7 +1674,7 @@ namespace Lua.AST
         public PloopClass PloopClass;
         public string PropertyName;
         public TableConstructor PropertyTable;
-
+        public PloopAttribute Attribute;
         private StringLiteral fieldStringLiteral;
 
         // default 
@@ -1726,7 +1730,7 @@ namespace Lua.AST
             {
                 fieldStringLiteral = new StringLiteral()
                 {
-                    Value = $"___{char.ToLower(PropertyName[0]) + PropertyName.Substring(1)}"
+                    Value = $"__{char.ToLower(PropertyName[0]) + PropertyName.Substring(1)}"
                 };
             }
 
@@ -1748,6 +1752,7 @@ namespace Lua.AST
                 Debug.Assert(_handler is FunctionDefinition, "handler is FunctionDefinition");
             if (_handler is FunctionDefinition _handlerFunction)
             {
+                //todo 
                 handlerFunction = _handlerFunction;
             }
         }
@@ -1758,9 +1763,11 @@ namespace Lua.AST
         public Assignment GetPropertyFieldAssignment()
         {
             AnalysisExpressions();
+            
+            var isStatic = Attribute?.IsStatic ?? false;
             if (fieldStringLiteral != null)
             {
-                if (defaultFunction != null)
+                if (defaultFunction != null && !isStatic)
                 {
                     var assignment = new Assignment()
                     {
@@ -1786,7 +1793,7 @@ namespace Lua.AST
                     return assignment;
                 }
 
-                if (defaultFunctionCall != null)
+                if (defaultFunctionCall != null && !isStatic)
                 {
                     //todo only luaobject
                     Debug.Assert(PloopClass.ClassName == "LuaObject");
@@ -1815,8 +1822,13 @@ namespace Lua.AST
                 {
                     var assignment = new Assignment()
                     {
+                        IsLocal = isStatic,
                         Targets = new()
                         {
+                            isStatic? new Variable()
+                                {
+                                    Name = fieldStringLiteral.Value
+                                }:
                             new TableAccess()
                             {
                                 Table = new Variable()
@@ -1879,8 +1891,13 @@ namespace Lua.AST
 
                     var assignment = new Assignment()
                     {
+                        IsLocal = isStatic,
                         Targets = new()
                         {
+                            isStatic?new Variable()
+                                {
+                                    Name = fieldStringLiteral.Value
+                                }:
                             new TableAccess()
                             {
                                 Table = new Variable()
@@ -1936,6 +1953,7 @@ namespace Lua.AST
                 assignments.Add(new Assignment()
                 {
                     PloopClass = PloopClass,
+                    Attribute = Attribute,
                     Targets = new List<IAssignable>()
                     {
                         new Variable()
@@ -1954,6 +1972,7 @@ namespace Lua.AST
                 assignments.Add(new Assignment()
                 {
                     PloopClass = PloopClass,
+                    Attribute = Attribute,
                     Targets = new List<IAssignable>()
                     {
                         new Variable()
@@ -1973,6 +1992,10 @@ namespace Lua.AST
                                     {
                                         Expressions = new List<IExpression>()
                                         {
+                                            Attribute?.IsStatic??false ? new Variable()
+                                                {
+                                                    Name =fieldStringLiteral.Value,
+                                                }:
                                             new TableAccess()
                                             {
                                                 Table = new Variable()
@@ -2004,6 +2027,7 @@ namespace Lua.AST
                 assignments.Add(new Assignment()
                 {
                     PloopClass = PloopClass,
+                    Attribute = Attribute,
                     Targets = new List<IAssignable>()
                     {
                         new Variable()
@@ -2022,6 +2046,7 @@ namespace Lua.AST
                 Debug.Assert(fieldStringLiteral != null, $"fieldStringLiteral is not null");
                 assignments.Add(new Assignment()
                 {
+                    Attribute = Attribute,
                     PloopClass = PloopClass,
                     Targets = new List<IAssignable>()
                     {
@@ -2029,7 +2054,7 @@ namespace Lua.AST
                         {
                             Name = $"Set{PropertyName}",
                         }
-                    },
+                    },  
                     Values = new List<IExpression>()
                     {
                         new FunctionDefinition()
@@ -2046,6 +2071,10 @@ namespace Lua.AST
                                     {
                                         Targets = new()
                                         {
+                                            Attribute?.IsStatic??false ? new Variable()
+                                                {
+                                                    Name = fieldStringLiteral.Value,
+                                                }:
                                             new TableAccess()
                                             {
                                                 Table = new Variable()
@@ -2150,6 +2179,19 @@ setmetatable({EnumName}, {{
     public class PloopAttribute : Node, IStatement
     {
         public FunctionCall FunctionCall;
+
+        public bool IsStatic
+        {
+            get
+            {
+                if (FunctionCall.Function is Variable variable)
+                {
+                    return variable.Name == "__Static__";
+                }
+
+                return false;
+            }
+        }
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {

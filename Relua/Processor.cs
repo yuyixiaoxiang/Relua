@@ -223,6 +223,36 @@ public class Processor
 
             moduleAndClasses.Add(moduleAndClasse);
         }
+        
+        //check the attribute
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var _ploopClass in moduleAndClass.Classes)
+            {
+                var Statements = _ploopClass.Statements;
+                for (var i = 0; i < Statements.Count; i++)
+                {
+                    var statement = Statements[i];
+                    PloopAttribute attribute = null;
+                    if (i > 0)
+                    {
+                        if (Statements[i - 1] is PloopAttribute _ploopAttribute)
+                        {
+                            attribute = _ploopAttribute;
+                        }
+                    }
+
+                    if (statement is Assignment assignment)
+                    {
+                        assignment.Attribute = attribute;
+                    }
+                    else if (statement is PloopProperty ploopProperty)
+                    {
+                        ploopProperty.Attribute = attribute;
+                    }
+                }
+            }
+        }
 
         //test same name ploop class 
         var sameclassKeys = new Dictionary<string, List<PloopClass>>();
@@ -516,7 +546,8 @@ public class Processor
                     _ploopClass.Statements.FindAll((statement => statement is PloopProperty));
 
                 var _index = 0;
-                var propertyAssignments = new List<IStatement>();
+                var propertyAssignmentFunctions = new List<IStatement>();
+                var localpropertyFieldAssignments = new List<IStatement>();
                 foreach (var property in properties)
                 {
                     if (property is PloopProperty _ploopProperty)
@@ -525,18 +556,81 @@ public class Processor
                         var fieldAssignment = _ploopProperty.GetPropertyFieldAssignment();
                         if (fieldAssignment != null)
                         {
-                            ctorDefinition.Block.Statements.Insert(_index++, fieldAssignment);
+                            if (!(_ploopProperty.Attribute?.IsStatic ?? false))
+                            {
+                                ctorDefinition.Block.Statements.Insert(_index++, fieldAssignment);
+                            }
+                            else
+                            {
+                                localpropertyFieldAssignments.Add(fieldAssignment);    
+                            }
                         }
-                        propertyAssignments.AddRange(_ploopProperty.GetPropertyFunction());
+                        propertyAssignmentFunctions.AddRange(_ploopProperty.GetPropertyFunction());
                     }
                 }
-                _ploopClass.Statements.InsertRange(0, propertyAssignments);    
+                //check
+                if (localpropertyFieldAssignments.Count > 0)
+                {
+                    foreach (var assignment in localpropertyFieldAssignments)
+                    {
+                        var assignment_ = assignment as Assignment;
+                        var fieldName = (assignment_.Targets[0] as Variable).Name;
+                        var exists = _ploopClass.Statements.Exists((statement =>
+                        {
+                            if(statement is Assignment assignment){
+                                if (assignment.IsLocal)
+                                {
+                                    if (assignment.Targets.Exists((assignable =>
+                                        {
+                                            if (assignable is Variable _variable)
+                                            {
+                                                if (_variable.Name == fieldName)
+                                                {
+                                                    return true;
+                                                }
+                                            }
+
+                                            return false;
+                                        })))
+                                    {
+                                        return true;
+                                    }
+                                }
+                            }
+                            return false;
+                        }));
+                        if (exists == false)
+                        {
+                            _ploopClass.Statements.Insert(0, assignment);            
+                        }
+                    }
+                }
+
+                //add the assignments get/set
+                _ploopClass.Statements.InsertRange(0, propertyAssignmentFunctions);    
                 
+                
+                //rearrange all the local assignment
+                var allLocalAssignments = _ploopClass.Statements.FindAll((statement =>
+                {
+                    if (statement is Assignment assignment)
+                    {
+                        if (assignment.IsLocal)
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }));
+                _ploopClass.Statements.RemoveAll((statement => allLocalAssignments.Contains(statement)));
+                _ploopClass.Statements.InsertRange(0,allLocalAssignments);
+
                 //check GetXXX/SetXXX
-                
-                
-                
-                
+
+
+
+
             }
         }
 
