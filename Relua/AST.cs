@@ -1138,7 +1138,7 @@ namespace Lua.AST
                 if (i < ArgumentNames.Count - 1) writer.Write(", ");
             }
 
-            if (AcceptsVarargs)
+            if (AcceptsVarargs && !ArgumentNames.Contains("..."))
             {
                 if (arg_start_idx == 0 ||　ArgumentNames.Count > 1)
                 {
