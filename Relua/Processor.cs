@@ -50,9 +50,10 @@ public class Processor
             }
         }
 
+        
         //post process
+        ProcessSafeRequireFile();
         PostprocessModuleAndPartialClass();
-
         //outout 
         List<(string path, string content)> outputs = new List<(string path, string content)>();
         foreach (var file in files)
@@ -64,6 +65,69 @@ public class Processor
         }
 
         return outputs;
+    }
+
+    private void ProcessSafeRequireFile()
+    {
+        var removerequire = new List<IStatement>();
+        foreach (var file in files)
+        {
+            removerequire.Clear();
+            for (var i = 0; i < file.Block.Statements.Count; i++)
+            {
+                var statement = file.Block.Statements[i];
+                if (statement is FunctionCall functionCall)
+                {
+                    if (functionCall.Function is Variable variable)
+                    {
+                        if (variable.Name == "require")
+                        {
+                            removerequire.Add(statement);
+                            continue;
+                            var requirePath = functionCall.Arguments[0] as StringLiteral;
+                            file.Block.Statements[i] = new If()
+                            {
+                                MainIf = new ConditionalBlock()
+                                {
+                                    Block = new Block()
+                                    {
+                                        Statements = new List<IStatement>()
+                                        {
+                                            functionCall
+                                        }
+                                    },
+                                    Condition = new UnaryOp()
+                                    {
+                                        Type = UnaryOp.OpType.Invert,
+                                        Expression = new TableAccess()
+                                        {
+                                            Table = new TableAccess()
+                                            {
+                                                Table = new Variable()
+                                                {
+                                                    Name = "package",
+                                                },
+                                                Index = new StringLiteral()
+                                                {
+                                                    Value = "loaded"
+                                                }
+                                            },
+                                            Index = new StringLiteral()
+                                            {
+                                                Value = requirePath.Value
+                                            }
+                                        }
+                                    }
+                                }
+                            };
+                            
+                        }
+                    }
+                }
+            }
+
+            file.Block.Statements.RemoveAll((statement => removerequire.Contains(statement)));
+        }
     }
 
     /// <summary>
