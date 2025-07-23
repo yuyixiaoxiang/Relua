@@ -1618,7 +1618,7 @@ namespace Lua.AST
                 writer.WriteLine($"package.loaded[\"{RequirePath}\"] = {ClassName}");
                 foreach (var subPartialRequirePath in SubPartialRequirePaths)
                 {
-                    writer.WriteLine($"if(not package.loaded(\"{subPartialRequirePath}\")) then");
+                    writer.WriteLine($"if(not package.loaded[\"{subPartialRequirePath}\"]) then");
                     writer.WriteLine($"\trequire(\"{subPartialRequirePath}\")  ");
                     writer.WriteLine("end");
                 }
@@ -1627,8 +1627,8 @@ namespace Lua.AST
                 writer.WriteLine();
             }
 
-            if (singleFileMultiClass == false)
-                writer.Write($"return {ClassName}");
+            // if (singleFileMultiClass == false)
+            //     writer.Write($"return {ClassName}");
         }
 
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)

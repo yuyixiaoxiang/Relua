@@ -143,6 +143,19 @@ public class Processor
                     }
                 });
             }
+            else
+            {
+                if (moduleAndClasse.Classes.Count > 0)
+                {
+                    file.Block.Statements.Add(new Return()
+                    {
+                        Expressions = new List<IExpression>()
+                        {
+                            new Variable(){Name =moduleAndClasse.Classes[0].ClassName }
+                        }
+                    });    
+                }
+            }
 
             moduleAndClasses.Add(moduleAndClasse);
         }
