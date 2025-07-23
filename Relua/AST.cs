@@ -1588,8 +1588,12 @@ namespace Lua.AST
             else
             {
                 //sub partial class
+                writer.WriteLine($"---------reserve in advance--------------------");
+                writer.WriteLine($"package.loaded[\"{RequirePath}\"] = {{}}");
                 writer.WriteLine($"---@type {ClassName}");
                 writer.WriteLine($"local {ClassName} = require(\"{MainPartialRequirePath}\")");
+                writer.WriteLine($"---------assign to package.load--------------------");
+                writer.WriteLine($"package.loaded[\"{RequirePath}\"] = {ClassName}");
             }
 
 
@@ -1614,7 +1618,9 @@ namespace Lua.AST
                 writer.WriteLine($"package.loaded[\"{RequirePath}\"] = {ClassName}");
                 foreach (var subPartialRequirePath in SubPartialRequirePaths)
                 {
-                    writer.WriteLine($"require(\"{subPartialRequirePath}\")  ");
+                    writer.WriteLine($"if(not package.loaded(\"{subPartialRequirePath}\")) then");
+                    writer.WriteLine($"\trequire(\"{subPartialRequirePath}\")  ");
+                    writer.WriteLine("end");
                 }
 
                 writer.WriteLine("---------auto include sub partial class--------------------");
