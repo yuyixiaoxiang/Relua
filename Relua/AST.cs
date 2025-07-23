@@ -2115,6 +2115,21 @@ namespace Lua.AST
             writer.Write($"{EnumName} = ");
             enumStruct.Write(writer, null);
             writer.WriteLine();
+            //assign meta table and call __call function 
+          
+            writer.WriteLine($@"
+setmetatable({EnumName}, {{
+    __call = function(self, value)
+        for key, val in pairs(self) do
+            if val == value then
+                return key
+            end
+        end
+        return """"
+    end
+}})
+            ");
+            
         }
 
         // public override void Accept(IVisitor visitor) => visitor.Visit(this);
