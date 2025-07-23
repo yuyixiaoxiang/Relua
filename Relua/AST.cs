@@ -1224,7 +1224,7 @@ namespace Lua.AST
         public void WriteNamedFunctionStyle(IndentAwareTextWriter writer, string name, FunctionDefinition func)
         {
             writer.Write("function ");
-            if (PloopClass != null)
+            if (PloopClass != null && !IsLocal)
             {
                 writer.Write($"{PloopClass.ClassName}:{name}");
             }
