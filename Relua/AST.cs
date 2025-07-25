@@ -32,6 +32,10 @@ namespace Lua.AST
             return Array.Empty<string>();
         }
 
+        public void ExportableVariables(ICheckContext context)
+        {
+        }
+
         public abstract void CheckNode(ICheckContext context,Node parent);
 
         public abstract void Write(IndentAwareTextWriter writer, object data = null);
@@ -94,37 +98,65 @@ namespace Lua.AST
         }
     }
 
+    public class ExportVariable
+    {
+        public string VariableName;
+        public bool IsField;
+        public bool IsClass;
+        public bool IsMethod;
+        public bool IsClassField;
+        public bool IsClassMethod;
+
+        public override string ToString()
+        {
+            return
+                $"{nameof(VariableName)}: {VariableName}, {nameof(IsField)}: {IsField}, {nameof(IsClass)}: {IsClass}, {nameof(IsMethod)}: {IsMethod}, {nameof(IsClassField)}: {IsClassField}, {nameof(IsClassMethod)}: {IsClassMethod}";
+        }
+    }
+
     public interface ICheckNode
     {
         void CheckNode(ICheckContext context,Node parent);
         void LookupVariable(ICheckContext context, Node child, string variable);
         IList<string> ProvideVariables();
+        void ExportableVariables(ICheckContext context);
     }
 
     public interface ICheckContext
     {
         void AddRequiredVariable(string variable);
         ICollection<string> GetRequiredVariables();
+        void AddExportVariable(ExportVariable exportVariable);
+        ICollection<ExportVariable> GetExportableVariables();
     }
-    
+
     public class CheckContext : ICheckContext
     {
         private HashSet<string> requiredVariables = new HashSet<string>();
+        private List<ExportVariable> exportableVariables = new List<ExportVariable>();
 
-        private  HashSet<string> PUBLIC_FUNCTIONS = new HashSet<string>()
+        private HashSet<string> PUBLIC_FUNCTIONS = new HashSet<string>()
         {
-            "table","ipairs","logError","math","type","tonumber","pairs"
-        };   
-        
+            "table", "ipairs", "logError", "math", "type", "tonumber", "pairs", "safe","logWarn","tostring","VhLog","logErrorEx","debug",
+            "tostring","logEx","log","protobuf","showMsg","string","VhLogError"
+        };
+
         private HashSet<string> PLOOP_VARIABLES = new HashSet<string>()
         {
-            "System",
-        };   
-        
+            "System","self",
+        };
+
         private HashSet<string> GLOBALS_VARIABLES = new HashSet<string>()
         {
-            "MODULE","DATA","EVENT",
+            "MODULE", "DATA", "EVENT","NET","VIEW","g_Util","NO_UPDATE","ACTION","ELEX_SDK","Timer","Time","EPSDK"
         };
+
+        private HashSet<string> OMIT_EXPORTABLE_VARIABLES = new()
+        {
+            "__ctor","__dtor"
+        };
+    
+
         public void AddRequiredVariable(string variable)
         {
             if(Tokenizer.RESERVED_KEYWORDS.Contains(variable))
@@ -138,14 +170,27 @@ namespace Lua.AST
             requiredVariables.Add(variable);
         }
 
+        public void AddExportVariable(ExportVariable variable)
+        {
+            if(OMIT_EXPORTABLE_VARIABLES.Contains(variable.VariableName))
+                return;
+            exportableVariables.Add(variable);
+        }
+
         public ICollection<string> GetRequiredVariables()
         {
             return requiredVariables;
         }
 
+        public ICollection<ExportVariable> GetExportableVariables()
+        {
+            return exportableVariables;
+        }
+
         public override string ToString()
         {
-            return $"--------------------RequireVariable---------------------\n{string.Join(",",requiredVariables)}";
+            return $"-----------------------------------------\nRequireVariables:{string.Join("\n\t",requiredVariables)}" +
+                   $"\nExportableVariables:{string.Join("\n\t",exportableVariables)}";
         }
     }
     /// <summary>
@@ -1109,6 +1154,14 @@ namespace Lua.AST
             base.LookupVariable(context,child, variable);
         }
 
+        public void ExportableVariables(ICheckContext context)
+        {
+            foreach (var statement in Statements)
+            {
+                statement.ExportableVariables(context);
+            }
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             Write(writer, true);
@@ -1552,6 +1605,38 @@ namespace Lua.AST
             }
         }
 
+        public void ExportableVariables(ICheckContext context)
+        {
+            if (IsLocal == false)
+            {
+                for (var i = 0; i < Targets.Count; i++)
+                {
+                    var target = Targets[i];
+                    if (target is Variable variable )
+                    {
+                        if (Values[i] is FunctionDefinition functionDefinition)
+                        {
+                            context.AddExportVariable(new ExportVariable()
+                            {
+                                VariableName = variable.Name,
+                                IsMethod = true,
+                                IsClassMethod = PloopClass != null,
+                            });    
+                        }
+                        else
+                        {
+                            context.AddExportVariable(new ExportVariable()
+                            {
+                                VariableName = variable.Name,
+                                IsField = true,
+                                IsClassField = PloopClass != null,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
         public void WriteNamedFunctionStyle(IndentAwareTextWriter writer, string name, FunctionDefinition func)
         {
             writer.Write("function ");
@@ -1809,6 +1894,33 @@ namespace Lua.AST
                 statement.CheckNode(context, this);
             }
         }
+        
+        public override void LookupVariable(ICheckContext context, Node child, string variable)
+        {
+            var indexOf = Statements.IndexOf((IStatement)child);
+            if (indexOf > 0)
+            {
+                for (var i = indexOf-1; i >= 0; i--)
+                {
+                    var provides = Statements[i].ProvideVariables();
+                    if (provides.Contains(variable))
+                    {
+                        Console.WriteLine($"find variable {variable}");
+                        return;
+                    }
+                }
+            }
+            
+            base.LookupVariable(context,child, variable);
+        }
+
+        public void ExportableVariables(ICheckContext context)
+        {
+            foreach (var statement in Statements)
+            {
+                statement.ExportableVariables(context);
+            }
+        }
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
@@ -1849,6 +1961,33 @@ namespace Lua.AST
             foreach (var statement in Statements)
             {
                 statement.CheckNode(context, this);
+            }
+        }
+
+        public override void LookupVariable(ICheckContext context, Node child, string variable)
+        {
+            var indexOf = Statements.IndexOf((IStatement)child);
+            if (indexOf > 0)
+            {
+                for (var i = indexOf-1; i >= 0; i--)
+                {
+                    var provides = Statements[i].ProvideVariables();
+                    if (provides.Contains(variable))
+                    {
+                        Console.WriteLine($"find variable {variable}");
+                        return;
+                    }
+                }
+            }
+            
+            base.LookupVariable(context,child, variable);
+        }
+
+        public void ExportableVariables(ICheckContext context)
+        {
+            foreach (var statement in Statements)
+            {
+                statement.ExportableVariables(context);
             }
         }
 
@@ -1916,6 +2055,39 @@ namespace Lua.AST
             foreach (var statement in Statements)
             {
                 statement.CheckNode(context, this);
+            }
+        }
+
+        public override void LookupVariable(ICheckContext context, Node child, string variable)
+        {
+            var indexOf = Statements.IndexOf((IStatement)child);
+            if (indexOf > 0)
+            {
+                for (var i = indexOf-1; i >= 0; i--)
+                {
+                    var provides = Statements[i].ProvideVariables();
+                    if (provides.Contains(variable))
+                    {
+                        Console.WriteLine($"find variable {variable}");
+                        return;
+                    }
+                }
+            }
+            
+            base.LookupVariable(context,child, variable);
+        }
+
+        public void ExportableVariables(ICheckContext context)
+        {
+            context.AddExportVariable(new ExportVariable()
+            {
+                VariableName = ClassName,
+                IsClass = true
+            });
+
+            foreach (var statement in Statements)
+            {
+                statement.ExportableVariables(context);
             }
         }
 
@@ -2054,6 +2226,24 @@ namespace Lua.AST
             AnalysisExpressions();
             this.parent = parent;
             PropertyTable.CheckNode(context, this);
+        }
+
+        public override IList<string> ProvideVariables()
+        {
+            AnalysisExpressions();
+            return new List<string>()
+            {
+                PropertyName,fieldStringLiteral.Value
+            };
+        }
+
+        public void ExportableVariables(ICheckContext context)
+        {
+            context.AddExportVariable(new ExportVariable()
+            {
+                VariableName = PropertyName,
+                IsClassField = true
+            });
         }
 
         /// <summary>
@@ -2498,6 +2688,20 @@ namespace Lua.AST
         public override void CheckNode(ICheckContext context,Node parent)
         {
             this.parent = parent;
+        }
+
+        public override IList<string> ProvideVariables()
+        {
+            return [EnumName];
+        }
+
+        public void ExportableVariables(ICheckContext context)
+        {
+            context.AddExportVariable(new ExportVariable()
+            {
+                IsField = true,
+                VariableName = EnumName
+            });
         }
 
         public override void Write(IndentAwareTextWriter writer, object data)

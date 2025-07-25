@@ -15,8 +15,10 @@ namespace Lua
             var tokenizer = new Tokenizer(File.ReadAllText(testluafile));
             var parser = new Parser(tokenizer);
             var expr = parser.Read();
+            expr.ToString();
             var context = new CheckContext();
             expr.CheckNode(context,null);
+            expr.ExportableVariables(context);
             Console.WriteLine($"{context}");
             
             var outpath = "f:/lua2ts/outputfile.lua";
