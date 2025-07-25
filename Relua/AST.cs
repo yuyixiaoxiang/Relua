@@ -247,24 +247,24 @@ namespace Lua.AST
         {
             this.parent = parent;
             
-            StringBuilder sb = new StringBuilder();
-            var path = new List<Node>();
-            Node current = this;
-    
-            // 迭代向上查找，直到根节点
-            while (current != null)
-            {
-                path.Add(current);
-                current = current.parent;
-            }
-    
-            // 反转路径，使其从根节点开始
-            path.Reverse();
-            var str = string.Join("-->", path.Select(node =>
-            {
-                return node.GetTag();
-            }));
-            Console.WriteLine(str);
+            // StringBuilder sb = new StringBuilder();
+            // var path = new List<Node>();
+            // Node current = this;
+            //
+            // // 迭代向上查找，直到根节点
+            // while (current != null)
+            // {
+            //     path.Add(current);
+            //     current = current.parent;
+            // }
+            //
+            // // 反转路径，使其从根节点开始
+            // path.Reverse();
+            // var str = string.Join("-->", path.Select(node =>
+            // {
+            //     return node.GetTag();
+            // }));
+            // Console.WriteLine(str);
             
             LookupVariable(context,this,Name);
         }
@@ -1019,6 +1019,7 @@ namespace Lua.AST
             writer.DecreaseIndent();
             writer.WriteLine();
             writer.Write("}");
+            // writer.WriteLine();
         }
         
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
@@ -1139,7 +1140,7 @@ namespace Lua.AST
                     var provides = Statements[i].ProvideVariables();
                     if (provides.Contains(variable))
                     {
-                        Console.WriteLine($"find variable {variable}");
+                        // Console.WriteLine($"find variable {variable}");
                         return;
                     }
                 }
@@ -1148,7 +1149,7 @@ namespace Lua.AST
             if (parent == null)
             {
                 context.AddRequiredVariable(variable);
-                Console.WriteLine($"not find variable {variable},node:{child.GetTag()}");
+                // Console.WriteLine($"not find variable {variable},node:{child.GetTag()}");
                 return;    
             }
             base.LookupVariable(context,child, variable);
@@ -1432,7 +1433,7 @@ namespace Lua.AST
         {
             if (ProvideVariables().Contains(variable))
             {
-                Console.WriteLine($"find variable {variable}");
+                // Console.WriteLine($"find variable {variable}");
                 return;
             }
 
@@ -1555,6 +1556,14 @@ namespace Lua.AST
         public PloopAttribute Attribute;
         public List<IAssignable> Targets = new List<IAssignable>();
         public List<IExpression> Values = new List<IExpression>();
+
+        public bool IsFunctionAssignment
+        {
+            get
+            {
+                return Values[0] is FunctionDefinition;
+            }
+        }
 
         public override IList<string> ProvideVariables()
         {
@@ -1905,7 +1914,7 @@ namespace Lua.AST
                     var provides = Statements[i].ProvideVariables();
                     if (provides.Contains(variable))
                     {
-                        Console.WriteLine($"find variable {variable}");
+                        // Console.WriteLine($"find variable {variable}");
                         return;
                     }
                 }
@@ -1974,7 +1983,7 @@ namespace Lua.AST
                     var provides = Statements[i].ProvideVariables();
                     if (provides.Contains(variable))
                     {
-                        Console.WriteLine($"find variable {variable}");
+                        // Console.WriteLine($"find variable {variable}");
                         return;
                     }
                 }
@@ -2068,7 +2077,7 @@ namespace Lua.AST
                     var provides = Statements[i].ProvideVariables();
                     if (provides.Contains(variable))
                     {
-                        Console.WriteLine($"find variable {variable}");
+                        // Console.WriteLine($"find variable {variable}");
                         return;
                     }
                 }
@@ -2134,16 +2143,17 @@ namespace Lua.AST
                 writer.WriteLine($"package.loaded[\"{RequirePath}\"] = {ClassName}");
             }
 
-
+            writer.WriteLine();
             // writer.IncreaseIndent();
 
-            var first = true;
+            // var first = true;
             foreach (var statement in Statements)
             {
 //                if(first == false)
-                writer.WriteLine();
+                if(statement is Assignment assignment && assignment.IsFunctionAssignment)
+                    writer.WriteLine();
                 statement.Write(writer, this);
-                first = false;
+                // first = false;
                 writer.WriteLine();
             }
 

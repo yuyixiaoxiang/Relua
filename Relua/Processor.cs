@@ -42,6 +42,10 @@ public class Processor
                 var tokenizer = new Tokenizer(File.ReadAllText(file.srcPath));
                 var parser = new Parser(tokenizer);
                 var expr = parser.Read();
+                expr.ToString();
+                var context = new CheckContext();
+                expr.CheckNode(context,null);
+                expr.ExportableVariables(context);
                 file.Block = expr;
             }
             catch (Exception e)

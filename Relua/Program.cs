@@ -9,7 +9,7 @@ namespace Lua
     {
         public static int Main(string[] args)
         {
-            FilterAllPloopClass();
+            ProcessAllPloopClass();
             return default;
             var testluafile = @"f:/lua2ts/infile.lua";
             var tokenizer = new Tokenizer(File.ReadAllText(testluafile));
@@ -27,7 +27,7 @@ namespace Lua
             return default;
         }
 
-        private static void FilterAllPloopClass()
+        private static void ProcessAllPloopClass()
         {
             var topLuaDir = "D:\\slgframework2\\Assets\\client-code\\LuaFramework\\Lua";
             Console.WriteLine(topLuaDir);
@@ -36,11 +36,11 @@ namespace Lua
             var processor = new Processor();
             foreach (var file in resut)
             {
-                if (file.FileName.Contains("LoginModule") == false)
+                if (file.FileName.EndsWith("LoginModule.lua") == false)
                 {
                     // continue;
                 }
-
+                
                 var srcPath = file.FilePath;
                 var requirePath =Path.GetRelativePath(topLuaDir,srcPath).Replace(Path.GetExtension(srcPath),"").Replace("\\","/");
                 var outpath = srcPath.Insert(srcPath.LastIndexOf(".lua", StringComparison.Ordinal), "");
@@ -49,6 +49,7 @@ namespace Lua
 
             var outfiles = processor.Process();
 
+            // return;
             foreach (var outfile in outfiles)
             {
                 if (File.Exists(outfile.path))
