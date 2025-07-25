@@ -25,7 +25,6 @@ public class PloopScanner
         "GameNet\\Core",
         "GamePlay\\GameModule.lua",
         "GamePlay\\GameData.lua"
-        
     };
 
 

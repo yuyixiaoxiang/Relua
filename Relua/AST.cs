@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection.Emit;
+﻿using System.Diagnostics;
 using System.Text;
 
 namespace Lua.AST
@@ -10,16 +6,46 @@ namespace Lua.AST
     /// <summary>
     /// Base class of all Lua AST node.
     /// </summary>
-    public abstract class Node
+    public abstract class Node : ICheckNode
     {
+        private Node _parent;
+        private HashSet<Node> _children = new HashSet<Node>();
+        public HashSet<Node> children => _children;
+
+        public Node parent
+        {
+            get { return _parent; }
+            set
+            {
+                _parent = value;
+                value?.children.Add(this);
+            }
+        }
+
+        public virtual void LookupVariable(ICheckContext context,Node child,string variable)
+        {
+            parent?.LookupVariable(context,this,variable);
+        }
+
+        public virtual IList<string> ProvideVariables()
+        {
+            return Array.Empty<string>();
+        }
+
+        public abstract void CheckNode(ICheckContext context,Node parent);
+
         public abstract void Write(IndentAwareTextWriter writer, object data = null);
 
-        // public abstract void Accept(IVisitor visitor);
         public abstract void Write2TS(IndentAwareTextWriter writer, object data = null);
 
         public override string ToString()
         {
             return ToString(false);
+        }
+
+        public virtual string GetTag()
+        {
+            return GetType().Name+$"({this.GetHashCode()})";
         }
 
         public virtual string ToString(bool one_line)
@@ -33,14 +59,102 @@ namespace Lua.AST
         }
     }
 
+    public class IntermediateNode : Node
+    {
+        protected ICheckNode node;
+        protected string TAG;
+        public IntermediateNode()
+        {
+        }
+        public IntermediateNode(ICheckNode node, string TAG)
+        {
+            this.node = node;
+            this.TAG = TAG;
+        }
+
+        public override string GetTag()
+        {
+            return this.TAG+$"({this.GetHashCode()})";
+        }
+
+        public override void Write(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void CheckNode(ICheckContext context, Node parent)
+        {
+            this.parent = parent;
+            node.CheckNode(context, this);
+        }
+
+        public override void Write2TS(IndentAwareTextWriter writer, object data = null)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public interface ICheckNode
+    {
+        void CheckNode(ICheckContext context,Node parent);
+        void LookupVariable(ICheckContext context, Node child, string variable);
+        IList<string> ProvideVariables();
+    }
+
+    public interface ICheckContext
+    {
+        void AddRequiredVariable(string variable);
+        ICollection<string> GetRequiredVariables();
+    }
+    
+    public class CheckContext : ICheckContext
+    {
+        private HashSet<string> requiredVariables = new HashSet<string>();
+
+        private  HashSet<string> PUBLIC_FUNCTIONS = new HashSet<string>()
+        {
+            "table","ipairs","logError","math","type","tonumber","pairs"
+        };   
+        
+        private HashSet<string> PLOOP_VARIABLES = new HashSet<string>()
+        {
+            "System",
+        };   
+        
+        private HashSet<string> GLOBALS_VARIABLES = new HashSet<string>()
+        {
+            "MODULE","DATA","EVENT",
+        };
+        public void AddRequiredVariable(string variable)
+        {
+            if(Tokenizer.RESERVED_KEYWORDS.Contains(variable))
+                return;
+            if(PUBLIC_FUNCTIONS.Contains(variable))
+                return;
+            if(PLOOP_VARIABLES.Contains(variable))
+                return;
+            if(GLOBALS_VARIABLES.Contains(variable))
+                return;
+            requiredVariables.Add(variable);
+        }
+
+        public ICollection<string> GetRequiredVariables()
+        {
+            return requiredVariables;
+        }
+
+        public override string ToString()
+        {
+            return $"--------------------RequireVariable---------------------\n{string.Join(",",requiredVariables)}";
+        }
+    }
     /// <summary>
     /// Interface (used as a sort of "type tag") for Lua AST nodes that are statements.
     /// </summary>
-    public interface IStatement
+    public interface IStatement : ICheckNode
     {
         void Write(IndentAwareTextWriter writer, object data = null);
 
-        // void Accept(IVisitor visitor);
         void Write2TS(IndentAwareTextWriter writer, object data = null);
         string ToString(bool one_line);
     }
@@ -48,11 +162,10 @@ namespace Lua.AST
     /// <summary>
     /// Interface (used as a sort of "type tag") for Lua AST nodes that are expressions.
     /// </summary>
-    public interface IExpression
+    public interface IExpression : ICheckNode
     {
         void Write(IndentAwareTextWriter writer, object data = null);
-
-        // void Accept(IVisitor visitor);
+        
         void Write2TS(IndentAwareTextWriter writer, object data = null);
         string ToString(bool one_line);
     }
@@ -61,11 +174,10 @@ namespace Lua.AST
     /// Interface (used as a sort of "type tag") for Lua AST nodes that are "assignable" expressions
     /// (variables and table access).
     /// </summary>
-    public interface IAssignable
+    public interface IAssignable : ICheckNode
     {
         void Write(IndentAwareTextWriter writer, object data);
-        // void Accept(IVisitor visitor);
-
+        
         void Write2TS(IndentAwareTextWriter writer, object data);
         string ToString(bool one_line);
     }
@@ -80,14 +192,43 @@ namespace Lua.AST
     public class Variable : Node, IExpression, IAssignable
     {
         public string Name;
+        
+        public override string GetTag()
+        {
+            return $"Variable({Name})";
+        }
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            
+            StringBuilder sb = new StringBuilder();
+            var path = new List<Node>();
+            Node current = this;
+    
+            // 迭代向上查找，直到根节点
+            while (current != null)
+            {
+                path.Add(current);
+                current = current.parent;
+            }
+    
+            // 反转路径，使其从根节点开始
+            path.Reverse();
+            var str = string.Join("-->", path.Select(node =>
+            {
+                return node.GetTag();
+            }));
+            Console.WriteLine(str);
+            
+            LookupVariable(context,this,Name);
+        }
+        
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write(Name);
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -105,13 +246,16 @@ namespace Lua.AST
     {
         public static NilLiteral Instance = new NilLiteral();
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("nil");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -133,13 +277,16 @@ namespace Lua.AST
     {
         public static VarargsLiteral Instance = new VarargsLiteral();
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("...");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -160,13 +307,16 @@ namespace Lua.AST
         public static BoolLiteral FalseInstance = new BoolLiteral { Value = false };
         public bool Value;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write(Value ? "true" : "false");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -203,6 +353,12 @@ namespace Lua.AST
             Expression = expr;
         }
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            Expression.CheckNode(context,this);
+        }
+
         public static void WriteUnaryOp(OpType type, IndentAwareTextWriter writer)
         {
             switch (type)
@@ -220,9 +376,7 @@ namespace Lua.AST
             (Expression as Node).Write(writer);
             writer.Write(")");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -297,7 +451,8 @@ namespace Lua.AST
                 case OpType.Or: writer.Write("or"); break;
             }
         }
-
+        
+        
         public BinaryOp()
         {
         }
@@ -313,6 +468,13 @@ namespace Lua.AST
         public IExpression Left;
         public IExpression Right;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            Left.CheckNode(context,this);
+            Right.CheckNode(context,this);
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("(");
@@ -323,9 +485,7 @@ namespace Lua.AST
             (Right as Node).Write(writer);
             writer.Write(")");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -368,13 +528,16 @@ namespace Lua.AST
 
         public string Value;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             Quote(writer, Value);
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -395,6 +558,11 @@ namespace Lua.AST
         public double Value;
         public bool HexFormat = false;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             if (HexFormat)
@@ -404,9 +572,7 @@ namespace Lua.AST
             }
             else writer.Write(Value);
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -429,6 +595,11 @@ namespace Lua.AST
         public long Value;
         public bool HexFormat = false;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             if (HexFormat)
@@ -440,9 +611,7 @@ namespace Lua.AST
 
             writer.Write("LL");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -505,6 +674,13 @@ namespace Lua.AST
             return s.ToString();
         }
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            new IntermediateNode(Table,"TableAccessTable").CheckNode(context,this);
+            new IntermediateNode(Index,"TableAccessIndex").CheckNode(context,this);
+        }
+
         public void WriteDotStyle(IndentAwareTextWriter writer, string index)
         {
             if (Table is StringLiteral) writer.Write("(");
@@ -535,9 +711,7 @@ namespace Lua.AST
                 WriteGenericStyle(writer);
             }
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -580,6 +754,17 @@ namespace Lua.AST
         public List<IExpression> Arguments = new List<IExpression>();
         public bool ForceTruncateReturnValues = false;
 
+
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            foreach (var argument in Arguments)
+            {
+               new IntermediateNode(argument,"FunctionCallArg").CheckNode(context,this);
+            }
+            new IntermediateNode(Function,"FunctionCallFuncName").CheckNode(context,this);   
+        }
+        
         public void WriteMethodStyle(IndentAwareTextWriter writer, IExpression obj, string method_name)
         {
             if (obj is FunctionDefinition) writer.Write("(");
@@ -631,9 +816,7 @@ namespace Lua.AST
 
             if (ForceTruncateReturnValues) writer.Write(")");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -686,6 +869,13 @@ namespace Lua.AST
             public IExpression Value;
             public bool ExplicitKey;
 
+            public override void CheckNode(ICheckContext context,Node parent)
+            {
+                this.parent = parent;
+                Key.CheckNode(context,this);
+                Value.CheckNode(context,this);
+            }
+
             public void WriteIdentifierStyle(IndentAwareTextWriter writer, string index)
             {
                 writer.Write(index);
@@ -724,9 +914,7 @@ namespace Lua.AST
                     WriteGenericStyle(writer);
                 }
             }
-
-            // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+            
             public override void Write2TS(IndentAwareTextWriter writer, object data = null)
             {
                 throw new NotImplementedException();
@@ -734,6 +922,15 @@ namespace Lua.AST
         }
 
         public List<Entry> Entries = new List<Entry>();
+
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            foreach (var entry in Entries)
+            {
+                entry.CheckNode(context,this);
+            }
+        }
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
@@ -778,9 +975,7 @@ namespace Lua.AST
             writer.WriteLine();
             writer.Write("}");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -796,13 +991,16 @@ namespace Lua.AST
     /// </summary>
     public class Break : Node, IStatement
     {
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("break");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -825,6 +1023,15 @@ namespace Lua.AST
         /// </summary>
         public bool Redundant;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            foreach (var expression in Expressions)
+            {
+                expression.CheckNode(context,this);
+            }
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             if (Redundant)
@@ -843,9 +1050,7 @@ namespace Lua.AST
                 if (i < Expressions.Count - 1) writer.Write(", ");
             }
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -869,6 +1074,40 @@ namespace Lua.AST
         public bool TopLevel;
 
         public bool IsEmpty => Statements.Count == 0;
+
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            foreach (var statement in Statements)
+            {
+                statement.CheckNode(context,this);
+            }
+        }
+        
+        public override void LookupVariable(ICheckContext context,Node child, string variable)
+        {
+            var indexOf = Statements.IndexOf((IStatement)child);
+            if (indexOf > 0)
+            {
+                for (var i = indexOf-1; i >= 0; i--)
+                {
+                    var provides = Statements[i].ProvideVariables();
+                    if (provides.Contains(variable))
+                    {
+                        Console.WriteLine($"find variable {variable}");
+                        return;
+                    }
+                }
+            }
+            
+            if (parent == null)
+            {
+                context.AddRequiredVariable(variable);
+                Console.WriteLine($"not find variable {variable},node:{child.GetTag()}");
+                return;    
+            }
+            base.LookupVariable(context,child, variable);
+        }
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
@@ -904,9 +1143,7 @@ namespace Lua.AST
                 writer.Write("end");
             }
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -923,6 +1160,13 @@ namespace Lua.AST
         public IExpression Condition;
         public Block Block;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            Condition.CheckNode(context,this);
+            Block.CheckNode(context,this);
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data = null)
         {
             writer.Write("if ");
@@ -934,9 +1178,7 @@ namespace Lua.AST
             writer.DecreaseIndent();
             writer.WriteLine();
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -961,6 +1203,17 @@ namespace Lua.AST
         public List<ConditionalBlock> ElseIfs = new List<ConditionalBlock>();
         public Block Else;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            MainIf?.CheckNode(context,this);
+            foreach (var elseIf in ElseIfs)
+            {
+                elseIf.CheckNode(context,this);
+            }
+            Else?.CheckNode(context,this);
+        }
+        
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             MainIf.Write(writer);
@@ -982,9 +1235,7 @@ namespace Lua.AST
 
             writer.Write("end");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1005,6 +1256,13 @@ namespace Lua.AST
         public IExpression Condition;
         public Block Block;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            Condition.CheckNode(context,this);
+            Block.CheckNode(context,this);
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("while ");
@@ -1017,9 +1275,7 @@ namespace Lua.AST
             writer.WriteLine();
             writer.Write("end");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1040,6 +1296,13 @@ namespace Lua.AST
         public IExpression Condition;
         public Block Block;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            Condition.CheckNode(context,this);
+            Block.CheckNode(context,this);
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("repeat");
@@ -1051,9 +1314,7 @@ namespace Lua.AST
             writer.Write("until ");
             Condition.Write(writer);
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1108,6 +1369,28 @@ namespace Lua.AST
         public bool ImplicitSelf = false;
         public PloopClass PloopClass;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            Block.CheckNode(context,this);
+        }
+
+        public override void LookupVariable(ICheckContext context,Node child, string variable)
+        {
+            if (ProvideVariables().Contains(variable))
+            {
+                Console.WriteLine($"find variable {variable}");
+                return;
+            }
+
+            base.LookupVariable(context,child, variable);
+        }
+
+        public override IList<string> ProvideVariables()
+        {
+            return ArgumentNames;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data = null)
         {
             if (data != null && data is FunctionDefinitionData _data)
@@ -1161,9 +1444,7 @@ namespace Lua.AST
 
             writer.Write("end");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1221,6 +1502,55 @@ namespace Lua.AST
         public PloopAttribute Attribute;
         public List<IAssignable> Targets = new List<IAssignable>();
         public List<IExpression> Values = new List<IExpression>();
+
+        public override IList<string> ProvideVariables()
+        {
+            var list = new List<string>();
+            foreach (var target in Targets)
+            {
+                if(target is Variable variable)
+                    list.Add(variable.Name);
+            }
+            return list;
+        }
+
+        public class AssignmentTargetNode : IntermediateNode
+        {
+            public AssignmentTargetNode(ICheckNode node):base(node,"AssignmentTarget")
+            {
+            }
+
+            public override void LookupVariable(ICheckContext context,Node child, string variable)
+            {
+                // base.LookupVariable(child, variable);
+            }
+        }
+        
+        public class AssignmentValueNode : IntermediateNode
+        {
+            public AssignmentValueNode(ICheckNode node):base(node,"AssignmentValue")
+            {
+            }
+
+            public override void LookupVariable(ICheckContext context,Node child, string variable)
+            {
+                base.LookupVariable(context,child, variable);
+            }
+        }
+        
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            foreach (var target in Targets)
+            {
+                new AssignmentTargetNode(target).CheckNode(context, this);
+            }
+
+            foreach (var value in Values)
+            {
+                new AssignmentValueNode(value).CheckNode(context, this);
+            }
+        }
 
         public void WriteNamedFunctionStyle(IndentAwareTextWriter writer, string name, FunctionDefinition func)
         {
@@ -1338,9 +1668,7 @@ namespace Lua.AST
                 WriteGenericStyle(writer);
             }
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1376,6 +1704,14 @@ namespace Lua.AST
         public IExpression EndPoint;
         public IExpression Step;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            StartPoint.CheckNode(context, this);
+            Step.CheckNode(context, this);
+            EndPoint.CheckNode(context, this);
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("for ");
@@ -1398,9 +1734,7 @@ namespace Lua.AST
             writer.WriteLine();
             writer.Write("end");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1424,6 +1758,12 @@ namespace Lua.AST
         public List<string> VariableNames = new List<string>();
         public IExpression Iterator;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            Iterator.CheckNode(context, this);
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("for ");
@@ -1443,9 +1783,7 @@ namespace Lua.AST
             writer.WriteLine();
             writer.Write("end");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1462,6 +1800,15 @@ namespace Lua.AST
     public class Ploop : Node, IStatement
     {
         public List<IStatement> Statements;
+
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            foreach (var statement in Statements)
+            {
+                statement.CheckNode(context, this);
+            }
+        }
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
@@ -1492,12 +1839,18 @@ namespace Lua.AST
     public class PloopModule : Node, IStatement
     {
         public string ModuleName;
-
         public FunctionCall NamespaceFunction;
-
-        // public string DeterministicNamespace;
         public List<FunctionCall> ImportFunctions = new List<FunctionCall>();
         public List<IStatement> Statements;
+
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            foreach (var statement in Statements)
+            {
+                statement.CheckNode(context, this);
+            }
+        }
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
@@ -1556,6 +1909,15 @@ namespace Lua.AST
         public string MainPartialRequirePath = string.Empty;
         public List<string> SubPartialRequirePaths = new List<string>();
         public PloopClass MainPartialClass;
+
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+            foreach (var statement in Statements)
+            {
+                statement.CheckNode(context, this);
+            }
+        }
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
@@ -1655,8 +2017,6 @@ namespace Lua.AST
             writer.WriteLine();
             writer.Write("}");
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
     }
 
     /// <summary>
@@ -1688,6 +2048,13 @@ namespace Lua.AST
         /// property expressions 
         /// </summary>
         private Dictionary<string, IExpression> propertyExpressions;
+
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            AnalysisExpressions();
+            this.parent = parent;
+            PropertyTable.CheckNode(context, this);
+        }
 
         /// <summary>
         /// first analysis the property table 
@@ -2128,6 +2495,11 @@ namespace Lua.AST
         public string EnumName;
         public TableConstructor enumStruct;
 
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             var dic = new Dictionary<string, IExpression>();
@@ -2160,9 +2532,7 @@ setmetatable({EnumName}, {{
             ");
             
         }
-
-        // public override void Accept(IVisitor visitor) => visitor.Visit(this);
-
+        
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -2191,6 +2561,11 @@ setmetatable({EnumName}, {{
 
                 return false;
             }
+        }
+
+        public override void CheckNode(ICheckContext context,Node parent)
+        {
+            this.parent = parent;
         }
 
         public override void Write(IndentAwareTextWriter writer, object data)
