@@ -2105,12 +2105,12 @@ namespace Lua.AST
             writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");
             if (IsMainPartialClass || !IsPartialClass)
             {
-                writer.WriteLine("local class = require(\"middleclass\")");
+                // writer.WriteLine("local class = require(\"middleclass\")");
                 // ---@class Car : Transport @define class Car extends Transport
                 if (string.IsNullOrEmpty(InheritClassName))
                 {
                     writer.WriteLine($"---@class {ClassName}");
-                    writer.WriteLine($"local {ClassName} = class('{ClassName}') ");
+                    writer.WriteLine($"local {ClassName} = middleclass('{ClassName}') ");
                 }
                 else
                 {
@@ -2129,7 +2129,7 @@ namespace Lua.AST
                     }
                     
                     writer.WriteLine($"---@class {ClassName} : {InheritClassName}");
-                    writer.WriteLine($"local {ClassName} = class('{ClassName}', {InheritClassName}) ");
+                    writer.WriteLine($"local {ClassName} = middleclass('{ClassName}', {InheritClassName}) ");
                 }
             }
             else
@@ -2143,8 +2143,40 @@ namespace Lua.AST
                 writer.WriteLine($"package.loaded[\"{RequirePath}\"] = {ClassName}");
             }
 
-            writer.WriteLine();
-            // writer.IncreaseIndent();
+            if (IsMainPartialClass || !IsPartialClass)
+            {
+                var property = Statements.Count(((statement => statement is PloopProperty)));
+                if (property > 0)
+                {
+                    writer.WriteLine();
+                    // writer.IncreaseIndent();
+            
+                    //add the __index/__newindex
+                    writer.WriteLine($@"
+function {ClassName}:__index(key)
+    local fieldName = '__' .. key:sub(1, 1):lower() .. key:sub(2) 
+    local existField = true --rawget(self,fieldName) ~= nil
+    local getFunc = rawget(self.class.__instanceDict,'Get'..key)
+    if existField and getFunc ~= nil then
+        return getFunc(self)
+    end
+    return nil
+end
+            ");
+                    writer.WriteLine($@"
+function {ClassName}:__newindex(key,value)
+    local fieldName = '__' .. key:sub(1, 1):lower() .. key:sub(2)
+    local existField = true-- rawget(self,fieldName) ~= nil
+    local setFunc = rawget(self.class.__instanceDict,'Set'..key)
+    if existField and setFunc ~= nil then
+        setFunc(self,value)
+    else
+        rawset(self,key,value)
+    end
+end
+            ");
+                }
+            }
 
             // var first = true;
             foreach (var statement in Statements)
