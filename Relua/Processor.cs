@@ -359,6 +359,13 @@ public class Processor
                         inheritClassName = "IContext";
                         _ploopClass.InheritClassName = inheritClassName;
                     }
+                    if (inheritClassName == "Common.StateMachine.IState")
+                    {
+                        inheritClassName = "IState";
+                        _ploopClass.InheritClassName = inheritClassName;
+                    }
+                    
+                    
 
                     Debug.Assert(inheritClassName.Split(".").Length == 1, "inheritClassName.Split('.').Length == 1");
                     if (sameclassKeys.ContainsKey(inheritClassName))

@@ -23,10 +23,8 @@ public class PloopScanner
         "3rd",
         "DataTable",
         "GameNet\\Core",
-        "GamePlay\\GameModule.lua",
         "GamePlay\\GameData.lua"
     };
-
 
     public static List<ScanResult> ScanLuaFiles(string rootPath)
     {

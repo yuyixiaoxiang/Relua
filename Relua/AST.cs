@@ -2102,6 +2102,17 @@ namespace Lua.AST
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
+            //custom
+            if (ClassName == "WorldMapModule" && IsMainPartialClass)
+            {
+                writer.WriteLine($"local MapViewPortChangedHandler = require(\"GameModule/Map/MapViewPortChangedHandler\")");
+                writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");
+                
+            }
+
+            
+            
+            
             writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");
             if (IsMainPartialClass || !IsPartialClass)
             {
@@ -2125,7 +2136,7 @@ namespace Lua.AST
                     }
                     else
                     {
-                        Console.WriteLine($"InheritRequirePath = RequirePath,{InheritRequirePath}");
+                        // Console.WriteLine($"InheritRequirePath = RequirePath,{InheritRequirePath}");
                     }
                     
                     writer.WriteLine($"---@class {ClassName} : {InheritClassName}");
@@ -2450,7 +2461,8 @@ end
                     if (string.IsNullOrEmpty(typeString) == false)
                     {
                         if (typeString == "System.Integer" ||
-                            typeString == "Integer" || typeString == "System.Number" || typeString == "System.number")
+                            typeString == "Integer" || typeString == "System.Number" || typeString == "System.number"||
+                            typeString == "Number")
                         {
                             defaultValueExpression = new NumberLiteral()
                             {
