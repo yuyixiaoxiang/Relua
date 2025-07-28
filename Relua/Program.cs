@@ -45,12 +45,16 @@ namespace Lua
             // "MapNpcObjectComponent",
             // "MapArmyObjectComponent",
             // "GameData/Map/WorldMapData"
+            
+            
+            "GameData/Login/LoginData",
         };
 
         private static List<string> fullcopyfiles = new List<string>()
         {
             "Procedure.lua",
             "GameModule.lua",
+            "GameData.lua",
         };
             
         
