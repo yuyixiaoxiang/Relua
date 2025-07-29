@@ -802,6 +802,48 @@ namespace Lua.AST
 
         public override void CheckNode(ICheckContext context,Node parent)
         {
+            //CUSTOM
+            // if (Function is TableAccess tableAccess)
+            // {
+            //     if (tableAccess.Table is Variable variable && tableAccess.Index is StringLiteral stringLiteral)
+            //     {
+            //         if (variable.Name == "NetPBCManager" && stringLiteral.Value == "RegisterReceiveMsg")
+            //         {
+            //             if (Arguments[3] is TableAccess access)
+            //             {
+            //                 var selfVariable = new Variable() { Name = "self" };
+            //                 Arguments[3] = new FunctionDefinition()
+            //                 {
+            //                     AcceptsVarargs =  true,
+            //                     ArgumentNames =  new List<string>(){"..."},
+            //                     Block = new Block()
+            //                     {
+            //                         Statements = new List<IStatement>()
+            //                         {
+            //                             new FunctionCall()
+            //                             {
+            //                                 Arguments = new List<IExpression>()
+            //                                 {
+            //                                     selfVariable,
+            //                                     new VarargsLiteral(),
+            //                                 },
+            //                                 Function = new TableAccess()
+            //                                 {
+            //                                     Table = selfVariable,
+            //                                     Index = access.Index
+            //                                 }
+            //                             },
+            //                         }
+            //                     }
+            //                 };
+            //             }
+            //         }
+            //     }
+            // }
+
+
+
+
             this.parent = parent;
             foreach (var argument in Arguments)
             {
@@ -1651,7 +1693,23 @@ namespace Lua.AST
             writer.Write("function ");
             if (PloopClass != null && !IsLocal)
             {
-                if(Attribute?.IsStatic ?? false)
+                var isClassMethod = Attribute?.IsStatic ?? false; 
+                //CUSTOM
+                if (PloopClass.parent is PloopModule ploopModule)
+                {
+                    if (ploopModule.ModuleName.StartsWith("Game.Net."))
+                    {
+                        if (Targets[0] is Variable variable)
+                        {
+                            if (variable.Name != "__ctor")
+                            {
+                                isClassMethod = true;        
+                            }
+                        }
+                    }
+                }
+                
+                if(isClassMethod)
                     writer.Write($"{PloopClass.ClassName}.{name}");    
                 else 
                     writer.Write($"{PloopClass.ClassName}:{name}");
@@ -2106,13 +2164,18 @@ namespace Lua.AST
             if (ClassName == "WorldMapModule" && IsMainPartialClass)
             {
                 writer.WriteLine($"local MapViewPortChangedHandler = require(\"GameModule/Map/MapViewPortChangedHandler\")");
-                writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");
-                
+                writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");    
             }
 
-            
-            
-            
+            if (ClassName == "DServerData")
+            {
+                writer.WriteLine($"local DServerDataElement = require(\"GameData/DServerData/DServerDataElement\")");
+            }
+
+
+
+
+
             writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");
             if (IsMainPartialClass || !IsPartialClass)
             {

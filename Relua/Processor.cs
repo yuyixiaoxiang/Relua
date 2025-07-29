@@ -15,6 +15,7 @@ public class Processor
         public string requirePath;
         public string outPath;
         public Block Block;
+        public ICheckContext CheckContext;
     }
 
     private List<LuaArtifact> files = new List<LuaArtifact>();
@@ -47,6 +48,7 @@ public class Processor
                 expr.CheckNode(context,null);
                 expr.ExportableVariables(context);
                 file.Block = expr;
+                file.CheckContext = context;
             }
             catch (Exception e)
             {
@@ -58,6 +60,8 @@ public class Processor
         //post process
         ProcessSafeRequireFile();
         PostprocessModuleAndPartialClass();
+        //todo check auto require 
+        
         //outout 
         List<(string path, string content)> outputs = new List<(string path, string content)>();
         foreach (var file in files)

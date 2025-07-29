@@ -6,8 +6,8 @@
 -----------------------------------------------
 
 Module "Game.Procedure"(function(_ENV)
-    import "Common.StateMachine"
-    import "Game.Module"
+    --import "Common.StateMachine"
+    --import "Game.Module"
 
     -- 启动状态初始化Lua
     ---@class LaunchState _auto_annotation_
@@ -25,15 +25,15 @@ Module "Game.Procedure"(function(_ENV)
             -- 初始化bin文件;
             NetPBCManager:Init(); -- 初始化协议交互模块
             ---@type GameData
-            _G["DATA"] = Game.Data.GameData(); -- 初始化玩法数据缓存模块
+            _G["DATA"] = GameData(); -- 初始化玩法数据缓存模块
             DATA:Init();
             ---@type GameModule
-            _G["MODULE"] = Game.Module.GameModule(); -- 初始化玩法逻辑
+            _G["MODULE"] = GameModule(); -- 初始化玩法逻辑
             MODULE:Init();
             ---@type GameView
-            _G["VIEW"] = Game.View.GameView(); -- 初始化界面模块
+            _G["VIEW"] = GameView(); -- 初始化界面模块
             ---@type GameNet  目前NET.xxx不生效
-            _G["NET"] = Game.Net.GameNet(); -- 初始化网络模块
+            _G["NET"] = GameNet(); -- 初始化网络模块
             NetPBCManager:InitEnd();
             ---@type ActionSystem
             _G["ACTION"] = ActionSystem(); -- 客户端独立事件处理系统

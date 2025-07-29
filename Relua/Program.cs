@@ -49,7 +49,13 @@ namespace Lua
             
             "GameData/Login/LoginData",
             "GameData/UserData",
-            "GameData/ConfEnumData"
+            "GameData/ConfEnumData",
+            "GameData/EnumData",
+            "DServerData/DServerData",
+            
+            
+            
+            "GameNet/EnterGamePb"
         };
 
         private static List<string> fullcopyfiles = new List<string>()
@@ -57,6 +63,8 @@ namespace Lua
             "Procedure.lua",
             "GameModule.lua",
             "GameData.lua",
+            "Core.lua",
+            "Game.lua"
         };
             
         

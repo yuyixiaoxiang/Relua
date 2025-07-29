@@ -5,8 +5,8 @@
 -- [MARK] 登录相关数据
 -----------------------------------------------
 Module "Game.Module" (function(_ENV)
-	namespace "Game.Module"
-	import "Game.Data"
+	--namespace "Game.Module"
+	--import "Game.Data"
 	-- 玩法逻辑模块只能访问数据模块不能直接访问界面（界面需要高度解耦独立）
 		
 	---@class GameModule _auto_annotation_
