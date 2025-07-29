@@ -23,6 +23,11 @@ Module "Game.Net" (function(_ENV)
 		---@param self GameNet _auto_annotation_
 		function __ctor(self)
 			self.EnterGamePb = require("GameNet/EnterGamePb")()
+			self.Common = require("GameNet/Common")()
+			self.Resource = require("GameNet/Resource")()
+			self.Recharge = require("GameNet/Recharge")()
+
+			
 			-- 自动初始化各模块
 			for i, name in ipairs(NetNames) do
 				if self[name] == nil then

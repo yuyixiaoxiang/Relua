@@ -55,7 +55,11 @@ namespace Lua
             
             
             
-            "GameNet/EnterGamePb"
+            "GameNet/EnterGamePb",
+            "GameNet/Common",
+            "GameNet/Resource",
+            "GameNet/Recharge",
+            
         };
 
         private static List<string> fullcopyfiles = new List<string>()
