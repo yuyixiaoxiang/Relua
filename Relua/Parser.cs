@@ -1199,6 +1199,11 @@ namespace Lua
             {
                 Move();
                 inheritClass = ReadStringLiteral().Value;
+                //CUSTOM 
+                if (inheritClass == "ViewBase")
+                {
+                    inheritClass = "ViewBaseN";
+                }
             }
 
             var Statements = new List<IStatement>();

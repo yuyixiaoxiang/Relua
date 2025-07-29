@@ -2220,7 +2220,7 @@ namespace Lua.AST
             if (IsMainPartialClass || !IsPartialClass)
             {
                 var property = Statements.Count(((statement => statement is PloopProperty)));
-                if (property > 0)
+                if (true || property > 0)
                 {
                     writer.WriteLine();
                     // writer.IncreaseIndent();
@@ -2469,7 +2469,7 @@ end
                 if (defaultFunctionCall != null && !isStatic)
                 {
                     //todo only luaobject
-                    Debug.Assert(PloopClass.ClassName == "LuaObject");
+                    // Debug.Assert(PloopClass.ClassName == "LuaObject");
 
                     var assignment = new Assignment()
                     {

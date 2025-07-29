@@ -60,6 +60,14 @@ namespace Lua
             "GameNet/Resource",
             "GameNet/Recharge",
             
+            //common
+            "Lua/Common/LuaObjectN",
+            "GameView/ViewBase/ViewNodeN",
+            "GameView/ViewBase/ViewBaseN",
+            
+            
+            //ui-----------
+            "GameView/Login/login_panel",
         };
 
         private static List<string> fullcopyfiles = new List<string>()
@@ -68,7 +76,8 @@ namespace Lua
             "GameModule.lua",
             "GameData.lua",
             "Core.lua",
-            "Game.lua"
+            "Game.lua",
+            "GameView.lua",
         };
             
         
