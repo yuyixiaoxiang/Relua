@@ -26,6 +26,7 @@ Module "Game.Data" (function(_ENV)
 		---@param self GameData _auto_annotation_
 		function Init(self)
 			self.Login = require("Common/GamePlay/GameData/Login/LoginData")()
+			self.User = require("GameData/UserData")()
 			for i, name in ipairs(DataNames) do
 				if self[name] == nil then
 					self[name] = _ENV[table.concat({name, "Data"})](); -- 实例化各玩法模块并保存

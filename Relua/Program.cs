@@ -48,6 +48,8 @@ namespace Lua
             
             
             "GameData/Login/LoginData",
+            "GameData/UserData",
+            "GameData/ConfEnumData"
         };
 
         private static List<string> fullcopyfiles = new List<string>()

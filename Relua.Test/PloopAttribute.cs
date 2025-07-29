@@ -9,7 +9,7 @@ namespace Lua.Tests
     public class PloopAttribte
     {
         [Test]
-        public void PloopPropertyAttribute()
+        public void PloopAttribute()
         {
             string multiLineString = """
                                      __Static__()
@@ -22,7 +22,7 @@ namespace Lua.Tests
 
 
         [Test]
-        public void PloopPropertyAttribute2()
+        public void PloopAttribute2()
         {
             string multiLineString = """
                                      __Set__(PropertySet.Clone + PropertySet.Retain)
@@ -35,7 +35,7 @@ namespace Lua.Tests
 
 
         [Test]
-        public void PloopPropertyAttribute3()
+        public void PloopAttribute3()
         {
             string multiLineString = """
                                      __Static__()
@@ -50,7 +50,7 @@ namespace Lua.Tests
         }
 
         [Test]
-        public void PloopPropertyAttribute4()
+        public void PloopAttribute4()
         {
             string multiLineString = """
                                      __Set__(PropertySet.Clone + PropertySet.Retain)

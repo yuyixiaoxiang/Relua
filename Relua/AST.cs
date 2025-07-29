@@ -2760,14 +2760,16 @@ end
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
-            var dic = new Dictionary<string, IExpression>();
             foreach (var entry in enumStruct.Entries)
             {
                 var key = entry.Key;
                 var value = entry.Value;
                 if (key is StringLiteral stringLiteral)
                 {
-                    dic.Add(stringLiteral.Value, value);
+                }
+                else if (key is NumberLiteral numberLiteral)
+                {
+                    entry.Key = entry.Value;
                 }
             }
 
