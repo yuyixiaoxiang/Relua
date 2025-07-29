@@ -534,9 +534,28 @@ public class Processor
                             {
                                 ArgumentNames = new List<string>()
                                 {
-                                    "self"
+                                    "self","..."
                                 },
-                                Block = new Block(),
+                                Block = new Block()
+                                {
+                                    Statements = new List<IStatement>()
+                                    {
+                                        string.IsNullOrEmpty(mainCtorClass.InheritClassName) == false?
+                                        new FunctionCall()
+                                        {
+                                            Arguments = new List<IExpression>()
+                                            {
+                                                new Variable(){Name = "self"},
+                                                new VarargsLiteral(),
+                                            },
+                                            Function = new TableAccess()
+                                            {
+                                                Table = new Variable() { Name = mainCtorClass.InheritClassName },
+                                                Index = new StringLiteral() { Value = "__ctor" }
+                                            }
+                                        }: new Block()
+                                    }
+                                },
                                 ImplicitSelf = true,
                                 PloopClass = _ploopClass,
                             },
