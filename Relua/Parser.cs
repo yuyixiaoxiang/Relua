@@ -1208,6 +1208,18 @@ namespace Lua
                 {
                     inheritClass = "ViewNodeN";
                 }
+                else if (inheritClass == "LuaObject")
+                {
+                    inheritClass = "LuaObjectN";
+                }
+                else if (inheritClass == "IState")
+                {
+                    inheritClass = "IStateN";
+                }
+                else if (inheritClass == "IContext")
+                {
+                    inheritClass = "IContextN";
+                }
             }
 
             var Statements = new List<IStatement>();

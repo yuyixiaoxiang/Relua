@@ -48,7 +48,7 @@ Module "Game.Procedure"(function(_ENV)
             ---@type CheckSystem
             _G["CHECK"] = CheckSystem(); -- 客户端红点系统
             if UNITY_EDITOR then
-                print(table2string(_G, "全局", 1));
+                --print(table2string(_G, "全局", 1));
             end
 
             -- 初始化语言设置

@@ -37,22 +37,46 @@ namespace Lua
             "GameModule/ResendMsg/ResendMsgModule",
             "GameModule/Payment/PaymentModule",
             "GameModule/MainModule",
-            // "GameModule/WorldMapModule",
-            // "GameData/EnumData",
-            // "MapViewPortChangedHandler",
-            // "MapCityObjectComponent",
-            // "MapObjectComponent",
-            // "MapNpcObjectComponent",
-            // "MapArmyObjectComponent",
-            // "GameData/Map/WorldMapData"
+           
+            
+            "GameModule/Map/State",
+            //枚举
+            "GameData/EnumData",
+            
+            //内城
+            "GameModule/ModuleDefine.lua",
+            "GameModule/HomeScene/HomeSceneModule",
+            "GameModule/HomeScene/CityFogModule",
+            "GameModule/SelfCity",
             
             
+            //外城
+            "GameModule/WorldMapModule",
+            "MapViewPortChangedHandler",
+            "MapCityObjectComponent",
+            "MapObjectComponent",
+            "MapNpcObjectComponent",
+            "MapArmyObjectComponent",
+            "GameModule/Map/MapUnit",
+            "GameModule/Map/Log/MapLevel0DisplayDataProvider",
+            "GameModule/Map/MapUtil",
+            "Lua/GameModule/Army",
+            "GameModule/Map/CityUnit",
+            
+            "GameModule/NPC",
+            "GameModule/Map/Lod/MapLevel0DisplayDataProvider",
+            
+            "GameModule/Battle",
+            
+            
+            
+            //data
             "GameData/Login/LoginData",
             "GameData/UserData",
             "GameData/ConfEnumData",
             "GameData/EnumData",
             "DServerData/DServerData",
-            
+            "GameData/Map/WorldMapData",
             
             
             "GameNet/EnterGamePb",
@@ -60,11 +84,15 @@ namespace Lua
             "GameNet/Resource",
             "GameNet/Recharge",
             
+            "Lua/GameData/Map/",
+            "Lua/GameData/Battle",
+            
             //common
             "Lua/Common/LuaObjectN",
             "Lua/Common/UI/CommonContainerN",
             "GameView/ViewBase/ViewNodeN",
             "GameView/ViewBase/ViewBaseN",
+            "Common/Util/StateMachineN",
             
             
             //ui-----------

@@ -1708,7 +1708,12 @@ namespace Lua.AST
                         }
                     }
                 }
-                
+                //CUSTOM 
+                if (PloopClass?.ClassName == "MapUtil")
+                {
+                    isClassMethod = true;   
+                }
+
                 if(isClassMethod)
                     writer.Write($"{PloopClass.ClassName}.{name}");    
                 else 
@@ -2061,6 +2066,22 @@ namespace Lua.AST
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.WriteLine();
+            
+            if(ModuleName == "Game.Data.WorldMapData")
+            {
+                writer.WriteLine("""
+                                 local MapCityData = require("GameData/Map/city/MapCityData")
+                                 local MapNpcData = require("GameData/Map/world/MapNpcData")
+                                 local MapResData = require("GameData/Map/world/MapResData")
+                                 local MapTroopData = require("GameData/Map/world/MapTroopData")
+                                 local MapABuildingData = require("GameData/Map/world/MapABuildingData")
+                                 local CityTroopData = require("GameData/Map/obsolete/CityTroopData")
+                                 local MapBookmarkData = require("GameData/Map/world/MapBookmarkData")
+                                 local MapNBuildingData = require("GameData/Map/world/MapNBuildingData")
+                                 """);
+                
+            }
+            
             var first = true;
             foreach (var statement in Statements)
             {
@@ -2165,7 +2186,61 @@ namespace Lua.AST
             {
                 writer.WriteLine($"local MapViewPortChangedHandler = require(\"GameModule/Map/MapViewPortChangedHandler\")");
                 writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");    
+                writer.WriteLine($"local MapCityObjectComponent = require(\"GameModule/Map/MapComponent/MapCityObjectComponent\")");
+                writer.WriteLine($"local MapObjectComponent = require(\"GameModule/Map/MapComponent/MapObjectComponent\")");
+                writer.WriteLine($"local MapArmyObjectComponent = require(\"GameModule/Map/MapComponent/MapArmyObjectComponent\")");
+                writer.WriteLine($"local MapNpcObjectComponent = require(\"GameModule/Map/MapComponent/MapNpcObjectComponent\")");
+                
+                writer.WriteLine("""
+                                 local MapResView = require("GameModule/Map/MapUnit/MapResView")
+                                 local MapTreeView = require("GameModule/Map/MapUnit/MapTreeView")
+                                 local MapStaticObjView = require("GameModule/Map/MapUnit/MapStaticObjView")
+                                 local MapBookmarkView = require("GameModule/Map/MapUnit/MapBookmarkView")
+                                 local MapABuildingView = require("GameModule/Map/MapUnit/MapABuildingView")
+                                 local MapBuildingResView = require("GameModule/Map/MapUnit/MapBuildingResView")
+                                 local MapNBuildingView = require("GameModule/Map/MapUnit/MapNBuildingView")
+                                 """);
+                
             }
+            else if (RequirePath.Contains("WorldMapModule_View"))
+            {
+                writer.WriteLine($"local MapLevel0DisplayDataProvider = require(\"GameModule/Map/Lod/MapLevel0DisplayDataProvider\")");
+                
+            }
+            
+            else if (RequirePath.Contains("Map/city/MapCityData_Building"))
+            {
+                writer.WriteLine("""
+                                 local MapCityBuildingData = require("GameData/Map/city/MapCityBuildingData")
+                                 """);
+            }
+            else if (RequirePath.Contains("Map/city/MapCityData_Army"))
+            {
+                writer.WriteLine("""
+                                 local ArmyData = require("GameData/Map/city/MapCityArmyData").ArmyData
+                                 """);
+            }
+            else if (RequirePath.Contains("GameModule/SelfCity/SelfCityModule_Build"))
+            {
+                writer.WriteLine("""
+                                 local MapCityBuildingData = require("GameData/Map/city/MapCityBuildingData")
+                                 """);
+            }
+            else if (ClassName == "MapNpcObjectComponent")
+            {
+                writer.WriteLine("""
+                                 local MapNpcView = require("GameModule/Map/MapUnit/MapNpcView")
+                                 """);
+            }
+            
+            else if (ClassName == "MapNpcView")
+            {
+                writer.WriteLine("""
+                                 local MapLegion = require("GameModule/Battle/MapLegion")
+                                 """);
+            }
+
+           
 
             if (ClassName == "DServerData")
             {
@@ -2285,6 +2360,12 @@ end
 
                 writer.WriteLine("---------auto include sub partial class--------------------");
                 writer.WriteLine();
+            }
+            
+            //CUSTOM
+            if (RequirePath.Contains("WorldMapModule_View"))
+            {
+                writer.WriteLine("_G.WorldMapModule = WorldMapModule");
             }
 
             // if (singleFileMultiClass == false)

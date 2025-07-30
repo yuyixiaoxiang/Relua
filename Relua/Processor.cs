@@ -641,7 +641,41 @@ public class Processor
                 }
 
                 //add the assignments get/set
-                _ploopClass.Statements.InsertRange(0, propertyAssignmentFunctions);    
+                //检测是否已经有同名的方法,如果有,那么不再处理
+                foreach (var assignmentFunction in propertyAssignmentFunctions)
+                {
+                    if (assignmentFunction is Assignment assignment)
+                    {
+                        if (assignment.Values[0] is FunctionDefinition definition)
+                        {
+                            var _name = ((Variable)assignment.Targets[0]).Name;
+                            var exists = _ploopClass.Statements.Exists((statement =>
+                            {
+                                if (statement is Assignment assignment)
+                                {
+                                    if (assignment.Values[0] is FunctionDefinition _function)
+                                    {
+                                        if (assignment.Targets[0] is Variable _variable)
+                                        {
+                                            if (_variable.Name == _name)
+                                            {
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                }
+                                return false;
+                            }));
+                            if (exists)
+                            {
+                                continue;
+                            }
+                        }
+                    }
+
+                    _ploopClass.Statements.Insert(0,assignmentFunction);    
+                }
+                    
                 
                 
                 //rearrange all the local assignment

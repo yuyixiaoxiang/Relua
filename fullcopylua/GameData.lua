@@ -28,8 +28,13 @@ Module "Game.Data" (function(_ENV)
 			self.Login = require("Common/GamePlay/GameData/Login/LoginData")()
 			self.User = require("GameData/UserData")()
 			self.DServer = require("GameData/DServerData/DServerData")()
+
+			self.WorldMap = require("GameData/Map/WorldMapData")()
+			self.Battle = require("GameData/Battle/BattleData")()
+			
 			for i, name in ipairs(DataNames) do
 				if self[name] == nil then
+					print('gamedata: ' .. name)
 					self[name] = _ENV[table.concat({name, "Data"})](); -- 实例化各玩法模块并保存
 				end
 			end
