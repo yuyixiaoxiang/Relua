@@ -289,6 +289,8 @@ Module "Game.View" (function(_ENV)
 			local viewClass
 			if name == "login_panel" then
 				viewClass = require("Common/GamePlay/GameView/Login/login_panel")
+			elseif name == "serverlist_panel" then
+				viewClass = require("Common/GamePlay/GameView/Login/serverlist_panel")
 			end
 			if viewClass == nil then
 				viewClass = _ENV[name]; -- 资源名字和脚本名字同名 -- 需要加保护	

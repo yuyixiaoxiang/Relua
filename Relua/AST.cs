@@ -2171,6 +2171,12 @@ namespace Lua.AST
             {
                 writer.WriteLine($"local DServerDataElement = require(\"GameData/DServerData/DServerDataElement\")");
             }
+            else if (ClassName == "serverlist_panel")
+            {
+                writer.WriteLine($"local ViewBaseN = require(\"Common/GamePlay/GameView/ViewBase/ViewBaseN\")");
+                writer.WriteLine($"local CommonContainer = require(\"Common/UI/CommonContainerN\")");
+                
+            }
 
 
 

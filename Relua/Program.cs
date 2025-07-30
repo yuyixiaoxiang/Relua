@@ -62,12 +62,15 @@ namespace Lua
             
             //common
             "Lua/Common/LuaObjectN",
+            "Lua/Common/UI/CommonContainerN",
             "GameView/ViewBase/ViewNodeN",
             "GameView/ViewBase/ViewBaseN",
             
             
             //ui-----------
             "GameView/Login/login_panel",
+            "GameView/Login/serverlist_panel",
+            "GameView/Login/server_item",
         };
 
         private static List<string> fullcopyfiles = new List<string>()

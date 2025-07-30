@@ -1204,6 +1204,10 @@ namespace Lua
                 {
                     inheritClass = "ViewBaseN";
                 }
+                else if (inheritClass == "ViewNode")
+                {
+                    inheritClass = "ViewNodeN";
+                }
             }
 
             var Statements = new List<IStatement>();
