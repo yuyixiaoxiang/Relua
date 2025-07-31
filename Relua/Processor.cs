@@ -428,11 +428,11 @@ public class Processor
                     {
                         if (statement is Assignment assignment)
                         {
-                            var _ctor = false;
+                            var _isCtorFunc = false;
                             if (assignment.Targets[0] is Variable variable_)
                             {
                                 if (variable_.Name == ctor)
-                                    _ctor = true;
+                                    _isCtorFunc = true;
                             }
 
                             foreach (var assignValue in assignment.Values)
@@ -453,7 +453,7 @@ public class Processor
                                                     }
                                                 }
                                             }
-                                            else if (functionCall.Function is Variable variable2 && _ctor &&
+                                            else if (functionCall.Function is Variable variable2 && _isCtorFunc &&
                                                      variable2.Name == "super")
                                             {
                                                 functionCall.Function = new TableAccess()
@@ -472,6 +472,81 @@ public class Processor
             }
         }
 
+        
+        //process the _dtor method call
+        const string _dtor = "__dtor";
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var _ploopClass in moduleAndClass.Classes)
+            {
+                if (string.IsNullOrEmpty(_ploopClass.InheritClassName) == false)
+                {
+                    var statements = _ploopClass.Statements;
+                    foreach (var statement in statements)
+                    {
+                        if (statement is Assignment assignment)
+                        {
+                            var _isDtorFunc = false;
+                            if (assignment.Targets[0] is Variable variable_)
+                            {
+                                if (variable_.Name == _dtor)
+                                    _isDtorFunc = true;
+                            }
+
+                            if (_isDtorFunc)
+                            {
+                                foreach (var assignValue in assignment.Values)
+                                {
+                                    if (assignValue is FunctionDefinition functionDefinition)
+                                    {
+                                        functionDefinition.Block.Statements.Add(new FunctionCall()
+                                        {
+                                            Function = new TableAccess()
+                                            {
+                                                Table = new Variable() { Name = _ploopClass.InheritClassName },
+                                                Index = new StringLiteral() { Value = _dtor }
+                                            },
+                                            Arguments = new List<IExpression>()
+                                            {
+                                                new Variable(){Name = "self"}
+                                            }
+                                        });
+                                        // foreach (var statement1 in functionDefinition.Block.Statements)
+                                        // {
+                                        //     if (statement1 is FunctionCall functionCall)
+                                        //     {
+                                        //         if (functionCall.Function is TableAccess tableAccess)
+                                        //         {
+                                        //             if (tableAccess.Table is Variable variable)
+                                        //             {
+                                        //                 if (variable.Name == "super")
+                                        //                 {
+                                        //                     variable.Name = _ploopClass.InheritClassName;
+                                        //                 }
+                                        //             }
+                                        //         }
+                                        //         else if (functionCall.Function is Variable variable2 && _isCtorFunc &&
+                                        //                  variable2.Name == "super")
+                                        //         {
+                                        //             functionCall.Function = new TableAccess()
+                                        //             {
+                                        //                 Table = new Variable() { Name = _ploopClass.InheritClassName },
+                                        //                 Index = new StringLiteral() { Value = ctor }
+                                        //             };
+                                        //         }
+                                        //     }
+                                        // }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        
+        
         //check Nested class 
         foreach (var moduleAndClass in moduleAndClasses)
         {
