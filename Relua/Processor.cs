@@ -587,14 +587,14 @@ public class Processor
                     if (property is PloopProperty _ploopProperty)
                     {
                         _ploopProperty.PloopClass = _ploopClass;
-                        var fieldAssignment = _ploopProperty.GetPropertyFieldAssignment();
+                        var fieldAssignment = _ploopProperty.GetPropertyStaticFieldAssignment();
                         if (fieldAssignment != null)
                         {
-                            if (!(_ploopProperty.Attribute?.IsStatic ?? false))
-                            {
-                                ctorDefinition.Block.Statements.Insert(_index++, fieldAssignment);
-                            }
-                            else
+                            // if (!(_ploopProperty.Attribute?.IsStatic ?? false))
+                            // {
+                            //     // ctorDefinition.Block.Statements.Insert(_index++, fieldAssignment);
+                            // }
+                            // else
                             {
                                 localpropertyFieldAssignments.Add(fieldAssignment);    
                             }

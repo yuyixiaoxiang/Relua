@@ -22,9 +22,9 @@ namespace Lua.AST
             }
         }
 
-        public virtual void LookupVariable(ICheckContext context,Node child,string variable)
+        public virtual void LookupVariable(ICheckContext context, Node child, string variable)
         {
-            parent?.LookupVariable(context,this,variable);
+            parent?.LookupVariable(context, this, variable);
         }
 
         public virtual IList<string> ProvideVariables()
@@ -36,7 +36,7 @@ namespace Lua.AST
         {
         }
 
-        public abstract void CheckNode(ICheckContext context,Node parent);
+        public abstract void CheckNode(ICheckContext context, Node parent);
 
         public abstract void Write(IndentAwareTextWriter writer, object data = null);
 
@@ -49,7 +49,7 @@ namespace Lua.AST
 
         public virtual string GetTag()
         {
-            return GetType().Name+$"({this.GetHashCode()})";
+            return GetType().Name + $"({this.GetHashCode()})";
         }
 
         public virtual string ToString(bool one_line)
@@ -67,9 +67,11 @@ namespace Lua.AST
     {
         protected ICheckNode node;
         protected string TAG;
+
         public IntermediateNode()
         {
         }
+
         public IntermediateNode(ICheckNode node, string TAG)
         {
             this.node = node;
@@ -78,7 +80,7 @@ namespace Lua.AST
 
         public override string GetTag()
         {
-            return this.TAG+$"({this.GetHashCode()})";
+            return this.TAG + $"({this.GetHashCode()})";
         }
 
         public override void Write(IndentAwareTextWriter writer, object data = null)
@@ -116,7 +118,7 @@ namespace Lua.AST
 
     public interface ICheckNode
     {
-        void CheckNode(ICheckContext context,Node parent);
+        void CheckNode(ICheckContext context, Node parent);
         void LookupVariable(ICheckContext context, Node child, string variable);
         IList<string> ProvideVariables();
         void ExportableVariables(ICheckContext context);
@@ -137,42 +139,44 @@ namespace Lua.AST
 
         private HashSet<string> PUBLIC_FUNCTIONS = new HashSet<string>()
         {
-            "table", "ipairs", "logError", "math", "type", "tonumber", "pairs", "safe","logWarn","tostring","VhLog","logErrorEx","debug",
-            "tostring","logEx","log","protobuf","showMsg","string","VhLogError"
+            "table", "ipairs", "logError", "math", "type", "tonumber", "pairs", "safe", "logWarn", "tostring", "VhLog",
+            "logErrorEx", "debug",
+            "tostring", "logEx", "log", "protobuf", "showMsg", "string", "VhLogError"
         };
 
         private HashSet<string> PLOOP_VARIABLES = new HashSet<string>()
         {
-            "System","self",
+            "System", "self",
         };
 
         private HashSet<string> GLOBALS_VARIABLES = new HashSet<string>()
         {
-            "MODULE", "DATA", "EVENT","NET","VIEW","g_Util","NO_UPDATE","ACTION","ELEX_SDK","Timer","Time","EPSDK"
+            "MODULE", "DATA", "EVENT", "NET", "VIEW", "g_Util", "NO_UPDATE", "ACTION", "ELEX_SDK", "Timer", "Time",
+            "EPSDK"
         };
 
         private HashSet<string> OMIT_EXPORTABLE_VARIABLES = new()
         {
-            "__ctor","__dtor"
+            "__ctor", "__dtor"
         };
-    
+
 
         public void AddRequiredVariable(string variable)
         {
-            if(Tokenizer.RESERVED_KEYWORDS.Contains(variable))
+            if (Tokenizer.RESERVED_KEYWORDS.Contains(variable))
                 return;
-            if(PUBLIC_FUNCTIONS.Contains(variable))
+            if (PUBLIC_FUNCTIONS.Contains(variable))
                 return;
-            if(PLOOP_VARIABLES.Contains(variable))
+            if (PLOOP_VARIABLES.Contains(variable))
                 return;
-            if(GLOBALS_VARIABLES.Contains(variable))
+            if (GLOBALS_VARIABLES.Contains(variable))
                 return;
             requiredVariables.Add(variable);
         }
 
         public void AddExportVariable(ExportVariable variable)
         {
-            if(OMIT_EXPORTABLE_VARIABLES.Contains(variable.VariableName))
+            if (OMIT_EXPORTABLE_VARIABLES.Contains(variable.VariableName))
                 return;
             exportableVariables.Add(variable);
         }
@@ -189,10 +193,12 @@ namespace Lua.AST
 
         public override string ToString()
         {
-            return $"-----------------------------------------\nRequireVariables:{string.Join("\n\t",requiredVariables)}" +
-                   $"\nExportableVariables:{string.Join("\n\t",exportableVariables)}";
+            return
+                $"-----------------------------------------\nRequireVariables:{string.Join("\n\t", requiredVariables)}" +
+                $"\nExportableVariables:{string.Join("\n\t", exportableVariables)}";
         }
     }
+
     /// <summary>
     /// Interface (used as a sort of "type tag") for Lua AST nodes that are statements.
     /// </summary>
@@ -210,7 +216,7 @@ namespace Lua.AST
     public interface IExpression : ICheckNode
     {
         void Write(IndentAwareTextWriter writer, object data = null);
-        
+
         void Write2TS(IndentAwareTextWriter writer, object data = null);
         string ToString(bool one_line);
     }
@@ -222,7 +228,7 @@ namespace Lua.AST
     public interface IAssignable : ICheckNode
     {
         void Write(IndentAwareTextWriter writer, object data);
-        
+
         void Write2TS(IndentAwareTextWriter writer, object data);
         string ToString(bool one_line);
     }
@@ -237,16 +243,16 @@ namespace Lua.AST
     public class Variable : Node, IExpression, IAssignable
     {
         public string Name;
-        
+
         public override string GetTag()
         {
             return $"Variable({Name})";
         }
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            
+
             // StringBuilder sb = new StringBuilder();
             // var path = new List<Node>();
             // Node current = this;
@@ -265,15 +271,15 @@ namespace Lua.AST
             //     return node.GetTag();
             // }));
             // Console.WriteLine(str);
-            
-            LookupVariable(context,this,Name);
+
+            LookupVariable(context, this, Name);
         }
-        
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write(Name);
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -291,7 +297,7 @@ namespace Lua.AST
     {
         public static NilLiteral Instance = new NilLiteral();
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
@@ -300,7 +306,7 @@ namespace Lua.AST
         {
             writer.Write("nil");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -322,7 +328,7 @@ namespace Lua.AST
     {
         public static VarargsLiteral Instance = new VarargsLiteral();
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
@@ -331,7 +337,7 @@ namespace Lua.AST
         {
             writer.Write("...");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -352,7 +358,7 @@ namespace Lua.AST
         public static BoolLiteral FalseInstance = new BoolLiteral { Value = false };
         public bool Value;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
@@ -361,7 +367,7 @@ namespace Lua.AST
         {
             writer.Write(Value ? "true" : "false");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -398,10 +404,10 @@ namespace Lua.AST
             Expression = expr;
         }
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            Expression.CheckNode(context,this);
+            Expression.CheckNode(context, this);
         }
 
         public static void WriteUnaryOp(OpType type, IndentAwareTextWriter writer)
@@ -421,7 +427,7 @@ namespace Lua.AST
             (Expression as Node).Write(writer);
             writer.Write(")");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -496,8 +502,8 @@ namespace Lua.AST
                 case OpType.Or: writer.Write("or"); break;
             }
         }
-        
-        
+
+
         public BinaryOp()
         {
         }
@@ -513,11 +519,11 @@ namespace Lua.AST
         public IExpression Left;
         public IExpression Right;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            Left.CheckNode(context,this);
-            Right.CheckNode(context,this);
+            Left.CheckNode(context, this);
+            Right.CheckNode(context, this);
         }
 
         public override void Write(IndentAwareTextWriter writer, object data)
@@ -530,7 +536,7 @@ namespace Lua.AST
             (Right as Node).Write(writer);
             writer.Write(")");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -573,7 +579,7 @@ namespace Lua.AST
 
         public string Value;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
@@ -582,7 +588,7 @@ namespace Lua.AST
         {
             Quote(writer, Value);
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -603,7 +609,7 @@ namespace Lua.AST
         public double Value;
         public bool HexFormat = false;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
@@ -617,7 +623,7 @@ namespace Lua.AST
             }
             else writer.Write(Value);
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -640,7 +646,7 @@ namespace Lua.AST
         public long Value;
         public bool HexFormat = false;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
@@ -656,7 +662,7 @@ namespace Lua.AST
 
             writer.Write("LL");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -719,11 +725,11 @@ namespace Lua.AST
             return s.ToString();
         }
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            new IntermediateNode(Table,"TableAccessTable").CheckNode(context,this);
-            new IntermediateNode(Index,"TableAccessIndex").CheckNode(context,this);
+            new IntermediateNode(Table, "TableAccessTable").CheckNode(context, this);
+            new IntermediateNode(Index, "TableAccessIndex").CheckNode(context, this);
         }
 
         public void WriteDotStyle(IndentAwareTextWriter writer, string index)
@@ -756,7 +762,7 @@ namespace Lua.AST
                 WriteGenericStyle(writer);
             }
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -800,7 +806,7 @@ namespace Lua.AST
         public bool ForceTruncateReturnValues = false;
 
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             //CUSTOM
             // if (Function is TableAccess tableAccess)
@@ -842,16 +848,15 @@ namespace Lua.AST
             // }
 
 
-
-
             this.parent = parent;
             foreach (var argument in Arguments)
             {
-               new IntermediateNode(argument,"FunctionCallArg").CheckNode(context,this);
+                new IntermediateNode(argument, "FunctionCallArg").CheckNode(context, this);
             }
-            new IntermediateNode(Function,"FunctionCallFuncName").CheckNode(context,this);   
+
+            new IntermediateNode(Function, "FunctionCallFuncName").CheckNode(context, this);
         }
-        
+
         public void WriteMethodStyle(IndentAwareTextWriter writer, IExpression obj, string method_name)
         {
             if (obj is FunctionDefinition) writer.Write("(");
@@ -903,7 +908,7 @@ namespace Lua.AST
 
             if (ForceTruncateReturnValues) writer.Write(")");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -956,11 +961,11 @@ namespace Lua.AST
             public IExpression Value;
             public bool ExplicitKey;
 
-            public override void CheckNode(ICheckContext context,Node parent)
+            public override void CheckNode(ICheckContext context, Node parent)
             {
                 this.parent = parent;
-                Key.CheckNode(context,this);
-                Value.CheckNode(context,this);
+                Key.CheckNode(context, this);
+                Value.CheckNode(context, this);
             }
 
             public void WriteIdentifierStyle(IndentAwareTextWriter writer, string index)
@@ -1001,7 +1006,7 @@ namespace Lua.AST
                     WriteGenericStyle(writer);
                 }
             }
-            
+
             public override void Write2TS(IndentAwareTextWriter writer, object data = null)
             {
                 throw new NotImplementedException();
@@ -1010,12 +1015,12 @@ namespace Lua.AST
 
         public List<Entry> Entries = new List<Entry>();
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             foreach (var entry in Entries)
             {
-                entry.CheckNode(context,this);
+                entry.CheckNode(context, this);
             }
         }
 
@@ -1063,7 +1068,7 @@ namespace Lua.AST
             writer.Write("}");
             // writer.WriteLine();
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1079,7 +1084,7 @@ namespace Lua.AST
     /// </summary>
     public class Break : Node, IStatement
     {
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
@@ -1088,7 +1093,7 @@ namespace Lua.AST
         {
             writer.Write("break");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1111,12 +1116,12 @@ namespace Lua.AST
         /// </summary>
         public bool Redundant;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             foreach (var expression in Expressions)
             {
-                expression.CheckNode(context,this);
+                expression.CheckNode(context, this);
             }
         }
 
@@ -1138,7 +1143,7 @@ namespace Lua.AST
                 if (i < Expressions.Count - 1) writer.Write(", ");
             }
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1163,21 +1168,21 @@ namespace Lua.AST
 
         public bool IsEmpty => Statements.Count == 0;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             foreach (var statement in Statements)
             {
-                statement.CheckNode(context,this);
+                statement.CheckNode(context, this);
             }
         }
-        
-        public override void LookupVariable(ICheckContext context,Node child, string variable)
+
+        public override void LookupVariable(ICheckContext context, Node child, string variable)
         {
             var indexOf = Statements.IndexOf((IStatement)child);
             if (indexOf > 0)
             {
-                for (var i = indexOf-1; i >= 0; i--)
+                for (var i = indexOf - 1; i >= 0; i--)
                 {
                     var provides = Statements[i].ProvideVariables();
                     if (provides.Contains(variable))
@@ -1187,14 +1192,15 @@ namespace Lua.AST
                     }
                 }
             }
-            
+
             if (parent == null)
             {
                 context.AddRequiredVariable(variable);
                 // Console.WriteLine($"not find variable {variable},node:{child.GetTag()}");
-                return;    
+                return;
             }
-            base.LookupVariable(context,child, variable);
+
+            base.LookupVariable(context, child, variable);
         }
 
         public void ExportableVariables(ICheckContext context)
@@ -1224,7 +1230,8 @@ namespace Lua.AST
             for (var i = 0; i < Statements.Count; i++)
             {
                 var stat = Statements[i];
-
+                if(stat == null)
+                    continue;
                 stat.Write(writer);
                 //if (writer.ForceOneLine && stat.AmbiguousTermination && i != Statements.Count - 1) {
                 //    writer.Write(";");
@@ -1239,7 +1246,7 @@ namespace Lua.AST
                 writer.Write("end");
             }
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1256,11 +1263,11 @@ namespace Lua.AST
         public IExpression Condition;
         public Block Block;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            Condition.CheckNode(context,this);
-            Block.CheckNode(context,this);
+            Condition.CheckNode(context, this);
+            Block.CheckNode(context, this);
         }
 
         public override void Write(IndentAwareTextWriter writer, object data = null)
@@ -1274,7 +1281,7 @@ namespace Lua.AST
             writer.DecreaseIndent();
             writer.WriteLine();
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1299,17 +1306,18 @@ namespace Lua.AST
         public List<ConditionalBlock> ElseIfs = new List<ConditionalBlock>();
         public Block Else;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            MainIf?.CheckNode(context,this);
+            MainIf?.CheckNode(context, this);
             foreach (var elseIf in ElseIfs)
             {
-                elseIf.CheckNode(context,this);
+                elseIf.CheckNode(context, this);
             }
-            Else?.CheckNode(context,this);
+
+            Else?.CheckNode(context, this);
         }
-        
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             MainIf.Write(writer);
@@ -1331,7 +1339,7 @@ namespace Lua.AST
 
             writer.Write("end");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1352,11 +1360,11 @@ namespace Lua.AST
         public IExpression Condition;
         public Block Block;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            Condition.CheckNode(context,this);
-            Block.CheckNode(context,this);
+            Condition.CheckNode(context, this);
+            Block.CheckNode(context, this);
         }
 
         public override void Write(IndentAwareTextWriter writer, object data)
@@ -1371,7 +1379,7 @@ namespace Lua.AST
             writer.WriteLine();
             writer.Write("end");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1392,11 +1400,11 @@ namespace Lua.AST
         public IExpression Condition;
         public Block Block;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            Condition.CheckNode(context,this);
-            Block.CheckNode(context,this);
+            Condition.CheckNode(context, this);
+            Block.CheckNode(context, this);
         }
 
         public override void Write(IndentAwareTextWriter writer, object data)
@@ -1410,7 +1418,7 @@ namespace Lua.AST
             writer.Write("until ");
             Condition.Write(writer);
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1465,13 +1473,13 @@ namespace Lua.AST
         public bool ImplicitSelf = false;
         public PloopClass PloopClass;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
-            Block.CheckNode(context,this);
+            Block.CheckNode(context, this);
         }
 
-        public override void LookupVariable(ICheckContext context,Node child, string variable)
+        public override void LookupVariable(ICheckContext context, Node child, string variable)
         {
             if (ProvideVariables().Contains(variable))
             {
@@ -1479,7 +1487,7 @@ namespace Lua.AST
                 return;
             }
 
-            base.LookupVariable(context,child, variable);
+            base.LookupVariable(context, child, variable);
         }
 
         public override IList<string> ProvideVariables()
@@ -1523,7 +1531,7 @@ namespace Lua.AST
                 {
                     writer.Write(", ");
                 }
-                    
+
                 writer.Write("...");
             }
 
@@ -1540,7 +1548,7 @@ namespace Lua.AST
 
             writer.Write("end");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1601,10 +1609,7 @@ namespace Lua.AST
 
         public bool IsFunctionAssignment
         {
-            get
-            {
-                return Values[0] is FunctionDefinition;
-            }
+            get { return Values[0] is FunctionDefinition; }
         }
 
         public override IList<string> ProvideVariables()
@@ -1612,37 +1617,38 @@ namespace Lua.AST
             var list = new List<string>();
             foreach (var target in Targets)
             {
-                if(target is Variable variable)
+                if (target is Variable variable)
                     list.Add(variable.Name);
             }
+
             return list;
         }
 
         public class AssignmentTargetNode : IntermediateNode
         {
-            public AssignmentTargetNode(ICheckNode node):base(node,"AssignmentTarget")
+            public AssignmentTargetNode(ICheckNode node) : base(node, "AssignmentTarget")
             {
             }
 
-            public override void LookupVariable(ICheckContext context,Node child, string variable)
+            public override void LookupVariable(ICheckContext context, Node child, string variable)
             {
                 // base.LookupVariable(child, variable);
             }
         }
-        
+
         public class AssignmentValueNode : IntermediateNode
         {
-            public AssignmentValueNode(ICheckNode node):base(node,"AssignmentValue")
+            public AssignmentValueNode(ICheckNode node) : base(node, "AssignmentValue")
             {
             }
 
-            public override void LookupVariable(ICheckContext context,Node child, string variable)
+            public override void LookupVariable(ICheckContext context, Node child, string variable)
             {
-                base.LookupVariable(context,child, variable);
+                base.LookupVariable(context, child, variable);
             }
         }
-        
-        public override void CheckNode(ICheckContext context,Node parent)
+
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             foreach (var target in Targets)
@@ -1663,7 +1669,7 @@ namespace Lua.AST
                 for (var i = 0; i < Targets.Count; i++)
                 {
                     var target = Targets[i];
-                    if (target is Variable variable )
+                    if (target is Variable variable)
                     {
                         if (Values[i] is FunctionDefinition functionDefinition)
                         {
@@ -1672,7 +1678,7 @@ namespace Lua.AST
                                 VariableName = variable.Name,
                                 IsMethod = true,
                                 IsClassMethod = PloopClass != null,
-                            });    
+                            });
                         }
                         else
                         {
@@ -1693,7 +1699,7 @@ namespace Lua.AST
             writer.Write("function ");
             if (PloopClass != null && !IsLocal)
             {
-                var isClassMethod = Attribute?.IsStatic ?? false; 
+                var isClassMethod = Attribute?.IsStatic ?? false;
                 //CUSTOM
                 if (PloopClass.parent is PloopModule ploopModule)
                 {
@@ -1703,20 +1709,21 @@ namespace Lua.AST
                         {
                             if (variable.Name != "__ctor")
                             {
-                                isClassMethod = true;        
+                                isClassMethod = true;
                             }
                         }
                     }
                 }
+
                 //CUSTOM 
                 if (PloopClass?.ClassName == "MapUtil")
                 {
-                    isClassMethod = true;   
+                    isClassMethod = true;
                 }
 
-                if(isClassMethod)
-                    writer.Write($"{PloopClass.ClassName}.{name}");    
-                else 
+                if (isClassMethod)
+                    writer.Write($"{PloopClass.ClassName}.{name}");
+                else
                     writer.Write($"{PloopClass.ClassName}:{name}");
             }
             else
@@ -1825,7 +1832,7 @@ namespace Lua.AST
                 WriteGenericStyle(writer);
             }
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1861,7 +1868,7 @@ namespace Lua.AST
         public IExpression EndPoint;
         public IExpression Step;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             StartPoint.CheckNode(context, this);
@@ -1891,7 +1898,7 @@ namespace Lua.AST
             writer.WriteLine();
             writer.Write("end");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1915,7 +1922,7 @@ namespace Lua.AST
         public List<string> VariableNames = new List<string>();
         public IExpression Iterator;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             Iterator.CheckNode(context, this);
@@ -1940,7 +1947,7 @@ namespace Lua.AST
             writer.WriteLine();
             writer.Write("end");
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -1958,7 +1965,7 @@ namespace Lua.AST
     {
         public List<IStatement> Statements;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             foreach (var statement in Statements)
@@ -1966,13 +1973,13 @@ namespace Lua.AST
                 statement.CheckNode(context, this);
             }
         }
-        
+
         public override void LookupVariable(ICheckContext context, Node child, string variable)
         {
             var indexOf = Statements.IndexOf((IStatement)child);
             if (indexOf > 0)
             {
-                for (var i = indexOf-1; i >= 0; i--)
+                for (var i = indexOf - 1; i >= 0; i--)
                 {
                     var provides = Statements[i].ProvideVariables();
                     if (provides.Contains(variable))
@@ -1982,8 +1989,8 @@ namespace Lua.AST
                     }
                 }
             }
-            
-            base.LookupVariable(context,child, variable);
+
+            base.LookupVariable(context, child, variable);
         }
 
         public void ExportableVariables(ICheckContext context)
@@ -2027,7 +2034,7 @@ namespace Lua.AST
         public List<FunctionCall> ImportFunctions = new List<FunctionCall>();
         public List<IStatement> Statements;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             foreach (var statement in Statements)
@@ -2041,7 +2048,7 @@ namespace Lua.AST
             var indexOf = Statements.IndexOf((IStatement)child);
             if (indexOf > 0)
             {
-                for (var i = indexOf-1; i >= 0; i--)
+                for (var i = indexOf - 1; i >= 0; i--)
                 {
                     var provides = Statements[i].ProvideVariables();
                     if (provides.Contains(variable))
@@ -2051,8 +2058,8 @@ namespace Lua.AST
                     }
                 }
             }
-            
-            base.LookupVariable(context,child, variable);
+
+            base.LookupVariable(context, child, variable);
         }
 
         public void ExportableVariables(ICheckContext context)
@@ -2066,8 +2073,8 @@ namespace Lua.AST
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.WriteLine();
-            
-            if(ModuleName == "Game.Data.WorldMapData")
+
+            if (ModuleName == "Game.Data.WorldMapData")
             {
                 writer.WriteLine("""
                                  local MapCityData = require("GameData/Map/city/MapCityData")
@@ -2079,9 +2086,8 @@ namespace Lua.AST
                                  local MapBookmarkData = require("GameData/Map/world/MapBookmarkData")
                                  local MapNBuildingData = require("GameData/Map/world/MapNBuildingData")
                                  """);
-                
             }
-            
+
             var first = true;
             foreach (var statement in Statements)
             {
@@ -2137,7 +2143,7 @@ namespace Lua.AST
         public List<string> SubPartialRequirePaths = new List<string>();
         public PloopClass MainPartialClass;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
             foreach (var statement in Statements)
@@ -2151,7 +2157,7 @@ namespace Lua.AST
             var indexOf = Statements.IndexOf((IStatement)child);
             if (indexOf > 0)
             {
-                for (var i = indexOf-1; i >= 0; i--)
+                for (var i = indexOf - 1; i >= 0; i--)
                 {
                     var provides = Statements[i].ProvideVariables();
                     if (provides.Contains(variable))
@@ -2161,8 +2167,8 @@ namespace Lua.AST
                     }
                 }
             }
-            
-            base.LookupVariable(context,child, variable);
+
+            base.LookupVariable(context, child, variable);
         }
 
         public void ExportableVariables(ICheckContext context)
@@ -2184,13 +2190,18 @@ namespace Lua.AST
             //custom
             if (ClassName == "WorldMapModule" && IsMainPartialClass)
             {
-                writer.WriteLine($"local MapViewPortChangedHandler = require(\"GameModule/Map/MapViewPortChangedHandler\")");
-                writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");    
-                writer.WriteLine($"local MapCityObjectComponent = require(\"GameModule/Map/MapComponent/MapCityObjectComponent\")");
-                writer.WriteLine($"local MapObjectComponent = require(\"GameModule/Map/MapComponent/MapObjectComponent\")");
-                writer.WriteLine($"local MapArmyObjectComponent = require(\"GameModule/Map/MapComponent/MapArmyObjectComponent\")");
-                writer.WriteLine($"local MapNpcObjectComponent = require(\"GameModule/Map/MapComponent/MapNpcObjectComponent\")");
-                
+                writer.WriteLine(
+                    $"local MapViewPortChangedHandler = require(\"GameModule/Map/MapViewPortChangedHandler\")");
+                writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");
+                writer.WriteLine(
+                    $"local MapCityObjectComponent = require(\"GameModule/Map/MapComponent/MapCityObjectComponent\")");
+                writer.WriteLine(
+                    $"local MapObjectComponent = require(\"GameModule/Map/MapComponent/MapObjectComponent\")");
+                writer.WriteLine(
+                    $"local MapArmyObjectComponent = require(\"GameModule/Map/MapComponent/MapArmyObjectComponent\")");
+                writer.WriteLine(
+                    $"local MapNpcObjectComponent = require(\"GameModule/Map/MapComponent/MapNpcObjectComponent\")");
+
                 writer.WriteLine("""
                                  local MapResView = require("GameModule/Map/MapUnit/MapResView")
                                  local MapTreeView = require("GameModule/Map/MapUnit/MapTreeView")
@@ -2200,14 +2211,13 @@ namespace Lua.AST
                                  local MapBuildingResView = require("GameModule/Map/MapUnit/MapBuildingResView")
                                  local MapNBuildingView = require("GameModule/Map/MapUnit/MapNBuildingView")
                                  """);
-                
             }
             else if (RequirePath.Contains("WorldMapModule_View"))
             {
-                writer.WriteLine($"local MapLevel0DisplayDataProvider = require(\"GameModule/Map/Lod/MapLevel0DisplayDataProvider\")");
-                
+                writer.WriteLine(
+                    $"local MapLevel0DisplayDataProvider = require(\"GameModule/Map/Lod/MapLevel0DisplayDataProvider\")");
             }
-            
+
             else if (RequirePath.Contains("Map/city/MapCityData_Building"))
             {
                 writer.WriteLine("""
@@ -2232,7 +2242,7 @@ namespace Lua.AST
                                  local MapNpcView = require("GameModule/Map/MapUnit/MapNpcView")
                                  """);
             }
-            
+
             else if (ClassName == "MapNpcView")
             {
                 writer.WriteLine("""
@@ -2240,7 +2250,6 @@ namespace Lua.AST
                                  """);
             }
 
-           
 
             if (ClassName == "DServerData")
             {
@@ -2250,29 +2259,25 @@ namespace Lua.AST
             {
                 writer.WriteLine($"local ViewBaseN = require(\"Common/GamePlay/GameView/ViewBase/ViewBaseN\")");
                 writer.WriteLine($"local CommonContainer = require(\"Common/UI/CommonContainerN\")");
-                
             }
             else if (ClassName == "MapLegion" && IsMainPartialClass)
             {
                 writer.WriteLine("""
                                  local MapEntity = require("GameModule/Battle/MapEntity")
                                  """);
-                
             }
             else if (RequirePath.Contains("BattleModule_Conf"))
             {
                 writer.WriteLine("""
                                  local MapFormationInfo = require("GameModule/Battle/MapFormationInfo").MapFormationInfo
                                  """);
-                
             }
-            
+
             else if (RequirePath.Contains("MapLegion_Battle"))
             {
                 writer.WriteLine("""
                                  local MapEntity = require("GameModule/Battle/MapEntity")
                                  """);
-                
             }
             else if (ClassName == "MapCityObjectComponent")
             {
@@ -2280,10 +2285,6 @@ namespace Lua.AST
                                  local MapCityView = require("GameModule/Map/MapUnit/MapCityView")
                                  """);
             }
-
-
-
-
 
 
             writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");
@@ -2311,7 +2312,7 @@ namespace Lua.AST
                     {
                         // Console.WriteLine($"InheritRequirePath = RequirePath,{InheritRequirePath}");
                     }
-                    
+
                     writer.WriteLine($"---@class {ClassName} : {InheritClassName}");
                     writer.WriteLine($"local {ClassName} = middleclass('{ClassName}', {InheritClassName}) ");
                 }
@@ -2334,13 +2335,13 @@ namespace Lua.AST
                 {
                     writer.WriteLine();
                     // writer.IncreaseIndent();
-            
+
                     //add the __index/__newindex
                     writer.WriteLine($@"
 function {ClassName}:__index(key)
     local fieldName = '__' .. key:sub(1, 1):lower() .. key:sub(2) 
     local existField = true --rawget(self,fieldName) ~= nil
-    local getFunc = rawget(self.class.__instanceDict,'Get'..key)
+    local getFunc = rawget(self.class.__instanceDict,'__Get'..key)
     if existField and getFunc ~= nil then
         return getFunc(self)
     end
@@ -2351,7 +2352,7 @@ end
 function {ClassName}:__newindex(key,value)
     local fieldName = '__' .. key:sub(1, 1):lower() .. key:sub(2)
     local existField = true-- rawget(self,fieldName) ~= nil
-    local setFunc = rawget(self.class.__instanceDict,'Set'..key)
+    local setFunc = rawget(self.class.__instanceDict,'__Set'..key)
     if existField and setFunc ~= nil then
         setFunc(self,value)
     else
@@ -2366,7 +2367,7 @@ end
             foreach (var statement in Statements)
             {
 //                if(first == false)
-                if(statement is Assignment assignment && assignment.IsFunctionAssignment)
+                if (statement is Assignment assignment && assignment.IsFunctionAssignment)
                     writer.WriteLine();
                 statement.Write(writer, this);
                 // first = false;
@@ -2390,7 +2391,7 @@ end
                 writer.WriteLine("---------auto include sub partial class--------------------");
                 writer.WriteLine();
             }
-            
+
             //CUSTOM
             if (RequirePath.Contains("WorldMapModule_View"))
             {
@@ -2453,7 +2454,7 @@ end
         /// </summary>
         private Dictionary<string, IExpression> propertyExpressions;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             AnalysisExpressions();
             this.parent = parent;
@@ -2465,7 +2466,7 @@ end
             AnalysisExpressions();
             return new List<string>()
             {
-                PropertyName,fieldStringLiteral.Value
+                PropertyName, fieldStringLiteral.Value
             };
         }
 
@@ -2526,10 +2527,12 @@ end
             if (_default is FunctionDefinition _defaultFunction)
             {
                 defaultFunction = _defaultFunction;
+                Console.WriteLine($"------->ClassName:{PloopClass?.ClassName} PropertyName:{PropertyName}");
             }
             else if (_default is FunctionCall _defaultFunctionCall)
             {
                 defaultFunctionCall = _defaultFunctionCall;
+                Console.WriteLine($"------->>>{PloopClass?.ClassName} {PropertyName}");
             }
             else if (_default is StringLiteral || _default is NilLiteral || _default is BoolLiteral ||
                      _default is NumberLiteral || _default is TableConstructor)
@@ -2546,13 +2549,43 @@ end
             }
         }
 
+        public Assignment GetPropertyStaticFieldAssignment()
+        {
+            AnalysisExpressions();
+            var isStatic = Attribute?.IsStatic ?? false;
+            if (isStatic == false)
+                return null;
+            
+            if (fieldStringLiteral != null)
+            {
+                //强制设置为nil
+                var assignment = new Assignment()
+                {
+                    IsLocal = isStatic,
+                    Targets = new()
+                    {
+                        new Variable()
+                        {
+                            Name = fieldStringLiteral.Value
+                        }       
+                    },
+                    Values = new()
+                    {
+                        new NilLiteral()
+                    },
+                };
+                return assignment;
+            }
+            return null;
+        }
+
         /// <summary>
         /// get self.__field assignment
         /// </summary>
         public Assignment GetPropertyFieldAssignment()
         {
             AnalysisExpressions();
-            
+
             var isStatic = Attribute?.IsStatic ?? false;
             if (fieldStringLiteral != null)
             {
@@ -2575,9 +2608,17 @@ end
                         {
                             new FunctionCall()
                             {
-                                Function = defaultFunction
+                                Function = defaultFunction,
+                                Arguments = new List<IExpression>()
+                                {
+                                    new Variable()
+                                    {
+                                        Name = "self"
+                                    }
+                                }
                             }
                         },
+
                     };
                     return assignment;
                 }
@@ -2611,21 +2652,22 @@ end
                 {
                     var assignment = new Assignment()
                     {
-                        IsLocal = isStatic,
+                        // IsLocal = isStatic,
                         Targets = new()
                         {
-                            isStatic? new Variable()
+                            isStatic
+                                ? new Variable()
                                 {
                                     Name = fieldStringLiteral.Value
-                                }:
-                            new TableAccess()
-                            {
-                                Table = new Variable()
+                                }
+                                : new TableAccess()
                                 {
-                                    Name = "self"
-                                },
-                                Index = fieldStringLiteral,
-                            }
+                                    Table = new Variable()
+                                    {
+                                        Name = "self"
+                                    },
+                                    Index = fieldStringLiteral,
+                                }
                         },
                         Values = new()
                         {
@@ -2634,77 +2676,81 @@ end
                     };
                     return assignment;
                 }
-                else
-                {
-                    IExpression defaultValueExpression = new NilLiteral();
-                    if (string.IsNullOrEmpty(typeString) == false)
-                    {
-                        if (typeString == "System.Integer" ||
-                            typeString == "Integer" || typeString == "System.Number" || typeString == "System.number"||
-                            typeString == "Number")
-                        {
-                            defaultValueExpression = new NumberLiteral()
-                            {
-                                Value = 0,
-                            };
-                        }
-                        else if (typeString == "System.String" ||
-                                 typeString == "String")
-                        {
-                            defaultValueExpression = new StringLiteral()
-                            {
-                                Value = "",
-                            };
-                        }
-                        else if (typeString == "System.Table" || typeString == "Table")
-                        {
-                            defaultValueExpression = new TableConstructor()
-                            {
-                            };
-                        }
-                        else if (typeString == "System.Boolean" || typeString == "Boolean")
-                        {
-                            defaultValueExpression = new BoolLiteral()
-                            {
-                                Value = false,
-                            };
-                        }
-                        else if (typeString == "System.Class")
-                        {
-                            defaultValueExpression = new NilLiteral();
-                        }
-                        else
-                        {
-                            throw new NotImplementedException();
-                        }
-                    }
-
-                    var assignment = new Assignment()
-                    {
-                        IsLocal = isStatic,
-                        Targets = new()
-                        {
-                            isStatic?new Variable()
-                                {
-                                    Name = fieldStringLiteral.Value
-                                }:
-                            new TableAccess()
-                            {
-                                Table = new Variable()
-                                {
-                                    Name = "self"
-                                },
-                                Index = fieldStringLiteral,
-                            }
-                        },
-                        Values = new()
-                        {
-                            defaultValueExpression
-                        },
-                    };
-                    return assignment;
-                }
             }
+            //     else
+            //     {
+            //         // return null;
+            //         IExpression defaultValueExpression = new NilLiteral();
+            //         if (string.IsNullOrEmpty(typeString) == false)
+            //         {
+            //             if (typeString == "System.Integer" ||
+            //                 typeString == "Integer" || typeString == "System.Number" || typeString == "System.number" ||
+            //                 typeString == "Number")
+            //             {
+            //                 defaultValueExpression = new NumberLiteral()
+            //                 {
+            //                     Value = 0,
+            //                 };
+            //             }
+            //             else if (typeString == "System.String" ||
+            //                      typeString == "String")
+            //             {
+            //                 defaultValueExpression = new StringLiteral()
+            //                 {
+            //                     Value = "",
+            //                 };
+            //             }
+            //             else if (typeString == "System.Table" || typeString == "Table")
+            //             {
+            //                 defaultValueExpression = new TableConstructor()
+            //                 {
+            //                 };
+            //             }
+            //             else if (typeString == "System.Boolean" || typeString == "Boolean")
+            //             {
+            //                 defaultValueExpression = new BoolLiteral()
+            //                 {
+            //                     Value = false,
+            //                 };
+            //             }
+            //             else if (typeString == "System.Class")
+            //             {
+            //                 defaultValueExpression = new NilLiteral();
+            //             }
+            //             else
+            //             {
+            //                 throw new NotImplementedException();
+            //             }
+            //         }
+            //         //强制设置为nil
+            //         defaultValueExpression = new NilLiteral();
+            //         var assignment = new Assignment()
+            //         {
+            //             IsLocal = isStatic,
+            //             Targets = new()
+            //             {
+            //                 isStatic
+            //                     ? new Variable()
+            //                     {
+            //                         Name = fieldStringLiteral.Value
+            //                     }
+            //                     : new TableAccess()
+            //                     {
+            //                         Table = new Variable()
+            //                         {
+            //                             Name = "self"
+            //                         },
+            //                         Index = fieldStringLiteral,
+            //                     }
+            //             },
+            //             Values = new()
+            //             {
+            //                 defaultValueExpression
+            //             },
+            //         };
+            //         return assignment;
+            //     }
+            // }
 
             return null;
         }
@@ -2716,6 +2762,7 @@ end
         public List<Assignment> GetPropertyFunction()
         {
             AnalysisExpressions();
+            var isStatic = Attribute?.IsStatic ?? false;
             var assignments = new List<Assignment>();
             if (handlerFunction != null)
             {
@@ -2726,7 +2773,7 @@ end
                     {
                         new Variable()
                         {
-                            Name = $"On{PropertyName}Handler",
+                            Name = $"__On{PropertyName}Handler",
                         },
                     },
                     Values = new List<IExpression>()
@@ -2748,7 +2795,7 @@ end
                     {
                         new Variable()
                         {
-                            Name = $"Get{PropertyName}",
+                            Name = $"__Get{PropertyName}",
                         },
                     },
                     Values = new List<IExpression>()
@@ -2759,6 +2806,39 @@ end
             }
             else if ((_get is BoolLiteral _getBoolLiteral && _getBoolLiteral.Value != false) || _get is null)
             {
+                var defaultValue = GetPropertyFieldAssignment();
+                If ifassignment = null;
+                if (defaultValue != null)
+                {
+                    ifassignment = new If()
+                    {
+                        MainIf = new ConditionalBlock()
+                        {
+                            Condition = new BinaryOp()
+                            {
+                                
+                                Left = isStatic == false?new TableAccess()
+                                {
+                                    Table = new Variable()
+                                    {
+                                        Name = "self"
+                                    },
+                                    Index = fieldStringLiteral
+                                }: new Variable(){Name = fieldStringLiteral.Value},
+                                Right = new NilLiteral(),
+                                Type = BinaryOp.OpType.Equal
+                            },
+                            Block = new Block()
+                            {
+                                Statements = new List<IStatement>()
+                                {
+                                    defaultValue
+                                }
+                            }
+                        },
+                    };
+                }
+
                 assignments.Add(new Assignment()
                 {
                     PloopClass = PloopClass,
@@ -2767,7 +2847,7 @@ end
                     {
                         new Variable()
                         {
-                            Name = $"Get{PropertyName}",
+                            Name = $"__Get{PropertyName}",
                         },
                     },
                     Values = new List<IExpression>()
@@ -2778,22 +2858,26 @@ end
                             {
                                 Statements = new List<IStatement>()
                                 {
+                                    //这里添加默认值 
+                                    ifassignment,
+                                    
                                     new Return()
                                     {
                                         Expressions = new List<IExpression>()
                                         {
-                                            Attribute?.IsStatic??false ? new Variable()
+                                            Attribute?.IsStatic ?? false
+                                                ? new Variable()
                                                 {
-                                                    Name =fieldStringLiteral.Value,
-                                                }:
-                                            new TableAccess()
-                                            {
-                                                Table = new Variable()
+                                                    Name = fieldStringLiteral.Value,
+                                                }
+                                                : new TableAccess()
                                                 {
-                                                    Name = "self"
-                                                },
-                                                Index = fieldStringLiteral,
-                                            }
+                                                    Table = new Variable()
+                                                    {
+                                                        Name = "self"
+                                                    },
+                                                    Index = fieldStringLiteral,
+                                                }
                                         }
                                     }
                                 }
@@ -2822,7 +2906,7 @@ end
                     {
                         new Variable()
                         {
-                            Name = $"Set{PropertyName}",
+                            Name = $"__Set{PropertyName}",
                         },
                     },
                     Values = new List<IExpression>()
@@ -2842,9 +2926,9 @@ end
                     {
                         new Variable()
                         {
-                            Name = $"Set{PropertyName}",
+                            Name = $"__Set{PropertyName}",
                         }
-                    },  
+                    },
                     Values = new List<IExpression>()
                     {
                         new FunctionDefinition()
@@ -2861,18 +2945,19 @@ end
                                     {
                                         Targets = new()
                                         {
-                                            Attribute?.IsStatic??false ? new Variable()
+                                            Attribute?.IsStatic ?? false
+                                                ? new Variable()
                                                 {
                                                     Name = fieldStringLiteral.Value,
-                                                }:
-                                            new TableAccess()
-                                            {
-                                                Table = new Variable()
+                                                }
+                                                : new TableAccess()
                                                 {
-                                                    Name = "self"
-                                                },
-                                                Index = fieldStringLiteral,
-                                            }
+                                                    Table = new Variable()
+                                                    {
+                                                        Name = "self"
+                                                    },
+                                                    Index = fieldStringLiteral,
+                                                }
                                         },
                                         Values = new()
                                         {
@@ -2918,7 +3003,7 @@ end
         public string EnumName;
         public TableConstructor enumStruct;
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
@@ -2956,7 +3041,7 @@ end
             enumStruct.Write(writer, null);
             writer.WriteLine();
             //assign meta table and call __call function 
-          
+
             writer.WriteLine($@"
 setmetatable({EnumName}, {{
     __call = function(self, value)
@@ -2969,9 +3054,8 @@ setmetatable({EnumName}, {{
     end
 }})
             ");
-            
         }
-        
+
         public override void Write2TS(IndentAwareTextWriter writer, object data = null)
         {
             throw new NotImplementedException();
@@ -3002,7 +3086,7 @@ setmetatable({EnumName}, {{
             }
         }
 
-        public override void CheckNode(ICheckContext context,Node parent)
+        public override void CheckNode(ICheckContext context, Node parent)
         {
             this.parent = parent;
         }
