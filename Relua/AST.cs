@@ -1714,6 +1714,23 @@ namespace Lua.AST
                         }
                     }
                 }
+                //CUSTOM
+                if (Values[0] is FunctionDefinition functionDefinition)
+                {
+                    var definitionArgumentNames = functionDefinition.ArgumentNames;
+                    if (definitionArgumentNames.Count == 0 || definitionArgumentNames[0] != "self")
+                    {
+                        if (Targets[0] is Variable variable)
+                        {
+                            if (!variable.Name.StartsWith("__Get") && !variable.Name.StartsWith("__Set"))
+                            {
+                                isClassMethod = true;
+                            }
+                        }
+
+                        
+                    }
+                }
 
                 //CUSTOM 
                 if (PloopClass?.ClassName == "MapUtil")
@@ -2285,6 +2302,55 @@ namespace Lua.AST
                                  local MapCityView = require("GameModule/Map/MapUnit/MapCityView")
                                  """);
             }
+            else if (RequirePath.Contains("HomeSceneModule_Operator"))
+            {
+                writer.WriteLine("""
+                                 local CitySelector = require("GameModule/Map/CityUnit/CitySelector")
+                                 """);
+                
+            }
+            else if (RequirePath.Contains("HomeSceneModule_Unlock"))
+            {
+                writer.WriteLine("""
+                                 local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
+                                 """);
+                
+            }
+            else if (ClassName == "HomeSceneModule" && IsMainPartialClass)
+            {
+                writer.WriteLine("""
+                                 local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
+                                 """);
+            }
+            else if (ClassName == "CityNodeFactory")
+            {
+                writer.WriteLine("""
+                                 local CityArmyView = require("GameModule/Map/CityUnit/CityArmyView")
+                                 local CityBuildingView = require("GameModule/Map/CityUnit/CityBuildingView")
+                                 local CityUnlockEventView = require("GameModule/Map/CityUnit/CityUnlockEventView")
+                                 local CityDefenceView = require("GameModule/Map/CityUnit/CityDefenceView")
+                                 local CityCornerObjView = require("GameModule/Map/CityUnit/CityCornerObjView")
+                                 local CityEdgeObjView = require("GameModule/Map/CityUnit/CityEdgeObjView")
+                                 local CityRepairedBuildingView = require("GameModule/Map/CityUnit/CityRepairedBuildingView")
+                                 local CityGridBuildingBaseView = require("GameModule/Map/CityUnit/CityGridBuildingBaseView")
+                                 """);
+                
+            }
+            else if (ClassName == "CityBuildingView" || ClassName == "CityCornerObjView"|| ClassName == "CityDefenceView" ||
+                     ClassName == "CityEdgeObjView" )
+            {
+                writer.WriteLine("""
+                                 local CityNodeStates = require("GameModule/Map/State/CityNodeState").CityNodeStates
+                                 """);
+            }
+            else if (ClassName == "CityUnlockEventView" || ClassName == "CityRepairedBuildingView")
+            {
+                writer.WriteLine("""
+                                 local UnlockEventNodeState = require("GameModule/Map/State/UnlockEventNodeState").UnlockEventNodeState
+                                 """);
+            }
+
+
 
 
             writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");

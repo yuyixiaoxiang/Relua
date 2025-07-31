@@ -845,7 +845,7 @@ Module "Game.Procedure"(function(_ENV)
     ---@field public ReconnectState number _auto_annotation_
     ---@field public GotoDungeon number _auto_annotation_
     ---@field public GotoBagLike number _auto_annotation_
-    enum "ProcedureEvent" {
+    ProcedureEvent = {
         ReturnLogin = 1, -- 返回登录
         InitMapScene = 2, -- 初始化主场景
         GotoCity = 3, -- 进入主城
@@ -856,6 +856,7 @@ Module "Game.Procedure"(function(_ENV)
         GotoBagLike = 9, -- 进入背包Like场景
         ReconnectSuccessProcedureEvent = 10, -- 断线重连 -> 静默重连方式 成功
     }
+    _G.ProcedureEvent = ProcedureEvent
 
     class "Procedure"(function(_ENV)
         inherit "IContext"
