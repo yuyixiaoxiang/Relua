@@ -2252,6 +2252,35 @@ namespace Lua.AST
                 writer.WriteLine($"local CommonContainer = require(\"Common/UI/CommonContainerN\")");
                 
             }
+            else if (ClassName == "MapLegion" && IsMainPartialClass)
+            {
+                writer.WriteLine("""
+                                 local MapEntity = require("GameModule/Battle/MapEntity")
+                                 """);
+                
+            }
+            else if (RequirePath.Contains("BattleModule_Conf"))
+            {
+                writer.WriteLine("""
+                                 local MapFormationInfo = require("GameModule/Battle/MapFormationInfo").MapFormationInfo
+                                 """);
+                
+            }
+            
+            else if (RequirePath.Contains("MapLegion_Battle"))
+            {
+                writer.WriteLine("""
+                                 local MapEntity = require("GameModule/Battle/MapEntity")
+                                 """);
+                
+            }
+            else if (ClassName == "MapCityObjectComponent")
+            {
+                writer.WriteLine("""
+                                 local MapCityView = require("GameModule/Map/MapUnit/MapCityView")
+                                 """);
+            }
+
 
 
 
