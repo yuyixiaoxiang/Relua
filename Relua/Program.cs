@@ -67,7 +67,7 @@ namespace Lua
             "GameModule/Map/Lod/MapLevel0DisplayDataProvider",
             
             "GameModule/Battle",
-            
+            "GameModule/EntityMenu",
             
             
             //data
@@ -86,6 +86,12 @@ namespace Lua
             
             "Lua/GameData/Map/",
             "Lua/GameData/Battle",
+            
+            "GameData/EntityMenu",
+            "GameData/EntityButtonData",
+            
+            "GameData/Item",
+            
             
             //common
             "Lua/Common/LuaObjectN",
@@ -109,6 +115,12 @@ namespace Lua
             "Core.lua",
             "Game.lua",
             "GameView.lua",
+            // "EntityMenuModule.lua"
+        };
+        
+        private static List<string> postcopyfiles = new List<string>()
+        {
+             "EntityMenuModule.lua"
         };
             
         
@@ -145,8 +157,19 @@ namespace Lua
                     continue;
                 if (File.Exists(outfile.path))
                     File.Delete(outfile.path);
-                Console.WriteLine($"rewriting {outfile.path}");
-                File.WriteAllText(outfile.path, outfile.content); 
+                
+                if (postcopyfiles.Exists(s => Path.GetFileName(outfile.path) == s))
+                {
+                    Console.WriteLine($"post copy file: {Path.GetFileName(outfile.path)}");
+                    var copyfile =Path.Combine(GetProjectDirectory(),"postcopylua",Path.GetFileName(outfile.path));
+                    var content = File.ReadAllText(copyfile);
+                    File.WriteAllText(outfile.path, content);
+                }
+                else
+                {
+                    Console.WriteLine($"rewriting {outfile.path}");
+                    File.WriteAllText(outfile.path, outfile.content);    
+                }
             }
         }
         

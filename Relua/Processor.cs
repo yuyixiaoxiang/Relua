@@ -511,31 +511,6 @@ public class Processor
                                                 new Variable(){Name = "self"}
                                             }
                                         });
-                                        // foreach (var statement1 in functionDefinition.Block.Statements)
-                                        // {
-                                        //     if (statement1 is FunctionCall functionCall)
-                                        //     {
-                                        //         if (functionCall.Function is TableAccess tableAccess)
-                                        //         {
-                                        //             if (tableAccess.Table is Variable variable)
-                                        //             {
-                                        //                 if (variable.Name == "super")
-                                        //                 {
-                                        //                     variable.Name = _ploopClass.InheritClassName;
-                                        //                 }
-                                        //             }
-                                        //         }
-                                        //         else if (functionCall.Function is Variable variable2 && _isCtorFunc &&
-                                        //                  variable2.Name == "super")
-                                        //         {
-                                        //             functionCall.Function = new TableAccess()
-                                        //             {
-                                        //                 Table = new Variable() { Name = _ploopClass.InheritClassName },
-                                        //                 Index = new StringLiteral() { Value = ctor }
-                                        //             };
-                                        //         }
-                                        //     }
-                                        // }
                                     }
                                 }
                             }

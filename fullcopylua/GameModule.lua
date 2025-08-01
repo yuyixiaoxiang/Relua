@@ -45,6 +45,9 @@ Module "Game.Module" (function(_ENV)
 			self.CityFog = require("GameModule/HomeScene/CityFogModule")()
 			self.SelfCity = require("GameModule/SelfCity/SelfCityModule")()
 			self.Battle = require("GameModule/Battle/BattleModule")()
+
+			
+			self.EntityMenu = require("Common/GamePlay/GameModule/EntityMenu/EntityMenuModule")()
 			-- 手动生成
 			--    self.__System = SystemModule();
 			--    self.__Message = MessageModule();

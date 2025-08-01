@@ -31,6 +31,9 @@ Module "Game.Data" (function(_ENV)
 
 			self.WorldMap = require("GameData/Map/WorldMapData")()
 			self.Battle = require("GameData/Battle/BattleData")()
+
+			self.Item = require("GameData/Item/ItemData")()
+			self.Goods = require("GameData/Item/GoodsData")()
 			
 			for i, name in ipairs(DataNames) do
 				if self[name] == nil then
