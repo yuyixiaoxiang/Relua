@@ -2665,6 +2665,20 @@ end
             {
                 defaultLiteral = _default;
             }
+            else if (_default is UnaryOp unaryOp)
+            {
+                if (unaryOp.Expression is NumberLiteral numberLiteral)
+                {
+                    if(unaryOp.Type == UnaryOp.OpType.Negate)
+                        defaultLiteral = new NumberLiteral(){Value = -numberLiteral.Value};
+                    else 
+                        defaultLiteral = unaryOp.Expression;
+                }
+                else
+                {
+                    throw new Exception("unsupport unaryop");
+                }
+            }
 
             if (_handler != null)
                 Debug.Assert(_handler is FunctionDefinition, "handler is FunctionDefinition");
@@ -2773,8 +2787,9 @@ end
                         },
                     };
                     return assignment;
-                }
-                else if (defaultLiteral != null)
+                } 
+                
+                if (defaultLiteral != null)
                 {
                     var assignment = new Assignment()
                     {
