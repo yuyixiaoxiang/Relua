@@ -28,7 +28,7 @@ namespace Lua
             Console.WriteLine(outpath);
             return default;
         }
-
+        
         private static List<string> filterPaths = new List<string>()
         {
             "GamePlay/GameModule/Login/LoginModule",
@@ -101,6 +101,25 @@ namespace Lua
             "Common/Util/StateMachineN",
             
             
+            //condition 
+            "Common/Logic/Condition/core/ConditionSystem",
+            "Common/Logic/Condition/type/Condition_Procedure",
+            "CommonExt/Logic/Condition/mod",
+            
+            //cfg condition
+            "Common/Logic/CfgCondition/core/CfgCondition",
+            "CommonExt/Logic/CfgCondition/CfgConditionBind",
+            "Common/Logic/CfgCondition/core/ConditionBase",
+            "CommonExt/Logic/CfgCondition/mod",
+            
+            //check 
+            "Common/Logic/Check",
+            "CommonExt/Logic/Check",
+            
+            //action 
+            "Common/Logic/Action/",
+            "CommonExt/Logic/Action/mod",
+            
             //ui-----------
             "GameView/Login/login_panel",
             "GameView/Login/serverlist_panel",
@@ -115,12 +134,12 @@ namespace Lua
             "Core.lua",
             "Game.lua",
             "GameView.lua",
-            // "EntityMenuModule.lua"
         };
         
         private static List<string> postcopyfiles = new List<string>()
         {
-             "EntityMenuModule.lua"
+             "EntityMenuModule.lua",
+             "CfgConditionBind.lua"
         };
             
         

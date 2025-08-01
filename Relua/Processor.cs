@@ -288,12 +288,33 @@ public class Processor
             foreach (var _class in kv.Value)
             {
                 Console.WriteLine($"=>{_class.RequirePath}");
+                //CUSTOM
+                if (_class.ClassName == "CfgCondition")
+                {
+                    if (_class.FileName == "CfgConditionBind")
+                    {
+                        mainPartialClass = _class;
+                    }
+                    else
+                    {
+                        subPartialClasses.Add(_class);
+                    }
+                    continue;
+                }
+                
                 if (_class.ClassName == _class.FileName)
                 {
                     mainPartialClass = _class;
                 }
                 else
                 {
+                    //CUSTOM  
+                    if (_class.FileName == "CfgCondition")
+                    {
+                        subPartialClasses.Add(_class);
+                        continue;
+                    }
+
                     string prefix = $"{_class.ClassName}";
                     //CUSTOM 
                     if (kv.Key == "ActionSystem")
