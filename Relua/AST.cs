@@ -1230,7 +1230,7 @@ namespace Lua.AST
             for (var i = 0; i < Statements.Count; i++)
             {
                 var stat = Statements[i];
-                if(stat == null)
+                if (stat == null)
                     continue;
                 stat.Write(writer);
                 //if (writer.ForceOneLine && stat.AmbiguousTermination && i != Statements.Count - 1) {
@@ -1714,6 +1714,7 @@ namespace Lua.AST
                         }
                     }
                 }
+
                 //CUSTOM
                 if (Values[0] is FunctionDefinition functionDefinition)
                 {
@@ -1727,8 +1728,6 @@ namespace Lua.AST
                                 isClassMethod = true;
                             }
                         }
-
-                        
                     }
                 }
 
@@ -2237,38 +2236,42 @@ namespace Lua.AST
                                  local MapNBuildingView = require("GameModule/Map/MapUnit/MapNBuildingView")
                                  """);
             }
-             if (RequirePath.Contains("WorldMapModule_View"))
+
+            if (RequirePath.Contains("WorldMapModule_View"))
             {
                 writer.WriteLine(
                     $"local MapLevel0DisplayDataProvider = require(\"GameModule/Map/Lod/MapLevel0DisplayDataProvider\")");
             }
 
-             if (RequirePath.Contains("Map/city/MapCityData_Building"))
+            if (RequirePath.Contains("Map/city/MapCityData_Building"))
             {
                 writer.WriteLine("""
                                  local MapCityBuildingData = require("GameData/Map/city/MapCityBuildingData")
                                  """);
             }
-             if (RequirePath.Contains("Map/city/MapCityData_Army"))
+
+            if (RequirePath.Contains("Map/city/MapCityData_Army"))
             {
                 writer.WriteLine("""
                                  local ArmyData = require("GameData/Map/city/MapCityArmyData").ArmyData
                                  """);
             }
-             if (RequirePath.Contains("GameModule/SelfCity/SelfCityModule_Build"))
+
+            if (RequirePath.Contains("GameModule/SelfCity/SelfCityModule_Build"))
             {
                 writer.WriteLine("""
                                  local MapCityBuildingData = require("GameData/Map/city/MapCityBuildingData")
                                  """);
             }
-             if (ClassName == "MapNpcObjectComponent")
+
+            if (ClassName == "MapNpcObjectComponent")
             {
                 writer.WriteLine("""
                                  local MapNpcView = require("GameModule/Map/MapUnit/MapNpcView")
                                  """);
             }
 
-             if (ClassName == "MapNpcView")
+            if (ClassName == "MapNpcView")
             {
                 writer.WriteLine("""
                                  local MapLegion = require("GameModule/Battle/MapLegion")
@@ -2280,57 +2283,63 @@ namespace Lua.AST
             {
                 writer.WriteLine($"local DServerDataElement = require(\"GameData/DServerData/DServerDataElement\")");
             }
-             if (ClassName == "serverlist_panel")
+
+            if (ClassName == "serverlist_panel")
             {
                 writer.WriteLine($"local ViewBaseN = require(\"Common/GamePlay/GameView/ViewBase/ViewBaseN\")");
                 writer.WriteLine($"local CommonContainer = require(\"Common/UI/CommonContainerN\")");
             }
-             if (ClassName == "MapLegion" && IsMainPartialClass)
+
+            if (ClassName == "MapLegion" && IsMainPartialClass)
             {
                 writer.WriteLine("""
                                  local MapEntity = require("GameModule/Battle/MapEntity")
                                  """);
             }
-             if (RequirePath.Contains("BattleModule_Conf"))
+
+            if (RequirePath.Contains("BattleModule_Conf"))
             {
                 writer.WriteLine("""
                                  local MapFormationInfo = require("GameModule/Battle/MapFormationInfo").MapFormationInfo
                                  """);
             }
 
-             if (RequirePath.Contains("MapLegion_Battle"))
+            if (RequirePath.Contains("MapLegion_Battle"))
             {
                 writer.WriteLine("""
                                  local MapEntity = require("GameModule/Battle/MapEntity")
                                  """);
             }
-             if (ClassName == "MapCityObjectComponent")
+
+            if (ClassName == "MapCityObjectComponent")
             {
                 writer.WriteLine("""
                                  local MapCityView = require("GameModule/Map/MapUnit/MapCityView")
                                  """);
             }
-             if (RequirePath.Contains("HomeSceneModule_Operator"))
+
+            if (RequirePath.Contains("HomeSceneModule_Operator"))
             {
                 writer.WriteLine("""
                                  local CitySelector = require("GameModule/Map/CityUnit/CitySelector")
                                  """);
-                
             }
-             if (RequirePath.Contains("HomeSceneModule_Unlock"))
-            {
-                writer.WriteLine("""
-                                 local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
-                                 """);
-                
-            }
-             if (ClassName == "HomeSceneModule" && IsMainPartialClass)
+
+            if (RequirePath.Contains("HomeSceneModule_Unlock"))
             {
                 writer.WriteLine("""
                                  local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
                                  """);
             }
-             if (ClassName == "CityNodeFactory")
+
+            if (ClassName == "HomeSceneModule" && IsMainPartialClass)
+            {
+                writer.WriteLine("""
+                                 local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
+                                 """);
+            }
+
+            if (ClassName == "CityNodeFactory")
             {
                 writer.WriteLine("""
                                  local CityArmyView = require("GameModule/Map/CityUnit/CityArmyView")
@@ -2342,48 +2351,53 @@ namespace Lua.AST
                                  local CityRepairedBuildingView = require("GameModule/Map/CityUnit/CityRepairedBuildingView")
                                  local CityGridBuildingBaseView = require("GameModule/Map/CityUnit/CityGridBuildingBaseView")
                                  """);
-                
             }
-             if (ClassName == "CityBuildingView" || ClassName == "CityCornerObjView"|| ClassName == "CityDefenceView" ||
-                     ClassName == "CityEdgeObjView" )
+
+            if (ClassName == "CityBuildingView" || ClassName == "CityCornerObjView" || ClassName == "CityDefenceView" ||
+                ClassName == "CityEdgeObjView")
             {
                 writer.WriteLine("""
                                  local CityNodeStates = require("GameModule/Map/State/CityNodeState").CityNodeStates
                                  """);
             }
-             if (ClassName == "CityUnlockEventView" || ClassName == "CityRepairedBuildingView")
+
+            if (ClassName == "CityUnlockEventView" || ClassName == "CityRepairedBuildingView")
             {
                 writer.WriteLine("""
                                  local UnlockEventNodeState = require("GameModule/Map/State/UnlockEventNodeState").UnlockEventNodeState
                                  """);
             }
-             if (ClassName == "ItemData")
+
+            if (ClassName == "ItemData")
             {
                 writer.WriteLine("""
                                  local GoodsData = require("GameData/Item/GoodsData")
                                  """);
-                
             }
-             if (ClassName == "EntityMenuModule")
+
+            if (ClassName == "EntityMenuModule")
             {
                 writer.WriteLine("""
                                  local EntityMenuDetail = require("Common/GamePlay/GameModule/EntityMenu/EntityMenuDetail")
                                  """);
             }
-             if (RequirePath.EndsWith("HomeSceneModule_Operator"))
+
+            if (RequirePath.EndsWith("HomeSceneModule_Operator"))
             {
                 writer.WriteLine("""
                                  local CityTileHighLighter = require("GameModule/Map/CityUnit/CityTileHighLighter")
                                  """);
             }
-             if (ClassName == "CityBuildingView")
+
+            if (ClassName == "CityBuildingView")
             {
                 writer.WriteLine("""
                                  local ResBuildingButtonData = require("GameData/EntityButtonData/ResBuildingButtonData")
                                  """);
             }
-             if (RequirePath.EndsWith("EntityMenuModule_Priority")||
-                     RequirePath.EndsWith("EntityMenuModule_Async"))
+
+            if (RequirePath.EndsWith("EntityMenuModule_Priority") ||
+                RequirePath.EndsWith("EntityMenuModule_Async"))
             {
                 writer.WriteLine("""
                                  local EntityMenuDetail = require("Common/GamePlay/GameModule/EntityMenu/EntityMenuDetail")
@@ -2406,7 +2420,7 @@ namespace Lua.AST
                     }
                     else
                     {
-                        writer.WriteLine($"local {ClassName} = middleclass('{ClassName}') ");    
+                        writer.WriteLine($"local {ClassName} = middleclass('{ClassName}') ");
                     }
                 }
                 else
@@ -2667,7 +2681,7 @@ end
             var isStatic = Attribute?.IsStatic ?? false;
             if (isStatic == false)
                 return null;
-            
+
             if (fieldStringLiteral != null)
             {
                 //强制设置为nil
@@ -2679,7 +2693,7 @@ end
                         new Variable()
                         {
                             Name = fieldStringLiteral.Value
-                        }       
+                        }
                     },
                     Values = new()
                     {
@@ -2688,6 +2702,7 @@ end
                 };
                 return assignment;
             }
+
             return null;
         }
 
@@ -2730,7 +2745,6 @@ end
                                 }
                             }
                         },
-
                     };
                     return assignment;
                 }
@@ -2928,15 +2942,16 @@ end
                         {
                             Condition = new BinaryOp()
                             {
-                                
-                                Left = isStatic == false?new TableAccess()
-                                {
-                                    Table = new Variable()
+                                Left = isStatic == false
+                                    ? new TableAccess()
                                     {
-                                        Name = "self"
-                                    },
-                                    Index = fieldStringLiteral
-                                }: new Variable(){Name = fieldStringLiteral.Value},
+                                        Table = new Variable()
+                                        {
+                                            Name = "self"
+                                        },
+                                        Index = fieldStringLiteral
+                                    }
+                                    : new Variable() { Name = fieldStringLiteral.Value },
                                 Right = new NilLiteral(),
                                 Type = BinaryOp.OpType.Equal
                             },
@@ -2972,7 +2987,7 @@ end
                                 {
                                     //这里添加默认值 
                                     ifassignment,
-                                    
+
                                     new Return()
                                     {
                                         Expressions = new List<IExpression>()
