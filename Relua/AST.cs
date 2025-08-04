@@ -807,7 +807,39 @@ namespace Lua.AST
 
 
         public override void CheckNode(ICheckContext context, Node parent)
-        {
+        { 
+            PloopClass findPloopClassAncestor(Node parent)
+            {
+                var tmpParent = parent;
+                while (tmpParent != null && tmpParent is not PloopClass )
+                {
+                    tmpParent = tmpParent.parent;
+                }
+                if (tmpParent is PloopClass ploopClass)
+                    return ploopClass;
+                return null;
+            }
+
+            if (Function is TableAccess tableAccess)
+            {
+                if (tableAccess.Table is Variable variable)
+                {
+                    if (variable.Name == "super")
+                    {
+                        variable.Name = findPloopClassAncestor(parent).InheritClassName;
+                    }
+                }
+            }
+            else if (Function is Variable variable2 &&
+                     variable2.Name == "super")
+            {
+                Function = new TableAccess()
+                {
+                    Table = new Variable() { Name = findPloopClassAncestor(parent).InheritClassName },
+                    Index = new StringLiteral() { Value = "__ctor" }
+                };
+            }
+            
             //CUSTOM
             // if (Function is TableAccess tableAccess)
             // {
@@ -2404,6 +2436,74 @@ namespace Lua.AST
                                  """);
             }
 
+            if (ClassName == "TriggerSystem" && IsMainPartialClass)
+            {
+                writer.WriteLine("""
+                                 local Trigger = require("Common/Logic/Trigger/core/Trigger")
+                                 """);
+                
+            }
+            else if (RequirePath.EndsWith("CheckSystem_Init"))
+            {
+                writer.WriteLine("""
+                                 local CheckGroup = require("Common/Logic/Check/core/CheckGroup")
+                                 local CheckTest = require("CommonExt/Logic/Check/mod/CheckTest").CheckTest
+                                 local CheckTasks = require("CommonExt/Logic/Check/mod/CheckTasks").CheckTasks
+                                 local CheckTriggers = require("CommonExt/Logic/Check/mod/CheckTriggers").CheckTriggers
+                                 local CheckActivityFrame = require("CommonExt/Logic/Check/mod/CheckActivityFrame").CheckActivityFrame
+                                 local CheckVip = require("CommonExt/Logic/Check/mod/CheckVip")
+                                 local CheckAlliance = require("CommonExt/Logic/Check/mod/CheckAlliance").CheckAlliance
+                                 local CheckHud = require("CommonExt/Logic/Check/mod/CheckHud")
+                                 local CheckTaskChapterGroup = require("CommonExt/Logic/Check/mod/CheckTasks").CheckTaskChapterGroup
+                                 local CheckBuildings = require("CommonExt/Logic/Check/mod/old/CheckBuildings").CheckBuildings
+                                 local CheckPve = require("CommonExt/Logic/Check/mod/CheckPve").CheckPve
+                                 local CheckUnlockEvent = require("CommonExt/Logic/Check/mod/CheckUnlockEvent").CheckUnlockEvent
+                                 local CheckCityFogOpen = require("CommonExt/Logic/Check/mod/CheckCityFogOpen").CheckCityFogOpen
+                                 local CheckKvk = require("CommonExt/Logic/Check/mod/CheckKvk").CheckKvk
+                                 
+                                 """);
+            }
+            else if (RequirePath.EndsWith("CfgCondition"))
+            {
+                writer.WriteLine("""
+                                 local CheckTriggerNode = require("Common/Logic/Check/core/CheckTriggerNode")
+                                 """);
+                
+            }
+            else if (RequirePath.EndsWith("CheckSystem"))
+            {
+                writer.WriteLine("""
+                                 local RedUIFunc = require("Common/Logic/Check/CheckRedUI").RedUIFunc
+                                 local RedUI = require("Common/Logic/Check/CheckRedUI").RedUI
+                                 """);
+                
+            }
+            else if (RequirePath.EndsWith("CheckHud"))
+            {
+                writer.WriteLine("""
+                                 local CheckBookmark = require("CommonExt/Logic/Check/mod/CheckBookmark")
+                                 """);
+                
+            }
+            else if (RequirePath.EndsWith("TriggerSystem_Bind"))
+            {
+                writer.WriteLine("""
+                                 local WatcherPlayerLevel = require("CommonExt/Logic/Trigger/mod/Watcher_User").WatcherPlayerLevel
+                                 """);
+            }
+            else if (RequirePath.EndsWith("Watcher"))
+            {
+                writer.WriteLine("""
+                                 local CondJudgment = require("Common/Logic/Condition/core/CondJudgment")
+                                 """);
+                
+            }
+
+
+
+
+
+
 
             writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");
             if (IsMainPartialClass || !IsPartialClass)
@@ -2420,7 +2520,14 @@ namespace Lua.AST
                     }
                     else
                     {
-                        writer.WriteLine($"local {ClassName} = middleclass('{ClassName}') ");
+                        if (singleFileMultiClass)
+                        {
+                            writer.WriteLine($"{ClassName} = middleclass('{ClassName}') ");
+                        }
+                        else
+                        {
+                            writer.WriteLine($"local {ClassName} = middleclass('{ClassName}') ");
+                        }
                     }
                 }
                 else
@@ -2440,7 +2547,14 @@ namespace Lua.AST
                     }
 
                     writer.WriteLine($"---@class {ClassName} : {InheritClassName}");
-                    writer.WriteLine($"local {ClassName} = middleclass('{ClassName}', {InheritClassName}) ");
+                    if (singleFileMultiClass)
+                    {
+                        writer.WriteLine($"{ClassName} = middleclass('{ClassName}', {InheritClassName}) ");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"local {ClassName} = middleclass('{ClassName}', {InheritClassName}) ");
+                    }
                 }
             }
             else

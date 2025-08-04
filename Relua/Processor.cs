@@ -197,6 +197,29 @@ public class Processor
 
             if (singleFileMultiClass)
             {
+                var tmpLocalClassIndex = 0;
+                //在顶部声明所有的类的local 变量
+                foreach (var tmpclass in allPloopClasses)
+                {
+                    var ploopClass = tmpclass as PloopClass;
+                    var className = ploopClass.ClassName;
+                    file.Block.Statements.Insert(tmpLocalClassIndex++,new Assignment()
+                    {
+                        IsLocal =  true,
+                        Targets = new List<IAssignable>()
+                        {
+                            new Variable()
+                            {
+                                Name = className,
+                            }
+                        }
+                    });
+                }
+            }
+
+
+            if (singleFileMultiClass)
+            {
                 Console.WriteLine($"Multi Class File: {file.srcPath}");
                 file.Block.Statements.Add(new Return()
                 {

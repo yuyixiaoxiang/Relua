@@ -36,15 +36,23 @@ Module "Game.Procedure"(function(_ENV)
             _G["NET"] = GameNet(); -- 初始化网络模块
             NetPBCManager:InitEnd();
             ---@type ActionSystem
+
+            local ActionSystem = require("Common/Logic/Action/core/ActionSystem")
             _G["ACTION"] = ActionSystem(); -- 客户端独立事件处理系统
+
+            local ConditionSystem = require("Common/Logic/Condition/core/ConditionSystem")
             ---@type ConditionSystem
             _G["CONDITION"] = ConditionSystem(); -- 客户端独立条件判断系统
+            local WatcherSystem = require("Common/Logic/Trigger/core/WatcherSystem")
             ---@type WatcherSystem
             _G["WATCHER"] = WatcherSystem(); -- 客户端监听器系统
+            local TriggerSystem = require("Common/Logic/Trigger/core/TriggerSystem")
             ---@type TriggerSystem
             _G["TRIGGER"] = TriggerSystem(); -- 客户端触发器系统
+            local CfgCondition = require("Common/Logic/CfgCondition/core/CfgCondition")
             ---@type CfgCondition
             _G["CFG_CONDITION"] = CfgCondition(); -- 基于服务器规则的条件判断系统
+            local CheckSystem = require("Common/Logic/Check/core/CheckSystem")
             ---@type CheckSystem
             _G["CHECK"] = CheckSystem(); -- 客户端红点系统
             if UNITY_EDITOR then

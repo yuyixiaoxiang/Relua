@@ -102,8 +102,8 @@ namespace Lua
             
             
             //condition 
-            "Common/Logic/Condition/core/ConditionSystem",
-            "Common/Logic/Condition/type/Condition_Procedure",
+            "Common/Logic/Condition/core/",
+            "Common/Logic/Condition/type/",
             "CommonExt/Logic/Condition/mod",
             
             //cfg condition
@@ -119,6 +119,14 @@ namespace Lua
             //action 
             "Common/Logic/Action/",
             "CommonExt/Logic/Action/mod",
+            
+            //trigger / watcher
+            "Common/Logic/Trigger/core/Watcher",
+            "CommonExt/Logic/Trigger",
+            "Common/Logic/Trigger/TriggerSystem_Bind",
+            "Common/Logic/Trigger/core/Trigger",
+            "Common/Logic/Trigger/core/TriggerSystem",
+            
             
             //ui-----------
             "GameView/Login/login_panel",
