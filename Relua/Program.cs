@@ -176,12 +176,16 @@ namespace Lua
             }
 
             var outfiles = processor.Process();
-
             // return;
             foreach (var outfile in outfiles)
             {
-                if(filterPaths.Exists((s => outfile.path.Replace("\\","/").Contains(s))) == false)
-                    continue;
+                // if (filterPaths.Exists((s => outfile.path.Replace("\\", "/").Contains(s))) == false)
+                // {
+                //     Console.WriteLine($"skip process file: {outfile.path}");
+                //     continue;
+                // }
+
+                
                 if (File.Exists(outfile.path))
                     File.Delete(outfile.path);
                 

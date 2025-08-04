@@ -16,6 +16,12 @@ public class PloopScanner
         @"class\s+""([^""]+)""\s*\(\s*function\s*\(\s*_ENV\s*\)",
         RegexOptions.IgnoreCase | RegexOptions.Multiline
     );
+    
+    // 检测PLoop enum关键字模式
+    private static readonly Regex EnumPattern = new Regex(
+        @"enum\s*""[^""]+""?\s*\{",
+        options: RegexOptions.IgnoreCase | RegexOptions.Multiline
+    );
 
     // 需要跳过的目录名称
     private static readonly List<string> SkipPaths = new List<string>()
@@ -173,8 +179,9 @@ public class PloopScanner
             // 检查是否有匹配项
             var moduleMatches = ModulePattern.Matches(content);
             var classMatches = ClassPattern.Matches(content);
+            var enumMatches = EnumPattern.Matches(content);
 
-            if (moduleMatches.Count == 0 && classMatches.Count == 0)
+            if (moduleMatches.Count == 0 && classMatches.Count == 0 && enumMatches.Count == 0)
             {
                 return results; // 没有匹配项，直接返回
             }

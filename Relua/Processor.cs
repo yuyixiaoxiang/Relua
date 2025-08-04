@@ -40,12 +40,15 @@ public class Processor
         {
             try
             {
+                // if(file.outPath.Contains("EntityMenuModule.lua") == false)
+                //     continue;
                 var tokenizer = new Tokenizer(File.ReadAllText(file.srcPath));
                 var parser = new Parser(tokenizer);
                 var expr = parser.Read();
+                //强制调用一下
                 expr.ToString();
                 var context = new CheckContext();
-                expr.CheckNode(context,null);
+                expr.CheckNode(context, null);
                 expr.ExportableVariables(context);
                 file.Block = expr;
                 file.CheckContext = context;
@@ -56,11 +59,10 @@ public class Processor
             }
         }
 
-        
+
         //post process
         ProcessSafeRequireFile();
         PostprocessModuleAndPartialClass();
-        //todo check auto require 
         
         //outout 
         List<(string path, string content)> outputs = new List<(string path, string content)>();
@@ -128,7 +130,6 @@ public class Processor
                                     }
                                 }
                             };
-                            
                         }
                     }
                 }
@@ -203,9 +204,9 @@ public class Processor
                 {
                     var ploopClass = tmpclass as PloopClass;
                     var className = ploopClass.ClassName;
-                    file.Block.Statements.Insert(tmpLocalClassIndex++,new Assignment()
+                    file.Block.Statements.Insert(tmpLocalClassIndex++, new Assignment()
                     {
-                        IsLocal =  true,
+                        IsLocal = true,
                         Targets = new List<IAssignable>()
                         {
                             new Variable()
@@ -246,15 +247,15 @@ public class Processor
                     {
                         Expressions = new List<IExpression>()
                         {
-                            new Variable(){Name =moduleAndClasse.Classes[0].ClassName }
+                            new Variable() { Name = moduleAndClasse.Classes[0].ClassName }
                         }
-                    });    
+                    });
                 }
             }
 
             moduleAndClasses.Add(moduleAndClasse);
         }
-        
+
         //check the attribute
         foreach (var moduleAndClass in moduleAndClasses)
         {
@@ -322,9 +323,10 @@ public class Processor
                     {
                         subPartialClasses.Add(_class);
                     }
+
                     continue;
                 }
-                
+
                 if (_class.ClassName == _class.FileName)
                 {
                     mainPartialClass = _class;
@@ -407,13 +409,13 @@ public class Processor
                         inheritClassName = "IContext";
                         _ploopClass.InheritClassName = inheritClassName;
                     }
+
                     if (inheritClassName == "Common.StateMachine.IState")
                     {
                         inheritClassName = "IState";
                         _ploopClass.InheritClassName = inheritClassName;
                     }
-                    
-                    
+
 
                     Debug.Assert(inheritClassName.Split(".").Length == 1, "inheritClassName.Split('.').Length == 1");
                     if (sameclassKeys.ContainsKey(inheritClassName))
@@ -453,7 +455,7 @@ public class Processor
                     }
                     else
                     {
-                            throw new Exception($"not find base class,{_ploopClass.InheritClassName}");
+                        throw new Exception($"not find base class,{_ploopClass.InheritClassName}");
                     }
                 }
             }
@@ -516,7 +518,7 @@ public class Processor
             }
         }
 
-        
+
         //process the _dtor method call
         const string _dtor = "__dtor";
         foreach (var moduleAndClass in moduleAndClasses)
@@ -552,7 +554,7 @@ public class Processor
                                             },
                                             Arguments = new List<IExpression>()
                                             {
-                                                new Variable(){Name = "self"}
+                                                new Variable() { Name = "self" }
                                             }
                                         });
                                     }
@@ -563,9 +565,8 @@ public class Processor
                 }
             }
         }
-        
-        
-        
+
+
         //check Nested class 
         foreach (var moduleAndClass in moduleAndClasses)
         {
@@ -628,26 +629,27 @@ public class Processor
                             {
                                 ArgumentNames = new List<string>()
                                 {
-                                    "self","..."
+                                    "self", "..."
                                 },
                                 Block = new Block()
                                 {
                                     Statements = new List<IStatement>()
                                     {
-                                        string.IsNullOrEmpty(mainCtorClass.InheritClassName) == false?
-                                        new FunctionCall()
-                                        {
-                                            Arguments = new List<IExpression>()
+                                        string.IsNullOrEmpty(mainCtorClass.InheritClassName) == false
+                                            ? new FunctionCall()
                                             {
-                                                new Variable(){Name = "self"},
-                                                new VarargsLiteral(),
-                                            },
-                                            Function = new TableAccess()
-                                            {
-                                                Table = new Variable() { Name = mainCtorClass.InheritClassName },
-                                                Index = new StringLiteral() { Value = "__ctor" }
+                                                Arguments = new List<IExpression>()
+                                                {
+                                                    new Variable() { Name = "self" },
+                                                    new VarargsLiteral(),
+                                                },
+                                                Function = new TableAccess()
+                                                {
+                                                    Table = new Variable() { Name = mainCtorClass.InheritClassName },
+                                                    Index = new StringLiteral() { Value = "__ctor" }
+                                                }
                                             }
-                                        }: new Block()
+                                            : new Block()
                                     }
                                 },
                                 ImplicitSelf = true,
@@ -690,12 +692,14 @@ public class Processor
                             // }
                             // else
                             {
-                                localpropertyFieldAssignments.Add(fieldAssignment);    
+                                localpropertyFieldAssignments.Add(fieldAssignment);
                             }
                         }
+
                         propertyAssignmentFunctions.AddRange(_ploopProperty.GetPropertyFunction());
                     }
                 }
+
                 //check
                 if (localpropertyFieldAssignments.Count > 0)
                 {
@@ -705,7 +709,8 @@ public class Processor
                         var fieldName = (assignment_.Targets[0] as Variable).Name;
                         var exists = _ploopClass.Statements.Exists((statement =>
                         {
-                            if(statement is Assignment assignment){
+                            if (statement is Assignment assignment)
+                            {
                                 if (assignment.IsLocal)
                                 {
                                     if (assignment.Targets.Exists((assignable =>
@@ -725,11 +730,12 @@ public class Processor
                                     }
                                 }
                             }
+
                             return false;
                         }));
                         if (exists == false)
                         {
-                            _ploopClass.Statements.Insert(0, assignment);            
+                            _ploopClass.Statements.Insert(0, assignment);
                         }
                     }
                 }
@@ -758,6 +764,7 @@ public class Processor
                                         }
                                     }
                                 }
+
                                 return false;
                             }));
                             if (exists)
@@ -767,11 +774,10 @@ public class Processor
                         }
                     }
 
-                    _ploopClass.Statements.Insert(0,assignmentFunction);    
+                    _ploopClass.Statements.Insert(0, assignmentFunction);
                 }
-                    
-                
-                
+
+
                 //rearrange all the local assignment
                 var allLocalAssignments = _ploopClass.Statements.FindAll((statement =>
                 {
@@ -786,17 +792,144 @@ public class Processor
                     return false;
                 }));
                 _ploopClass.Statements.RemoveAll((statement => allLocalAssignments.Contains(statement)));
-                _ploopClass.Statements.InsertRange(0,allLocalAssignments);
+                _ploopClass.Statements.InsertRange(0, allLocalAssignments);
 
                 //check GetXXX/SetXXX
-
-
-
-
             }
         }
 
 
+        
+        
+        //todo check auto require 
+        HashSet<string> autorequirenotfind = new HashSet<string>();
+        foreach (var file in files)
+        {
+            Console.WriteLine($"Auto Require File:{file.outPath}");
+            Console.WriteLine(file.CheckContext);
+            Console.WriteLine("\n\n");
+
+            var needRequireFile = new Dictionary<string, List<ModuleAndClass>>();
+            var needRequreStrs = file.CheckContext.GetRequiredVariables();
+
+            foreach (var _needRequreStr in needRequreStrs)
+            {
+                var needRequreStr = _needRequreStr;
+                
+                foreach (var moduleAndClass in moduleAndClasses)
+                {
+                    var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
+                    foreach (var exportVariable in exportableVariables)
+                    {
+                        if (exportVariable.VariableName == needRequreStr)
+                        {
+                            if(needRequireFile.ContainsKey(needRequreStr) == false)
+                                needRequireFile[needRequreStr] = new List<ModuleAndClass>();
+                            if(needRequireFile[needRequreStr].Contains(moduleAndClass) == false)
+                                //find 
+                                needRequireFile[needRequreStr].Add(moduleAndClass);
+                        }
+                    }
+                }
+            }
+
+            var autoRequireIndex = 0;
+            foreach (var needRequreStr in needRequreStrs)
+            {
+                if (needRequireFile.ContainsKey(needRequreStr))
+                {
+                    if (needRequireFile[needRequreStr].Count > 1)
+                    {
+                        Console.WriteLine($"AutoRequire,find multiply:{file.outPath} {needRequreStr}");
+                    }
+                    //尝试自动require lua file 
+
+                    var requireFile = needRequireFile[needRequreStr][0];
+                    if(requireFile.file == file)
+                        continue;
+
+                    PloopClass needRequireClass = null;
+                    foreach (var _ploopClass in requireFile.Classes)
+                    {
+                        if (_ploopClass.ClassName == needRequreStr)
+                        {
+                            needRequireClass = _ploopClass;
+                        }
+                    }
+
+                    if (needRequireClass != null)
+                    {
+                        var requirePath = needRequireClass.RequirePath;
+                        //CUSTOM  
+                        if (needRequreStr == "CommonContainer")
+                        {
+                            requirePath = requirePath.Replace("CommonContainer", "CommonContainerN");
+                        }
+
+                        file.Block.Statements.Insert(autoRequireIndex++,new Assignment()
+                        {
+                            IsLocal = true,
+                            Targets = new()
+                            {
+                                new Variable()
+                                {
+                                    Name = needRequreStr
+                                }
+                            },
+                            
+                            Values = needRequireClass.singleFileMultiClass == false ?  new List<IExpression>()
+                            {
+                                new FunctionCall()
+                                {
+                                    Arguments = new List<IExpression>()
+                                    {
+                                        new StringLiteral()
+                                        {
+                                            Value = requirePath
+                                        }
+                                    },
+                                    Function = new Variable()
+                                    {
+                                        Name = "require",
+                                    }
+                                }
+                            }:new List<IExpression>()
+                            {
+                                new TableAccess()
+                                {
+                                    Table = new FunctionCall()
+                                    {
+                                        Arguments = new List<IExpression>()
+                                        {
+                                            new StringLiteral()
+                                            {
+                                                Value = requirePath
+                                            }
+                                        },
+                                        Function = new Variable()
+                                        {
+                                            Name = "require",
+                                        }
+                                    },
+                                    Index = new StringLiteral()
+                                    {
+                                        Value = needRequreStr
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"AutoRequire,Not find:{file.outPath} {needRequreStr}");
+                    autorequirenotfind.Add(needRequreStr);
+                }
+            }
+        }
+        
+        Console.WriteLine($"\n\n AutoRequireNotFind:{string.Join(",", autorequirenotfind)}");
+        
         // throw new Exception("custom exception");
     }
 }

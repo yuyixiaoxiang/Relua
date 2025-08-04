@@ -194,8 +194,8 @@ namespace Lua.AST
         public override string ToString()
         {
             return
-                $"-----------------------------------------\nRequireVariables:{string.Join("\n\t", requiredVariables)}" +
-                $"\nExportableVariables:{string.Join("\n\t", exportableVariables)}";
+                $"RequireVariables:\n\t{string.Join("\n\t", requiredVariables)}" +
+                $"\nExportableVariables:\n\t{string.Join("\n\t", exportableVariables)}";
         }
     }
 
@@ -808,6 +808,7 @@ namespace Lua.AST
 
         public override void CheckNode(ICheckContext context, Node parent)
         { 
+            this.parent = parent;
             PloopClass findPloopClassAncestor(Node parent)
             {
                 var tmpParent = parent;
@@ -840,47 +841,6 @@ namespace Lua.AST
                 };
             }
             
-            //CUSTOM
-            // if (Function is TableAccess tableAccess)
-            // {
-            //     if (tableAccess.Table is Variable variable && tableAccess.Index is StringLiteral stringLiteral)
-            //     {
-            //         if (variable.Name == "NetPBCManager" && stringLiteral.Value == "RegisterReceiveMsg")
-            //         {
-            //             if (Arguments[3] is TableAccess access)
-            //             {
-            //                 var selfVariable = new Variable() { Name = "self" };
-            //                 Arguments[3] = new FunctionDefinition()
-            //                 {
-            //                     AcceptsVarargs =  true,
-            //                     ArgumentNames =  new List<string>(){"..."},
-            //                     Block = new Block()
-            //                     {
-            //                         Statements = new List<IStatement>()
-            //                         {
-            //                             new FunctionCall()
-            //                             {
-            //                                 Arguments = new List<IExpression>()
-            //                                 {
-            //                                     selfVariable,
-            //                                     new VarargsLiteral(),
-            //                                 },
-            //                                 Function = new TableAccess()
-            //                                 {
-            //                                     Table = selfVariable,
-            //                                     Index = access.Index
-            //                                 }
-            //                             },
-            //                         }
-            //                     }
-            //                 };
-            //             }
-            //         }
-            //     }
-            // }
-
-
-            this.parent = parent;
             foreach (var argument in Arguments)
             {
                 new IntermediateNode(argument, "FunctionCallArg").CheckNode(context, this);
@@ -1974,6 +1934,7 @@ namespace Lua.AST
         {
             this.parent = parent;
             Iterator.CheckNode(context, this);
+            Block.CheckNode(context, this);
         }
 
         public override void Write(IndentAwareTextWriter writer, object data)
@@ -2210,6 +2171,11 @@ namespace Lua.AST
 
         public override void LookupVariable(ICheckContext context, Node child, string variable)
         {
+            //CUSTOM 
+            if(variable == InheritClassName)
+                return;
+            if(variable == ClassName)
+                return;
             var indexOf = Statements.IndexOf((IStatement)child);
             if (indexOf > 0)
             {
@@ -2246,109 +2212,109 @@ namespace Lua.AST
             //custom
             if (ClassName == "WorldMapModule" && IsMainPartialClass)
             {
-                writer.WriteLine(
-                    $"local MapViewPortChangedHandler = require(\"GameModule/Map/MapViewPortChangedHandler\")");
-                writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");
-                writer.WriteLine(
-                    $"local MapCityObjectComponent = require(\"GameModule/Map/MapComponent/MapCityObjectComponent\")");
-                writer.WriteLine(
-                    $"local MapObjectComponent = require(\"GameModule/Map/MapComponent/MapObjectComponent\")");
-                writer.WriteLine(
-                    $"local MapArmyObjectComponent = require(\"GameModule/Map/MapComponent/MapArmyObjectComponent\")");
-                writer.WriteLine(
-                    $"local MapNpcObjectComponent = require(\"GameModule/Map/MapComponent/MapNpcObjectComponent\")");
+                // writer.WriteLine(
+                //     $"local MapViewPortChangedHandler = require(\"GameModule/Map/MapViewPortChangedHandler\")");
+                // writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");
+                // writer.WriteLine(
+                //     $"local MapCityObjectComponent = require(\"GameModule/Map/MapComponent/MapCityObjectComponent\")");
+                // writer.WriteLine(
+                //     $"local MapObjectComponent = require(\"GameModule/Map/MapComponent/MapObjectComponent\")");
+                // writer.WriteLine(
+                //     $"local MapArmyObjectComponent = require(\"GameModule/Map/MapComponent/MapArmyObjectComponent\")");
+                // writer.WriteLine(
+                //     $"local MapNpcObjectComponent = require(\"GameModule/Map/MapComponent/MapNpcObjectComponent\")");
 
-                writer.WriteLine("""
-                                 local MapResView = require("GameModule/Map/MapUnit/MapResView")
-                                 local MapTreeView = require("GameModule/Map/MapUnit/MapTreeView")
-                                 local MapStaticObjView = require("GameModule/Map/MapUnit/MapStaticObjView")
-                                 local MapBookmarkView = require("GameModule/Map/MapUnit/MapBookmarkView")
-                                 local MapABuildingView = require("GameModule/Map/MapUnit/MapABuildingView")
-                                 local MapBuildingResView = require("GameModule/Map/MapUnit/MapBuildingResView")
-                                 local MapNBuildingView = require("GameModule/Map/MapUnit/MapNBuildingView")
-                                 """);
+                // writer.WriteLine("""
+                //                  local MapResView = require("GameModule/Map/MapUnit/MapResView")
+                //                  local MapTreeView = require("GameModule/Map/MapUnit/MapTreeView")
+                //                  local MapStaticObjView = require("GameModule/Map/MapUnit/MapStaticObjView")
+                //                  local MapBookmarkView = require("GameModule/Map/MapUnit/MapBookmarkView")
+                //                  local MapABuildingView = require("GameModule/Map/MapUnit/MapABuildingView")
+                //                  local MapBuildingResView = require("GameModule/Map/MapUnit/MapBuildingResView")
+                //                  local MapNBuildingView = require("GameModule/Map/MapUnit/MapNBuildingView")
+                //                  """);
             }
 
-            if (RequirePath.Contains("WorldMapModule_View"))
-            {
-                writer.WriteLine(
-                    $"local MapLevel0DisplayDataProvider = require(\"GameModule/Map/Lod/MapLevel0DisplayDataProvider\")");
-            }
+            // if (RequirePath.Contains("WorldMapModule_View"))
+            // {
+            //     writer.WriteLine(
+            //         $"local MapLevel0DisplayDataProvider = require(\"GameModule/Map/Lod/MapLevel0DisplayDataProvider\")");
+            // }
 
-            if (RequirePath.Contains("Map/city/MapCityData_Building"))
-            {
-                writer.WriteLine("""
-                                 local MapCityBuildingData = require("GameData/Map/city/MapCityBuildingData")
-                                 """);
-            }
+            // if (RequirePath.Contains("Map/city/MapCityData_Building"))
+            // {
+            //     writer.WriteLine("""
+            //                      local MapCityBuildingData = require("GameData/Map/city/MapCityBuildingData")
+            //                      """);
+            // }
 
-            if (RequirePath.Contains("Map/city/MapCityData_Army"))
-            {
-                writer.WriteLine("""
-                                 local ArmyData = require("GameData/Map/city/MapCityArmyData").ArmyData
-                                 """);
-            }
+            // if (RequirePath.Contains("Map/city/MapCityData_Army"))
+            // {
+            //     writer.WriteLine("""
+            //                      local ArmyData = require("GameData/Map/city/MapCityArmyData").ArmyData
+            //                      """);
+            // }
 
-            if (RequirePath.Contains("GameModule/SelfCity/SelfCityModule_Build"))
-            {
-                writer.WriteLine("""
-                                 local MapCityBuildingData = require("GameData/Map/city/MapCityBuildingData")
-                                 """);
-            }
+            // if (RequirePath.Contains("GameModule/SelfCity/SelfCityModule_Build"))
+            // {
+            //     writer.WriteLine("""
+            //                      local MapCityBuildingData = require("GameData/Map/city/MapCityBuildingData")
+            //                      """);
+            // }
 
-            if (ClassName == "MapNpcObjectComponent")
-            {
-                writer.WriteLine("""
-                                 local MapNpcView = require("GameModule/Map/MapUnit/MapNpcView")
-                                 """);
-            }
+            // if (ClassName == "MapNpcObjectComponent")
+            // {
+            //     writer.WriteLine("""
+            //                      local MapNpcView = require("GameModule/Map/MapUnit/MapNpcView")
+            //                      """);
+            // }
 
-            if (ClassName == "MapNpcView")
-            {
-                writer.WriteLine("""
-                                 local MapLegion = require("GameModule/Battle/MapLegion")
-                                 """);
-            }
+            // if (ClassName == "MapNpcView")
+            // {
+            //     writer.WriteLine("""
+            //                      local MapLegion = require("GameModule/Battle/MapLegion")
+            //                      """);
+            // }
 
 
-            if (ClassName == "DServerData")
-            {
-                writer.WriteLine($"local DServerDataElement = require(\"GameData/DServerData/DServerDataElement\")");
-            }
+            // if (ClassName == "DServerData")
+            // {
+            //     writer.WriteLine($"local DServerDataElement = require(\"GameData/DServerData/DServerDataElement\")");
+            // }
 
-            if (ClassName == "serverlist_panel")
-            {
-                writer.WriteLine($"local ViewBaseN = require(\"Common/GamePlay/GameView/ViewBase/ViewBaseN\")");
-                writer.WriteLine($"local CommonContainer = require(\"Common/UI/CommonContainerN\")");
-            }
+            // if (ClassName == "serverlist_panel")
+            // {
+            //     // writer.WriteLine($"local ViewBaseN = require(\"Common/GamePlay/GameView/ViewBase/ViewBaseN\")");
+            //     // writer.WriteLine($"local CommonContainer = require(\"Common/UI/CommonContainerN\")");
+            // }
 
-            if (ClassName == "MapLegion" && IsMainPartialClass)
-            {
-                writer.WriteLine("""
-                                 local MapEntity = require("GameModule/Battle/MapEntity")
-                                 """);
-            }
+            // if (ClassName == "MapLegion" && IsMainPartialClass)
+            // {
+            //     writer.WriteLine("""
+            //                      local MapEntity = require("GameModule/Battle/MapEntity")
+            //                      """);
+            // }
 
-            if (RequirePath.Contains("BattleModule_Conf"))
-            {
-                writer.WriteLine("""
-                                 local MapFormationInfo = require("GameModule/Battle/MapFormationInfo").MapFormationInfo
-                                 """);
-            }
+            // if (RequirePath.Contains("BattleModule_Conf"))
+            // {
+            //     writer.WriteLine("""
+            //                      local MapFormationInfo = require("GameModule/Battle/MapFormationInfo").MapFormationInfo
+            //                      """);
+            // }
 
-            if (RequirePath.Contains("MapLegion_Battle"))
-            {
-                writer.WriteLine("""
-                                 local MapEntity = require("GameModule/Battle/MapEntity")
-                                 """);
-            }
+            // if (RequirePath.Contains("MapLegion_Battle"))
+            // {
+            //     writer.WriteLine("""
+            //                      local MapEntity = require("GameModule/Battle/MapEntity")
+            //                      """);
+            // }
 
-            if (ClassName == "MapCityObjectComponent")
-            {
-                writer.WriteLine("""
-                                 local MapCityView = require("GameModule/Map/MapUnit/MapCityView")
-                                 """);
-            }
+            // if (ClassName == "MapCityObjectComponent")
+            // {
+            //     writer.WriteLine("""
+            //                      local MapCityView = require("GameModule/Map/MapUnit/MapCityView")
+            //                      """);
+            // }
 
             if (RequirePath.Contains("HomeSceneModule_Operator"))
             {
@@ -2357,33 +2323,33 @@ namespace Lua.AST
                                  """);
             }
 
-            if (RequirePath.Contains("HomeSceneModule_Unlock"))
-            {
-                writer.WriteLine("""
-                                 local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
-                                 """);
-            }
+            // if (RequirePath.Contains("HomeSceneModule_Unlock"))
+            // {
+            //     writer.WriteLine("""
+            //                      local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
+            //                      """);
+            // }
 
-            if (ClassName == "HomeSceneModule" && IsMainPartialClass)
-            {
-                writer.WriteLine("""
-                                 local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
-                                 """);
-            }
+            // if (ClassName == "HomeSceneModule" && IsMainPartialClass)
+            // {
+            //     writer.WriteLine("""
+            //                      local CityNodeFactory = require("GameModule/Map/CityUnit/CityNodeFactory")
+            //                      """);
+            // }
 
-            if (ClassName == "CityNodeFactory")
-            {
-                writer.WriteLine("""
-                                 local CityArmyView = require("GameModule/Map/CityUnit/CityArmyView")
-                                 local CityBuildingView = require("GameModule/Map/CityUnit/CityBuildingView")
-                                 local CityUnlockEventView = require("GameModule/Map/CityUnit/CityUnlockEventView")
-                                 local CityDefenceView = require("GameModule/Map/CityUnit/CityDefenceView")
-                                 local CityCornerObjView = require("GameModule/Map/CityUnit/CityCornerObjView")
-                                 local CityEdgeObjView = require("GameModule/Map/CityUnit/CityEdgeObjView")
-                                 local CityRepairedBuildingView = require("GameModule/Map/CityUnit/CityRepairedBuildingView")
-                                 local CityGridBuildingBaseView = require("GameModule/Map/CityUnit/CityGridBuildingBaseView")
-                                 """);
-            }
+            // if (ClassName == "CityNodeFactory")
+            // {
+            //     writer.WriteLine("""
+            //                      local CityArmyView = require("GameModule/Map/CityUnit/CityArmyView")
+            //                      local CityBuildingView = require("GameModule/Map/CityUnit/CityBuildingView")
+            //                      local CityUnlockEventView = require("GameModule/Map/CityUnit/CityUnlockEventView")
+            //                      local CityDefenceView = require("GameModule/Map/CityUnit/CityDefenceView")
+            //                      local CityCornerObjView = require("GameModule/Map/CityUnit/CityCornerObjView")
+            //                      local CityEdgeObjView = require("GameModule/Map/CityUnit/CityEdgeObjView")
+            //                      local CityRepairedBuildingView = require("GameModule/Map/CityUnit/CityRepairedBuildingView")
+            //                      local CityGridBuildingBaseView = require("GameModule/Map/CityUnit/CityGridBuildingBaseView")
+            //                      """);
+            // }
 
             if (ClassName == "CityBuildingView" || ClassName == "CityCornerObjView" || ClassName == "CityDefenceView" ||
                 ClassName == "CityEdgeObjView")
