@@ -1206,6 +1206,29 @@ namespace Lua.AST
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
+            //CUSTOM
+            // if (TopLevel)
+            // {
+            //     foreach (var statement in Statements)
+            //     {
+            //         if (statement is PloopModule ploopModule)
+            //         {
+            //             foreach (var moduleStatement in ploopModule.Statements)
+            //             {
+            //                 if (moduleStatement is PloopClass @class)
+            //                 {
+            //                     if (@class.IsMainPartialClass)
+            //                     {
+            //                         writer.WriteLine("---------reserve main partial class--------------------");
+            //                         writer.WriteLine($"package.loaded[\"{@class.RequirePath}\"] = {{}}");
+            //                         writer.WriteLine("---------reserve main partial class--------------------");            
+            //                     }
+            //                 } 
+            //             }
+            //         }
+            //     }    
+            // }
+
             Write(writer, true);
         }
 

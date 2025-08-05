@@ -865,8 +865,12 @@ public class Processor
         //将枚举提前到前边
         foreach (var moduleAndClass in moduleAndClasses)
         {
+            //CUSTOM
+            if(moduleAndClass.file.fileName == "AllianceModule_Conf")
+                continue;
             foreach (var _ploopClass in moduleAndClass.Classes)
             {
+                
                 var allEnums = _ploopClass.Statements.FindAll((statement =>
                 {
                     if (statement is PloopEnum ploopEnum)
@@ -948,6 +952,18 @@ public class Processor
                     //尝试自动require lua file 
 
                     var requireFile = needRequireFile[needRequreStr][0];
+                    foreach (var _moduleAndClass in needRequireFile[needRequreStr])
+                    {
+                        foreach (var _class in _moduleAndClass.Classes)
+                        {
+                            if (_class.IsMainPartialClass)
+                            {
+                                requireFile = _moduleAndClass;
+                                break;
+                            }
+                        }
+                    }
+                    
                     if (requireFile.file == file)
                         continue;
 
@@ -969,7 +985,7 @@ public class Processor
                             requirePath = requirePath.Replace("CommonContainer", "CommonContainerN");
                         }
 
-                        file.Block.Statements.Insert(autoRequireIndex++, new Assignment()
+                         var requireStatement = new Assignment()
                         {
                             IsLocal = true,
                             Targets = new()
@@ -1022,7 +1038,41 @@ public class Processor
                                         }
                                     }
                                 }
-                        });
+                        };
+                        //CUSTOM
+                        if (file.fileName == "WorldMapModule" && (needRequreStr.EndsWith("Component")||
+                                                                  needRequreStr.EndsWith("View") ||
+                                                                  needRequreStr.EndsWith("ChangedHandler")))
+                        {
+                            var ploopModule = file.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
+                            var ploopClass = ploopModule.Statements.Find((statement => statement is PloopClass)) as PloopClass;
+                            foreach (var statement in ploopClass.Statements)
+                            {
+                                if (statement is Assignment assignment)
+                                {
+                                    if (assignment.Targets.Exists((assignable =>
+                                        {
+                                            if (assignable is Variable variable)
+                                            {
+                                                if (variable.Name == "RegisterComponent")
+                                                {
+                                                    return true;
+                                                }
+                                            }
+                                            return false;
+                                        })))
+                                    {
+                                        var functionDefinition = (statement as Assignment).Values[0] as FunctionDefinition;
+                                        functionDefinition.Block.Statements.Insert(0,requireStatement);
+                                    }                           
+                                }
+                               
+                            }
+                        }
+                        else
+                        {
+                            file.Block.Statements.Insert(autoRequireIndex++, requireStatement);    
+                        }
                     }
                 }
                 else

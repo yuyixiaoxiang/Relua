@@ -1,0 +1,6 @@
+--require "GameModule/Shop/Condition/ShopCondition";
+--require "GameModule/Shop/Condition/GreaterThanMainLv";
+--require "GameModule/Shop/Condition/GreaterThanNewBee";
+--require "GameModule/Shop/Condition/LessThanMainLv";
+--require "GameModule/Shop/Condition/LessThanNewBee";
+--require "GameModule/Shop/Condition/ShopConditionFactory";

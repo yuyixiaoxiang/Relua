@@ -202,6 +202,14 @@ namespace Lua
                     File.WriteAllText(outfile.path, outfile.content);    
                 }
             }
+            //CUSTOM 
+            var luainit =Path.Combine(GetProjectDirectory(),"misc","luainit.lua");
+            var luainitcontent = File.ReadAllText(luainit);
+            File.WriteAllText(Path.Combine(Const.topLuaDir,"init.lua"), luainitcontent);
+            
+            luainit =Path.Combine(GetProjectDirectory(),"misc","shopinit.lua");
+            luainitcontent = File.ReadAllText(luainit);
+            File.WriteAllText(Path.Combine(Const.topLuaDir,"GameModule/Shop","init.lua"), luainitcontent);
         }
         
         private static bool HasProjectFile(string directory)
