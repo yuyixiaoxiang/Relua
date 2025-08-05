@@ -29,6 +29,7 @@ public class PloopScanner
         "3rd",
         "DataTable",
         "CommonExt/Logic/Check/mod/old",
+        "Event_Class"
     };
 
     public static List<ScanResult> ScanLuaFiles(string rootPath)

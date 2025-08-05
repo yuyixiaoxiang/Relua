@@ -291,7 +291,36 @@ Module "Game.View" (function(_ENV)
 				viewClass = require("Common/GamePlay/GameView/Login/login_panel")
 			elseif name == "serverlist_panel" then
 				viewClass = require("Common/GamePlay/GameView/Login/serverlist_panel")
+			elseif name == "fly_effect_panel" then
+				viewClass =  require("GameView/FlyEffect/fly_effect_panel")
+			elseif name == "entity_menu_panel" then
+				viewClass =  require("GameView/EntityMenu/core/entity_menu_panel")
+			elseif name == "guide_view_panel" then
+				viewClass =  require("GameView/GuideView/guide_view_panel")
+			elseif name == "gauss_blur_panel" then
+				viewClass =  require("GameView/Common/util_panel/gauss_blur_panel")
+			elseif name == "top_menu_panel" then
+				viewClass =  require("GameView/Common/util_panel/top_menu_panel")
+			elseif name == "hud_info_panel" then
+				viewClass =  require("GameView/Main/hud_info_panel")
+			elseif name == "resource_group" then
+				viewClass =  require("GameView/Main/resource_group")
+			elseif name == "dialog_bg_group" then
+				viewClass =  require("GameView/Common/util_group/dialog_bg_group")
+			elseif name == "main_panel_new" then
+				viewClass =  require("GameView/Main_panel_new/main_panel_new")
+
+			elseif name == "map_hub_panel" then
+				viewClass =  require("GameView/MapHub/map_hub_panel")
+				
+				
+			elseif name == "msg_panel" then
+				viewClass = require("GameView/Msg/msg_panel")
 			end
+			
+
+
+
 			if viewClass == nil then
 				viewClass = _ENV[name]; -- 资源名字和脚本名字同名 -- 需要加保护	
 			end

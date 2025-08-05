@@ -25,14 +25,17 @@ Module "Game.Procedure"(function(_ENV)
             -- 初始化bin文件;
             NetPBCManager:Init(); -- 初始化协议交互模块
             ---@type GameData
+            local GameData = require("Common/GamePlay/GameData")
             _G["DATA"] = GameData(); -- 初始化玩法数据缓存模块
             DATA:Init();
             ---@type GameModule
+            local GameModule = require("Common/GamePlay/GameModule")
             _G["MODULE"] = GameModule(); -- 初始化玩法逻辑
             MODULE:Init();
             ---@type GameView
             _G["VIEW"] = GameView(); -- 初始化界面模块
             ---@type GameNet  目前NET.xxx不生效
+            local GameNet = require("GameNet/Core")
             _G["NET"] = GameNet(); -- 初始化网络模块
             NetPBCManager:InitEnd();
             ---@type ActionSystem

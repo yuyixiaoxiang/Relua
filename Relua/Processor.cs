@@ -458,7 +458,7 @@ public class Processor
 
         Console.WriteLine($"-------------------------------sameClassNameButNotPartial---------------");
 
-
+       
         //process inheriate
         foreach (var moduleAndClass in moduleAndClasses)
         {
@@ -862,7 +862,45 @@ public class Processor
             }
         }
 
+        //将枚举提前到前边
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var _ploopClass in moduleAndClass.Classes)
+            {
+                var allEnums = _ploopClass.Statements.FindAll((statement =>
+                {
+                    if (statement is PloopEnum ploopEnum)
+                    {
+                        return true;
+                    }
 
+                    return false;
+                }));
+                foreach (var _enum in allEnums)
+                {
+                    _ploopClass.Statements.Remove(_enum);
+                }
+                _ploopClass.Statements.InsertRange(0,allEnums);
+            }
+
+            foreach (var module in moduleAndClass.Modules)
+            {
+                var allEnums = module.Statements.FindAll((statement =>
+                {
+                    if (statement is PloopEnum ploopEnum)
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }));
+                foreach (var _enum in allEnums)
+                {
+                    module.Statements.Remove(_enum);
+                }
+                module.Statements.InsertRange(0,allEnums);
+            }
+        }
         //todo check auto require 
         HashSet<string> autorequirenotfind = new HashSet<string>();
         foreach (var file in files)
@@ -1058,6 +1096,7 @@ public class Processor
                     {
                         var moduleName = moduleNames[i] + "Module";
                         var moduleRequirePath = string.Empty;
+                        bool singleFileMultiplyClass = false;
                         foreach (var moduleAndClass in moduleAndClasses)
                         {
                             var find = false;
@@ -1073,6 +1112,7 @@ public class Processor
                                         {
                                             find = true;
                                             moduleRequirePath = _class.RequirePath;
+                                            singleFileMultiplyClass = _class.singleFileMultiClass;
                                             break;
                                         }
                                     }
@@ -1103,7 +1143,7 @@ public class Processor
                                 }
                             },
 
-                            Values = new List<IExpression>()
+                            Values =singleFileMultiplyClass == false? new List<IExpression>()
                             {
                                 new FunctionCall()
                                 {
@@ -1122,6 +1162,35 @@ public class Processor
                                         }
                                     }
                                 }
+                            }:
+                            new List<IExpression>()
+                            {
+                                new FunctionCall()
+                                {
+                                    Function = new TableAccess()
+                                    {
+                                        Table = new FunctionCall()
+                                        {
+                                            Arguments = new List<IExpression>()
+                                            {
+                                                new StringLiteral()
+                                                {
+                                                    Value = moduleRequirePath
+                                                }
+                                            },
+                                            Function = new Variable()
+                                            {
+                                                Name = "require",
+                                            }
+                                        },
+                                        Index = new StringLiteral()
+                                        {
+                                            Value = moduleName
+                                        }
+                                    }
+                                }
+                                
+                                
                             }
                         });
                     }
@@ -1255,6 +1324,7 @@ public class Processor
                     {
                         var dataName = dataNames[i] + "Data";
                         var moduleRequirePath = string.Empty;
+                        bool singleFileMultiplyClass = false;
                         foreach (var moduleAndClass in moduleAndClasses)
                         {
                             var find = false;
@@ -1270,6 +1340,7 @@ public class Processor
                                         {
                                             find = true;
                                             moduleRequirePath = _class.RequirePath;
+                                            singleFileMultiplyClass = _class.singleFileMultiClass;
                                             break;
                                         }
                                     }
@@ -1300,7 +1371,7 @@ public class Processor
                                 }
                             },
 
-                            Values = new List<IExpression>()
+                            Values = singleFileMultiplyClass == false ?  new List<IExpression>()
                             {
                                 new FunctionCall()
                                 {
@@ -1319,6 +1390,35 @@ public class Processor
                                         }
                                     }
                                 }
+                            }:
+                            new List<IExpression>()
+                            {
+                                new FunctionCall()
+                                {
+                                    Function = new TableAccess()
+                                    {
+                                        Table = new FunctionCall()
+                                        {
+                                            Arguments = new List<IExpression>()
+                                            {
+                                                new StringLiteral()
+                                                {
+                                                    Value = moduleRequirePath
+                                                }
+                                            },
+                                            Function = new Variable()
+                                            {
+                                                Name = "require",
+                                            }
+                                        },
+                                        Index = new StringLiteral()
+                                        {
+                                            Value = dataName
+                                        }
+                                    }
+                                }
+                                
+                                
                             }
                         });
                     }
@@ -1446,7 +1546,7 @@ public class Processor
                     })))
                 {
                     var functionDeclaration = assignment.Values[0] as FunctionDefinition;
-                    for (var i = 0; i < dataNames.Count; i++)
+                    for (var i = 0; i < netNames.Count; i++)
                     {
                         var netName = netNames[i];
                         var moduleRequirePath = string.Empty;

@@ -1883,6 +1883,7 @@ namespace Lua.AST
             StartPoint.CheckNode(context, this);
             Step.CheckNode(context, this);
             EndPoint.CheckNode(context, this);
+            Block.CheckNode(context, this);
         }
 
         public override void Write(IndentAwareTextWriter writer, object data)
