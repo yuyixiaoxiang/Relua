@@ -137,9 +137,9 @@ namespace Lua
         private static List<string> fullcopyfiles = new List<string>()
         {
             "Procedure.lua",
-            "GameModule.lua",
-            "GameData.lua",
-            "Core.lua",
+            // "GameModule.lua",
+            // "GameData.lua",
+            // "Core.lua",
             "Game.lua",
             "GameView.lua",
         };
@@ -153,7 +153,7 @@ namespace Lua
         
         private static void ProcessAllPloopClass()
         {
-            var topLuaDir = "D:\\e-u3dclient\\Assets\\client-code\\LuaFramework\\Lua";
+            var topLuaDir =Const.topLuaDir;
             Console.WriteLine(topLuaDir);
             var scanLuaFiles = PloopScanner.ScanLuaFiles(topLuaDir);
             var errCnt = 0;

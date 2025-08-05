@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Lua.AST;
 
 namespace Lua;
@@ -31,6 +32,68 @@ public class Processor
     }
 
     /// <summary>
+    /// custom process file 
+    /// </summary>
+    /// <param name="filePath"></param>
+    private void PreprocessFile(string filePath)
+    {
+        if (filePath.EndsWith("GameModule.lua"))
+        {
+            // 读取Lua文件内容
+            string luaContent = File.ReadAllText(filePath);
+
+            // 匹配 for...end 块的正则表达式
+            string pattern = @"for\s+\w+,\s+\w+\s+in\s+ipairs\(ModuleNames\)\s+do[\s\S]*?end";
+
+            // 使用正则表达式提取
+            Match match = Regex.Match(luaContent, pattern);
+
+            if (match.Success)
+            {
+                string extractedCode = match.Value;
+                string modifiedContent = Regex.Replace(luaContent, pattern, "", RegexOptions.Singleline);
+                File.WriteAllText(filePath, modifiedContent);
+            }
+        }
+        if (filePath.EndsWith("GameData.lua"))
+        {
+            // 读取Lua文件内容
+            string luaContent = File.ReadAllText(filePath);
+
+            // 匹配 for...end 块的正则表达式
+            string pattern = @"for\s+\w+,\s+\w+\s+in\s+ipairs\(DataNames\)\s+do[\s\S]*?end";
+
+            // 使用正则表达式提取
+            Match match = Regex.Match(luaContent, pattern);
+
+            if (match.Success)
+            {
+                string extractedCode = match.Value;
+                string modifiedContent = Regex.Replace(luaContent, pattern, "", RegexOptions.Singleline);
+                File.WriteAllText(filePath, modifiedContent);
+            }
+        }
+        if (filePath.EndsWith("Core.lua"))
+        {
+            // 读取Lua文件内容
+            string luaContent = File.ReadAllText(filePath);
+
+            // 匹配 for...end 块的正则表达式
+            string pattern = @"for\s+\w+,\s+\w+\s+in\s+ipairs\(NetNames\)\s+do[\s\S]*?end";
+
+            // 使用正则表达式提取
+            Match match = Regex.Match(luaContent, pattern);
+
+            if (match.Success)
+            {
+                string extractedCode = match.Value;
+                string modifiedContent = Regex.Replace(luaContent, pattern, "", RegexOptions.Singleline);
+                File.WriteAllText(filePath, modifiedContent);
+            }
+        }
+    }
+
+    /// <summary>
     /// process all lua files to ast
     /// </summary>
     /// <returns></returns>
@@ -42,6 +105,7 @@ public class Processor
             {
                 // if(file.outPath.Contains("EntityMenuModule.lua") == false)
                 //     continue;
+                PreprocessFile(file.srcPath);
                 var tokenizer = new Tokenizer(File.ReadAllText(file.srcPath));
                 var parser = new Parser(tokenizer);
                 var expr = parser.Read();
@@ -63,7 +127,7 @@ public class Processor
         //post process
         ProcessSafeRequireFile();
         PostprocessModuleAndPartialClass();
-        
+
         //outout 
         List<(string path, string content)> outputs = new List<(string path, string content)>();
         foreach (var file in files)
@@ -799,8 +863,6 @@ public class Processor
         }
 
 
-        
-        
         //todo check auto require 
         HashSet<string> autorequirenotfind = new HashSet<string>();
         foreach (var file in files)
@@ -815,19 +877,20 @@ public class Processor
             foreach (var _needRequreStr in needRequreStrs)
             {
                 var needRequreStr = _needRequreStr;
-                
+
                 foreach (var moduleAndClass in moduleAndClasses)
                 {
                     var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
                     foreach (var exportVariable in exportableVariables)
                     {
-                        if (exportVariable.VariableName == needRequreStr &&(exportVariable.IsClass||exportVariable.IsEnum||
-                                                                            (exportVariable.IsField && !exportVariable.IsClassField) ||
-                                                                            (exportVariable.IsMethod && !exportVariable.IsClassMethod)))
+                        if (exportVariable.VariableName == needRequreStr &&
+                            (exportVariable.IsClass || exportVariable.IsEnum ||
+                             (exportVariable.IsField && !exportVariable.IsClassField) ||
+                             (exportVariable.IsMethod && !exportVariable.IsClassMethod)))
                         {
-                            if(needRequireFile.ContainsKey(needRequreStr) == false)
+                            if (needRequireFile.ContainsKey(needRequreStr) == false)
                                 needRequireFile[needRequreStr] = new List<ModuleAndClass>();
-                            if(needRequireFile[needRequreStr].Contains(moduleAndClass) == false)
+                            if (needRequireFile[needRequreStr].Contains(moduleAndClass) == false)
                                 //find 
                                 needRequireFile[needRequreStr].Add(moduleAndClass);
                         }
@@ -847,7 +910,7 @@ public class Processor
                     //尝试自动require lua file 
 
                     var requireFile = needRequireFile[needRequreStr][0];
-                    if(requireFile.file == file)
+                    if (requireFile.file == file)
                         continue;
 
                     PloopClass needRequireClass = null;
@@ -868,7 +931,7 @@ public class Processor
                             requirePath = requirePath.Replace("CommonContainer", "CommonContainerN");
                         }
 
-                        file.Block.Statements.Insert(autoRequireIndex++,new Assignment()
+                        file.Block.Statements.Insert(autoRequireIndex++, new Assignment()
                         {
                             IsLocal = true,
                             Targets = new()
@@ -878,28 +941,11 @@ public class Processor
                                     Name = needRequreStr
                                 }
                             },
-                            
-                            Values = needRequireClass.singleFileMultiClass == false ?  new List<IExpression>()
-                            {
-                                new FunctionCall()
+
+                            Values = needRequireClass.singleFileMultiClass == false
+                                ? new List<IExpression>()
                                 {
-                                    Arguments = new List<IExpression>()
-                                    {
-                                        new StringLiteral()
-                                        {
-                                            Value = requirePath
-                                        }
-                                    },
-                                    Function = new Variable()
-                                    {
-                                        Name = "require",
-                                    }
-                                }
-                            }:new List<IExpression>()
-                            {
-                                new TableAccess()
-                                {
-                                    Table = new FunctionCall()
+                                    new FunctionCall()
                                     {
                                         Arguments = new List<IExpression>()
                                         {
@@ -912,13 +958,32 @@ public class Processor
                                         {
                                             Name = "require",
                                         }
-                                    },
-                                    Index = new StringLiteral()
-                                    {
-                                        Value = needRequreStr
                                     }
                                 }
-                            }
+                                : new List<IExpression>()
+                                {
+                                    new TableAccess()
+                                    {
+                                        Table = new FunctionCall()
+                                        {
+                                            Arguments = new List<IExpression>()
+                                            {
+                                                new StringLiteral()
+                                                {
+                                                    Value = requirePath
+                                                }
+                                            },
+                                            Function = new Variable()
+                                            {
+                                                Name = "require",
+                                            }
+                                        },
+                                        Index = new StringLiteral()
+                                        {
+                                            Value = needRequreStr
+                                        }
+                                    }
+                                }
                         });
                     }
                 }
@@ -929,9 +994,531 @@ public class Processor
                 }
             }
         }
-        
+
         Console.WriteLine($"\n\n AutoRequireNotFind:{string.Join(",", autorequirenotfind)}");
+
+
+        //处理gamemodule
+        string luaFilePath = Path.Combine(Const.topLuaDir, "GameModule/init.lua");
+        // 读取Lua文件内容
+        string luaContent = File.ReadAllText(luaFilePath);
+        // 匹配ModuleNames表内容的正则
+        string pattern = @"ModuleNames\s*=\s*{([\s\S]*?)}";
+
+        Match match = Regex.Match(luaContent, pattern);
+
+        List<string> moduleNames = new List<string>();
+        if (match.Success)
+        {
+            // 获取表中的值
+            string tableContent = match.Groups[1].Value;
+
+            // 根据逗号和换行分割值，并去掉空格和引号
+            string[] values = tableContent
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+            Console.WriteLine("Lua表中的值如下：");
+            foreach (var value in values)
+            {
+                // 去掉两侧的空格、换行符以及引号
+                string cleanedValue = value
+                    .Trim() // 修剪空格及换行符
+                    .Trim('\"') // 去掉双引号
+                    .Replace("\r", "")
+                    .Replace("\n", "");
+                // Console.WriteLine(cleanedValue);
+                if (string.IsNullOrEmpty(cleanedValue) == false)
+                    moduleNames.Add(cleanedValue);
+            }
+        }
+        else
+        {
+            Console.WriteLine("未找到ModuleNames表内容！");
+        }
+
+        if (moduleNames.Count > 0)
+        {
+            var gameModule = files.Find((artifact => artifact.fileName == "GameModule"));
+            var ploopModule = gameModule.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
+            var @class = ploopModule.Statements.Find((statement => statement is PloopClass)) as PloopClass;
+            foreach (var statement in @class.Statements)
+            {
+                if (statement is Assignment assignment && assignment.Targets.Exists((assignable =>
+                    {
+                        if (assignable is Variable variable && variable.Name == "Init")
+                        {
+                            return true;
+                        }
+
+                        return false;
+                    })))
+                {
+                    var functionDeclaration = assignment.Values[0] as FunctionDefinition;
+                    for (var i = 0; i < moduleNames.Count; i++)
+                    {
+                        var moduleName = moduleNames[i] + "Module";
+                        var moduleRequirePath = string.Empty;
+                        foreach (var moduleAndClass in moduleAndClasses)
+                        {
+                            var find = false;
+                            var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
+                            foreach (var exportVariable in exportableVariables)
+                            {
+                                if (exportVariable.VariableName == moduleName && exportVariable.IsClass)
+                                {
+                                    foreach (var _class in moduleAndClass.Classes)
+                                    {
+                                        if (_class.ClassName == moduleName &&
+                                            (_class.IsMainPartialClass || !_class.IsPartialClass))
+                                        {
+                                            find = true;
+                                            moduleRequirePath = _class.RequirePath;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (find)
+                                    break;
+                            }
+
+                            if (find)
+                                break;
+                        }
+
+                        functionDeclaration.Block.Statements.Insert(i, new Assignment()
+                        {
+                            Targets = new()
+                            {
+                                new TableAccess()
+                                {
+                                    Table = new Variable()
+                                    {
+                                        Name = "self"
+                                    },
+                                    Index = new StringLiteral()
+                                    {
+                                        Value = moduleNames[i],
+                                    }
+                                }
+                            },
+
+                            Values = new List<IExpression>()
+                            {
+                                new FunctionCall()
+                                {
+                                    Function = new FunctionCall()
+                                    {
+                                        Arguments = new List<IExpression>()
+                                        {
+                                            new StringLiteral()
+                                            {
+                                                Value = moduleRequirePath
+                                            }
+                                        },
+                                        Function = new Variable()
+                                        {
+                                            Name = "require",
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+
+                if (statement is Assignment assignment1 && assignment1.Targets.Exists((assignable =>
+                    {
+                        if (assignable is Variable variable && variable.Name == "OnEnterGame")
+                        {
+                            return true;
+                        }
+
+                        return false;
+                    })))
+                {
+                    var functionDeclaration = assignment1.Values[0] as FunctionDefinition;
+                    functionDeclaration.Block.Statements.Insert(0, new GenericFor()
+                    {
+                        Iterator = new FunctionCall()
+                        {
+                            Function = new Variable()
+                            {
+                                Name = "ipairs"
+                            },
+                            Arguments = new List<IExpression>()
+                            {
+                                new Variable()
+                                {
+                                    Name = "ModuleNames"
+                                }
+                            }
+                        },
+                        VariableNames = new List<string>()
+                        {
+                            "i", "name"
+                        },
+                        Block = new Block()
+                        {
+                            Statements = new List<IStatement>()
+                            {
+                                new FunctionCall()
+                                {
+                                    Function = new TableAccess()
+                                    {
+                                        Table = new Variable()
+                                        {
+                                            Name = "safe"
+                                        },
+                                        Index = new StringLiteral()
+                                        {
+                                            Value = "callFunc"
+                                        }
+                                    },
+                                    Arguments = new List<IExpression>()
+                                    {
+                                        new TableAccess()
+                                        {
+                                            Table = new Variable() { Name = "self" },
+                                            Index = new Variable()
+                                            {
+                                                Name = "name"
+                                            }
+                                        },
+                                        new StringLiteral()
+                                        {
+                                            Value = "OnEnterGame"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
         
-        // throw new Exception("custom exception");
+        
+        
+        //处理GameData
+        luaFilePath = Path.Combine(Const.topLuaDir, "GameData/init.lua");
+        // 读取Lua文件内容
+        luaContent = File.ReadAllText(luaFilePath);
+        // 匹配ModuleNames表内容的正则
+        pattern = @"DataNames\s*=\s*{([\s\S]*?)}";
+
+        match = Regex.Match(luaContent, pattern);
+
+        List<string> dataNames = new List<string>();
+        if (match.Success)
+        {
+            // 获取表中的值
+            string tableContent = match.Groups[1].Value;
+
+            // 根据逗号和换行分割值，并去掉空格和引号
+            string[] values = tableContent
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var value in values)
+            {
+                // 去掉两侧的空格、换行符以及引号
+                string cleanedValue = value
+                    .Trim() // 修剪空格及换行符
+                    .Trim('\"') // 去掉双引号
+                    .Replace("\r", "")
+                    .Replace("\n", "");
+                // Console.WriteLine(cleanedValue);
+                if (string.IsNullOrEmpty(cleanedValue) == false)
+                    dataNames.Add(cleanedValue);
+            }
+        }
+
+        if (dataNames.Count > 0)
+        {
+            var gameData = files.Find((artifact => artifact.fileName == "GameData"));
+            var ploopModule = gameData.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
+            var @class = ploopModule.Statements.Find((statement => statement is PloopClass)) as PloopClass;
+            foreach (var statement in @class.Statements)
+            {
+                if (statement is Assignment assignment && assignment.Targets.Exists((assignable =>
+                    {
+                        if (assignable is Variable variable && variable.Name == "Init")
+                        {
+                            return true;
+                        }
+
+                        return false;
+                    })))
+                {
+                    var functionDeclaration = assignment.Values[0] as FunctionDefinition;
+                    for (var i = 0; i < dataNames.Count; i++)
+                    {
+                        var dataName = dataNames[i] + "Data";
+                        var moduleRequirePath = string.Empty;
+                        foreach (var moduleAndClass in moduleAndClasses)
+                        {
+                            var find = false;
+                            var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
+                            foreach (var exportVariable in exportableVariables)
+                            {
+                                if (exportVariable.VariableName == dataName && exportVariable.IsClass)
+                                {
+                                    foreach (var _class in moduleAndClass.Classes)
+                                    {
+                                        if (_class.ClassName == dataName &&
+                                            (_class.IsMainPartialClass || !_class.IsPartialClass))
+                                        {
+                                            find = true;
+                                            moduleRequirePath = _class.RequirePath;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (find)
+                                    break;
+                            }
+
+                            if (find)
+                                break;
+                        }
+
+                        functionDeclaration.Block.Statements.Insert(i, new Assignment()
+                        {
+                            Targets = new()
+                            {
+                                new TableAccess()
+                                {
+                                    Table = new Variable()
+                                    {
+                                        Name = "self"
+                                    },
+                                    Index = new StringLiteral()
+                                    {
+                                        Value = dataNames[i],
+                                    }
+                                }
+                            },
+
+                            Values = new List<IExpression>()
+                            {
+                                new FunctionCall()
+                                {
+                                    Function = new FunctionCall()
+                                    {
+                                        Arguments = new List<IExpression>()
+                                        {
+                                            new StringLiteral()
+                                            {
+                                                Value = moduleRequirePath
+                                            }
+                                        },
+                                        Function = new Variable()
+                                        {
+                                            Name = "require",
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+
+                if (statement is Assignment assignment1 && assignment1.Targets.Exists((assignable =>
+                    {
+                        if (assignable is Variable variable && variable.Name == "OnEnterGame")
+                        {
+                            return true;
+                        }
+
+                        return false;
+                    })))
+                {
+                    var functionDeclaration = assignment1.Values[0] as FunctionDefinition;
+                    functionDeclaration.Block.Statements.Insert(0, new GenericFor()
+                    {
+                        Iterator = new FunctionCall()
+                        {
+                            Function = new Variable()
+                            {
+                                Name = "ipairs"
+                            },
+                            Arguments = new List<IExpression>()
+                            {
+                                new Variable()
+                                {
+                                    Name = "DataNames"
+                                }
+                            }
+                        },
+                        VariableNames = new List<string>()
+                        {
+                            "i", "name"
+                        },
+                        Block = new Block()
+                        {
+                            Statements = new List<IStatement>()
+                            {
+                                new FunctionCall()
+                                {
+                                    Function = new TableAccess()
+                                    {
+                                        Table = new Variable()
+                                        {
+                                            Name = "safe"
+                                        },
+                                        Index = new StringLiteral()
+                                        {
+                                            Value = "callFunc"
+                                        }
+                                    },
+                                    Arguments = new List<IExpression>()
+                                    {
+                                        new TableAccess()
+                                        {
+                                            Table = new Variable() { Name = "self" },
+                                            Index = new Variable()
+                                            {
+                                                Name = "name"
+                                            }
+                                        },
+                                        new StringLiteral()
+                                        {
+                                            Value = "OnEnterGame"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        
+        //处理GameNet
+        luaFilePath = Path.Combine(Const.topLuaDir, "GameNet/init.lua");
+        // 读取Lua文件内容
+        luaContent = File.ReadAllText(luaFilePath);
+        // 匹配ModuleNames表内容的正则
+        pattern = @"NetNames\s*=\s*{([\s\S]*?)}";
+
+        match = Regex.Match(luaContent, pattern);
+
+        List<string> netNames = new List<string>();
+        if (match.Success)
+        {
+            // 获取表中的值
+            string tableContent = match.Groups[1].Value;
+
+            // 根据逗号和换行分割值，并去掉空格和引号
+            string[] values = tableContent
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var value in values)
+            {
+                // 去掉两侧的空格、换行符以及引号
+                string cleanedValue = value
+                    .Trim() // 修剪空格及换行符
+                    .Trim('\"') // 去掉双引号
+                    .Replace("\r", "")
+                    .Replace("\n", "");
+                // Console.WriteLine(cleanedValue);
+                if (string.IsNullOrEmpty(cleanedValue) == false)
+                    netNames.Add(cleanedValue);
+            }
+        }
+
+        if (netNames.Count > 0)
+        {
+            var gameData = files.Find((artifact => artifact.fileName == "Core"));
+            var ploopModule = gameData.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
+            var @class = ploopModule.Statements.Find((statement => statement is PloopClass)) as PloopClass;
+            foreach (var statement in @class.Statements)
+            {
+                if (statement is Assignment assignment && assignment.Targets.Exists((assignable =>
+                    {
+                        if (assignable is Variable variable && variable.Name == "__ctor")
+                        {
+                            return true;
+                        }
+
+                        return false;
+                    })))
+                {
+                    var functionDeclaration = assignment.Values[0] as FunctionDefinition;
+                    for (var i = 0; i < dataNames.Count; i++)
+                    {
+                        var netName = netNames[i];
+                        var moduleRequirePath = string.Empty;
+                        foreach (var moduleAndClass in moduleAndClasses)
+                        {
+                            var find = false;
+                            var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
+                            foreach (var exportVariable in exportableVariables)
+                            {
+                                if (exportVariable.VariableName == netName && exportVariable.IsClass)
+                                {
+                                    foreach (var _class in moduleAndClass.Classes)
+                                    {
+                                        if (_class.ClassName == netName &&
+                                            (_class.IsMainPartialClass || !_class.IsPartialClass))
+                                        {
+                                            find = true;
+                                            moduleRequirePath = _class.RequirePath;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (find)
+                                    break;
+                            }
+
+                            if (find)
+                                break;
+                        }
+
+                        functionDeclaration.Block.Statements.Insert(i, new Assignment()
+                        {
+                            Targets = new()
+                            {
+                                new TableAccess()
+                                {
+                                    Table = new Variable()
+                                    {
+                                        Name = "self"
+                                    },
+                                    Index = new StringLiteral()
+                                    {
+                                        Value = netNames[i],
+                                    }
+                                }
+                            },
+
+                            Values = new List<IExpression>()
+                            {
+                                new FunctionCall()
+                                {
+                                    Function = new FunctionCall()
+                                    {
+                                        Arguments = new List<IExpression>()
+                                        {
+                                            new StringLiteral()
+                                            {
+                                                Value = moduleRequirePath
+                                            }
+                                        },
+                                        Function = new Variable()
+                                        {
+                                            Name = "require",
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
     }
 }
