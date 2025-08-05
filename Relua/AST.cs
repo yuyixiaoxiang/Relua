@@ -105,6 +105,7 @@ namespace Lua.AST
         public string VariableName;
         public bool IsField;
         public bool IsClass;
+        public bool IsEnum;
         public bool IsMethod;
         public bool IsClassField;
         public bool IsClassMethod;
@@ -1937,6 +1938,15 @@ namespace Lua.AST
             Block.CheckNode(context, this);
         }
 
+        public override void LookupVariable(ICheckContext context, Node child, string variable)
+        {
+            if(VariableNames.Contains(variable))
+                return;
+            if(Iterator.ProvideVariables().Contains(variable))
+                return;
+            base.LookupVariable(context, child, variable);
+        }
+
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.Write("for ");
@@ -2210,8 +2220,8 @@ namespace Lua.AST
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             //custom
-            if (ClassName == "WorldMapModule" && IsMainPartialClass)
-            {
+            // if (ClassName == "WorldMapModule" && IsMainPartialClass)
+            // {
                 // writer.WriteLine(
                 //     $"local MapViewPortChangedHandler = require(\"GameModule/Map/MapViewPortChangedHandler\")");
                 // writer.WriteLine($"--local PBEMapNode = require(\"GameData/Map/WorldMapData\")");
@@ -2233,7 +2243,7 @@ namespace Lua.AST
                 //                  local MapBuildingResView = require("GameModule/Map/MapUnit/MapBuildingResView")
                 //                  local MapNBuildingView = require("GameModule/Map/MapUnit/MapNBuildingView")
                 //                  """);
-            }
+            // }
 
             // if (RequirePath.Contains("WorldMapModule_View"))
             // {
@@ -2316,12 +2326,12 @@ namespace Lua.AST
             //                      """);
             // }
 
-            if (RequirePath.Contains("HomeSceneModule_Operator"))
-            {
-                writer.WriteLine("""
-                                 local CitySelector = require("GameModule/Map/CityUnit/CitySelector")
-                                 """);
-            }
+            // if (RequirePath.Contains("HomeSceneModule_Operator"))
+            // {
+            //     writer.WriteLine("""
+            //                      local CitySelector = require("GameModule/Map/CityUnit/CitySelector")
+            //                      """);
+            // }
 
             // if (RequirePath.Contains("HomeSceneModule_Unlock"))
             // {
@@ -2351,27 +2361,27 @@ namespace Lua.AST
             //                      """);
             // }
 
-            if (ClassName == "CityBuildingView" || ClassName == "CityCornerObjView" || ClassName == "CityDefenceView" ||
-                ClassName == "CityEdgeObjView")
-            {
-                writer.WriteLine("""
-                                 local CityNodeStates = require("GameModule/Map/State/CityNodeState").CityNodeStates
-                                 """);
-            }
+            // if (ClassName == "CityBuildingView" || ClassName == "CityCornerObjView" || ClassName == "CityDefenceView" ||
+            //     ClassName == "CityEdgeObjView")
+            // {
+            //     writer.WriteLine("""
+            //                      local CityNodeStates = require("GameModule/Map/State/CityNodeState").CityNodeStates
+            //                      """);
+            // }
 
-            if (ClassName == "CityUnlockEventView" || ClassName == "CityRepairedBuildingView")
-            {
-                writer.WriteLine("""
-                                 local UnlockEventNodeState = require("GameModule/Map/State/UnlockEventNodeState").UnlockEventNodeState
-                                 """);
-            }
+            // if (ClassName == "CityUnlockEventView" || ClassName == "CityRepairedBuildingView")
+            // {
+            //     writer.WriteLine("""
+            //                      local UnlockEventNodeState = require("GameModule/Map/State/UnlockEventNodeState").UnlockEventNodeState
+            //                      """);
+            // }
 
-            if (ClassName == "ItemData")
-            {
-                writer.WriteLine("""
-                                 local GoodsData = require("GameData/Item/GoodsData")
-                                 """);
-            }
+            // if (ClassName == "ItemData")
+            // {
+            //     writer.WriteLine("""
+            //                      local GoodsData = require("GameData/Item/GoodsData")
+            //                      """);
+            // }
 
             if (ClassName == "EntityMenuModule")
             {
@@ -2380,90 +2390,90 @@ namespace Lua.AST
                                  """);
             }
 
-            if (RequirePath.EndsWith("HomeSceneModule_Operator"))
-            {
-                writer.WriteLine("""
-                                 local CityTileHighLighter = require("GameModule/Map/CityUnit/CityTileHighLighter")
-                                 """);
-            }
+            // if (RequirePath.EndsWith("HomeSceneModule_Operator"))
+            // {
+            //     writer.WriteLine("""
+            //                      local CityTileHighLighter = require("GameModule/Map/CityUnit/CityTileHighLighter")
+            //                      """);
+            // }
 
-            if (ClassName == "CityBuildingView")
-            {
-                writer.WriteLine("""
-                                 local ResBuildingButtonData = require("GameData/EntityButtonData/ResBuildingButtonData")
-                                 """);
-            }
+            // if (ClassName == "CityBuildingView")
+            // {
+            //     writer.WriteLine("""
+            //                      local ResBuildingButtonData = require("GameData/EntityButtonData/ResBuildingButtonData")
+            //                      """);
+            // }
 
-            if (RequirePath.EndsWith("EntityMenuModule_Priority") ||
-                RequirePath.EndsWith("EntityMenuModule_Async"))
-            {
-                writer.WriteLine("""
-                                 local EntityMenuDetail = require("Common/GamePlay/GameModule/EntityMenu/EntityMenuDetail")
-                                 """);
-            }
+            // if (RequirePath.EndsWith("EntityMenuModule_Priority") ||
+            //     RequirePath.EndsWith("EntityMenuModule_Async"))
+            // {
+            //     writer.WriteLine("""
+            //                      local EntityMenuDetail = require("Common/GamePlay/GameModule/EntityMenu/EntityMenuDetail")
+            //                      """);
+            // }
 
-            if (ClassName == "TriggerSystem" && IsMainPartialClass)
-            {
-                writer.WriteLine("""
-                                 local Trigger = require("Common/Logic/Trigger/core/Trigger")
-                                 """);
-                
-            }
-            else if (RequirePath.EndsWith("CheckSystem_Init"))
-            {
-                writer.WriteLine("""
-                                 local CheckGroup = require("Common/Logic/Check/core/CheckGroup")
-                                 local CheckTest = require("CommonExt/Logic/Check/mod/CheckTest").CheckTest
-                                 local CheckTasks = require("CommonExt/Logic/Check/mod/CheckTasks").CheckTasks
-                                 local CheckTriggers = require("CommonExt/Logic/Check/mod/CheckTriggers").CheckTriggers
-                                 local CheckActivityFrame = require("CommonExt/Logic/Check/mod/CheckActivityFrame").CheckActivityFrame
-                                 local CheckVip = require("CommonExt/Logic/Check/mod/CheckVip")
-                                 local CheckAlliance = require("CommonExt/Logic/Check/mod/CheckAlliance").CheckAlliance
-                                 local CheckHud = require("CommonExt/Logic/Check/mod/CheckHud")
-                                 local CheckTaskChapterGroup = require("CommonExt/Logic/Check/mod/CheckTasks").CheckTaskChapterGroup
-                                 local CheckBuildings = require("CommonExt/Logic/Check/mod/old/CheckBuildings").CheckBuildings
-                                 local CheckPve = require("CommonExt/Logic/Check/mod/CheckPve").CheckPve
-                                 local CheckUnlockEvent = require("CommonExt/Logic/Check/mod/CheckUnlockEvent").CheckUnlockEvent
-                                 local CheckCityFogOpen = require("CommonExt/Logic/Check/mod/CheckCityFogOpen").CheckCityFogOpen
-                                 local CheckKvk = require("CommonExt/Logic/Check/mod/CheckKvk").CheckKvk
-                                 
-                                 """);
-            }
-            else if (RequirePath.EndsWith("CfgCondition"))
-            {
-                writer.WriteLine("""
-                                 local CheckTriggerNode = require("Common/Logic/Check/core/CheckTriggerNode")
-                                 """);
-                
-            }
-            else if (RequirePath.EndsWith("CheckSystem"))
-            {
-                writer.WriteLine("""
-                                 local RedUIFunc = require("Common/Logic/Check/CheckRedUI").RedUIFunc
-                                 local RedUI = require("Common/Logic/Check/CheckRedUI").RedUI
-                                 """);
-                
-            }
-            else if (RequirePath.EndsWith("CheckHud"))
-            {
-                writer.WriteLine("""
-                                 local CheckBookmark = require("CommonExt/Logic/Check/mod/CheckBookmark")
-                                 """);
-                
-            }
-            else if (RequirePath.EndsWith("TriggerSystem_Bind"))
-            {
-                writer.WriteLine("""
-                                 local WatcherPlayerLevel = require("CommonExt/Logic/Trigger/mod/Watcher_User").WatcherPlayerLevel
-                                 """);
-            }
-            else if (RequirePath.EndsWith("Watcher"))
-            {
-                writer.WriteLine("""
-                                 local CondJudgment = require("Common/Logic/Condition/core/CondJudgment")
-                                 """);
-                
-            }
+            // if (ClassName == "TriggerSystem" && IsMainPartialClass)
+            // {
+            //     writer.WriteLine("""
+            //                      local Trigger = require("Common/Logic/Trigger/core/Trigger")
+            //                      """);
+            //     
+            // }
+            // else if (RequirePath.EndsWith("CheckSystem_Init"))
+            // {
+            //     writer.WriteLine("""
+            //                      local CheckGroup = require("Common/Logic/Check/core/CheckGroup")
+            //                      local CheckTest = require("CommonExt/Logic/Check/mod/CheckTest").CheckTest
+            //                      local CheckTasks = require("CommonExt/Logic/Check/mod/CheckTasks").CheckTasks
+            //                      local CheckTriggers = require("CommonExt/Logic/Check/mod/CheckTriggers").CheckTriggers
+            //                      local CheckActivityFrame = require("CommonExt/Logic/Check/mod/CheckActivityFrame").CheckActivityFrame
+            //                      local CheckVip = require("CommonExt/Logic/Check/mod/CheckVip")
+            //                      local CheckAlliance = require("CommonExt/Logic/Check/mod/CheckAlliance").CheckAlliance
+            //                      local CheckHud = require("CommonExt/Logic/Check/mod/CheckHud")
+            //                      local CheckTaskChapterGroup = require("CommonExt/Logic/Check/mod/CheckTasks").CheckTaskChapterGroup
+            //                      local CheckBuildings = require("CommonExt/Logic/Check/mod/old/CheckBuildings").CheckBuildings
+            //                      local CheckPve = require("CommonExt/Logic/Check/mod/CheckPve").CheckPve
+            //                      local CheckUnlockEvent = require("CommonExt/Logic/Check/mod/CheckUnlockEvent").CheckUnlockEvent
+            //                      local CheckCityFogOpen = require("CommonExt/Logic/Check/mod/CheckCityFogOpen").CheckCityFogOpen
+            //                      local CheckKvk = require("CommonExt/Logic/Check/mod/CheckKvk").CheckKvk
+            //                      
+            //                      """);
+            // }
+            // else if (RequirePath.EndsWith("CfgCondition"))
+            // {
+            //     writer.WriteLine("""
+            //                      local CheckTriggerNode = require("Common/Logic/Check/core/CheckTriggerNode")
+            //                      """);
+            //     
+            // }
+            // else if (RequirePath.EndsWith("CheckSystem"))
+            // {
+            //     writer.WriteLine("""
+            //                      local RedUIFunc = require("Common/Logic/Check/CheckRedUI").RedUIFunc
+            //                      local RedUI = require("Common/Logic/Check/CheckRedUI").RedUI
+            //                      """);
+            //     
+            // }
+            // else if (RequirePath.EndsWith("CheckHud"))
+            // {
+            //     writer.WriteLine("""
+            //                      local CheckBookmark = require("CommonExt/Logic/Check/mod/CheckBookmark")
+            //                      """);
+            //     
+            // }
+            // else if (RequirePath.EndsWith("TriggerSystem_Bind"))
+            // {
+            //     writer.WriteLine("""
+            //                      local WatcherPlayerLevel = require("CommonExt/Logic/Trigger/mod/Watcher_User").WatcherPlayerLevel
+            //                      """);
+            // }
+            // else if (RequirePath.EndsWith("Watcher"))
+            // {
+            //     writer.WriteLine("""
+            //                      local CondJudgment = require("Common/Logic/Condition/core/CondJudgment")
+            //                      """);
+            //     
+            // }
 
 
 
@@ -2667,14 +2677,14 @@ end
             PropertyTable.CheckNode(context, this);
         }
 
-        public override IList<string> ProvideVariables()
-        {
-            AnalysisExpressions();
-            return new List<string>()
-            {
-                PropertyName, fieldStringLiteral.Value
-            };
-        }
+        // public override IList<string> ProvideVariables()
+        // {
+        //     AnalysisExpressions();
+        //     return new List<string>()
+        //     {
+        //         PropertyName, fieldStringLiteral.Value
+        //     };
+        // }
 
         public void ExportableVariables(ICheckContext context)
         {
@@ -3239,7 +3249,7 @@ end
         {
             context.AddExportVariable(new ExportVariable()
             {
-                IsField = true,
+                IsEnum = true,
                 VariableName = EnumName
             });
         }

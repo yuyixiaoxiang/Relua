@@ -821,7 +821,9 @@ public class Processor
                     var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
                     foreach (var exportVariable in exportableVariables)
                     {
-                        if (exportVariable.VariableName == needRequreStr)
+                        if (exportVariable.VariableName == needRequreStr &&(exportVariable.IsClass||exportVariable.IsEnum||
+                                                                            (exportVariable.IsField && !exportVariable.IsClassField) ||
+                                                                            (exportVariable.IsMethod && !exportVariable.IsClassMethod)))
                         {
                             if(needRequireFile.ContainsKey(needRequreStr) == false)
                                 needRequireFile[needRequreStr] = new List<ModuleAndClass>();
