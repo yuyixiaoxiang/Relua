@@ -141,13 +141,15 @@ namespace Lua
             // "GameData.lua",
             // "Core.lua",
             "Game.lua",
-            "GameView.lua",
+            // "GameView.lua",
+            
         };
         
         private static List<string> postcopyfiles = new List<string>()
         {
              "EntityMenuModule.lua",
-             "CfgConditionBind.lua"
+             "CfgConditionBind.lua",
+             "LuaObjectN.lua"
         };
             
         
@@ -198,8 +200,58 @@ namespace Lua
                 }
                 else
                 {
+                    //CUSTOM GameView
+                    var content = outfile.content;
+                    
+                    if (outfile.path.EndsWith("GameView.lua"))
+                    {
+                        content = content.Replace("Enum.GetEnumValues", "pairs");
+                        content = content.Replace("local viewClass = _ENV[name]", "local viewClass = _ENV[name]()");
+                    }
+
+                    if (outfile.path.EndsWith("msg_panel.lua"))
+                    {
+                        content = content.Insert(0,"""
+                                                    local _ENV = {
+                                                       msg_entity_buff_item = require("GameView/Msg/mod/msg_entity_buff_item"),
+                                                       msg_entity_chat_item = require("GameView/Msg/mod/msg_entity_chat_item"),
+                                                       msg_entity_damage_item = require("GameView/Msg/mod/msg_entity_damage_item"),
+                                                       msg_entity_info_item = require("GameView/Msg/mod/msg_entity_info_item"),
+                                                       msg_entity_pop_item = require("GameView/Msg/mod/msg_entity_pop_item"),
+                                                       msg_entity_skill_damage_item = require("GameView/Msg/mod/msg_entity_skill_damage_item"),
+                                                       msg_notice_item = require("GameView/Msg/mod/msg_notice_item"),
+                                                       msg_pop_critical_item = require("GameView/Msg/mod/msg_pop_critical_item"),
+                                                       msg_pop_item = require("GameView/Msg/mod/msg_pop_item"),
+                                                       msg_reward_item = require("GameView/Msg/mod/msg_reward_item"),
+                                                       msg_rolling_item = require("GameView/Msg/mod/msg_rolling_item"),
+                                                       msg_voice_over_item = require("GameView/Msg/mod/msg_voice_over_item"),
+                                                   }
+                                                   
+                                                   """);
+                    }
+
+                    if (outfile.path.EndsWith("main_panel_new_menu.lua"))
+                    {
+                        content = content.Insert(0,"""
+                                                    local _ENV = {
+                                                       main_left_menu_item = require("GameView/Main_panel_new/main_left_menu_item"),
+                                                       main_normal_item = require("GameView/Main_panel_new/main_normal_item"),
+                                                       msg_entity_damage_item = require("GameView/Main_panel_new/main_right_menu_item"),
+                                                   }
+
+                                                   """);
+                    }
+
+                    if (outfile.path.EndsWith("BuffAttributeModule.lua"))
+                    {
+                        content = content.Replace("GetStartIndex(sourceType[1])", "BuffAttributeModule.GetStartIndex(sourceType[1])");
+                    }
+
+
+
+
                     Console.WriteLine($"rewriting {outfile.path}");
-                    File.WriteAllText(outfile.path, outfile.content);    
+                    File.WriteAllText(outfile.path, content);    
                 }
             }
             //CUSTOM 

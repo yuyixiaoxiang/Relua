@@ -33,6 +33,7 @@ Module "Game.Procedure"(function(_ENV)
             _G["MODULE"] = GameModule(); -- 初始化玩法逻辑
             MODULE:Init();
             ---@type GameView
+            local GameView = require("Common/GamePlay/GameView")
             _G["VIEW"] = GameView(); -- 初始化界面模块
             ---@type GameNet  目前NET.xxx不生效
             local GameNet = require("GameNet/Core")

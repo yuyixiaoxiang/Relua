@@ -1220,6 +1220,18 @@ namespace Lua
                 {
                     inheritClass = "IContextN";
                 }
+                else if (inheritClass == "CommonContainer")
+                {
+                    inheritClass = "CommonContainerN";
+                }
+                else if (inheritClass == "SuperListViewContainer")
+                {
+                    inheritClass = "SuperListViewContainerN";
+                }
+                else if (inheritClass == "SuperTreeContainer")
+                {
+                    inheritClass = "SuperTreeContainerN";
+                }
             }
 
             var Statements = new List<IStatement>();

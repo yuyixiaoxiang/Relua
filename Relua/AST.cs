@@ -2745,10 +2745,15 @@ end
             propertyExpressions.TryGetValue("set", out var _set);
             propertyExpressions.TryGetValue("handler", out var _handler);
 
+            // Debug.Assert(_type != null,"_type != null");
             // type 
             if (_type != null)
             {
                 typeString = _type.ToString();
+            }
+            else
+            {
+                Console.WriteLine($"property type is null:{PropertyName}");
             }
 
             //field 
@@ -3042,6 +3047,7 @@ end
             propertyExpressions.TryGetValue("get", out var _get);
             if (_get is FunctionDefinition _getFunction)
             {
+                
                 assignments.Add(new Assignment()
                 {
                     PloopClass = PloopClass,
@@ -3336,6 +3342,19 @@ setmetatable({EnumName}, {{
                 if (FunctionCall.Function is Variable variable)
                 {
                     return variable.Name == "__Static__";
+                }
+
+                return false;
+            }
+        }
+        
+        public bool IsIndexer
+        {
+            get
+            {
+                if (FunctionCall.Function is Variable variable)
+                {
+                    return variable.Name == "__Indexer__";
                 }
 
                 return false;
