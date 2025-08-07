@@ -130,6 +130,7 @@ public class Processor
         ProcessSafeRequireFile();
         PreprocessModuleAndClass();
         PostprocessModuleAndPartialClass();
+        PostProcessMainSingletonClass();
         PostProcessDynamicClass();
         //outout 
         List<(string path, string content)> outputs = new List<(string path, string content)>();
@@ -1164,9 +1165,12 @@ public class Processor
         }
 
         Console.WriteLine($"\n\n AutoRequireNotFind:{string.Join(",", autorequirenotfind)}");
+        
+    }
 
-
-        //处理gamemodule
+    private void PostProcessMainSingletonClass()
+    {
+          //处理gamemodule
         string luaFilePath = Path.Combine(Const.topLuaDir, "GameModule/init.lua");
         // 读取Lua文件内容
         string luaContent = File.ReadAllText(luaFilePath);
@@ -1399,42 +1403,114 @@ public class Processor
 
 
         //处理GameData
-        luaFilePath = Path.Combine(Const.topLuaDir, "GameData/init.lua");
-        // 读取Lua文件内容
-        luaContent = File.ReadAllText(luaFilePath);
-        // 匹配ModuleNames表内容的正则
-        pattern = @"DataNames\s*=\s*{([\s\S]*?)}";
-
-        match = Regex.Match(luaContent, pattern);
-
-        List<string> dataNames = new List<string>();
-        if (match.Success)
+        List<string> dataNames = Const.DataNames;
+        var dataClass = new List<PloopClass>();
+        foreach (var moduleAndClass in moduleAndClasses)
         {
-            // 获取表中的值
-            string tableContent = match.Groups[1].Value;
-
-            // 根据逗号和换行分割值，并去掉空格和引号
-            string[] values = tableContent
-                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var value in values)
+            foreach (var ploopClass in moduleAndClass.Classes)
             {
-                // 去掉两侧的空格、换行符以及引号
-                string cleanedValue = value
-                    .Trim() // 修剪空格及换行符
-                    .Trim('\"') // 去掉双引号
-                    .Replace("\r", "")
-                    .Replace("\n", "");
-                // Console.WriteLine(cleanedValue);
-                if (string.IsNullOrEmpty(cleanedValue) == false)
-                    dataNames.Add(cleanedValue);
+                if (dataNames.Exists((s => $"{s}Data" == ploopClass.ClassName)) &&
+                    ploopClass.RequirePath.Contains("GameData/"))
+                {
+                    if(ploopClass.IsMainPartialClass || !ploopClass.IsPartialClass)
+                        dataClass.Add(ploopClass);
+                }
             }
         }
+        
+        var dataClassAssignment = new Assignment()
+        {
+            // IsLocal = true,
+            Targets = new List<IAssignable>()
+            {
+                new TableAccess()
+                {
+                    Table = new Variable(){Name = "self"},
+                    Index = new StringLiteral(){Value = "_ENV"}
+                }
+            },
+            Values = new List<IExpression>()
+            {
+                new TableConstructor()
+                {
+                    Entries = dataNames.Select(_input =>
+                    {
+                        PloopClass input = null;
+                        foreach (var moduleAndClass in moduleAndClasses)
+                        {
+                            foreach (var ploopClass in moduleAndClass.Classes)
+                            {
+                                if ($"{_input}Data" == ploopClass.ClassName &&
+                                    ploopClass.RequirePath.Contains("GameData/"))
+                                {
+                                    if (ploopClass.IsMainPartialClass || !ploopClass.IsPartialClass)
+                                        input = ploopClass;
+                                }
+                                if(input != null)
+                                    break;
+                            }
+                            if(input != null)
+                                break;
+                        }
+                        
+                        var singleclass = input.singleFileMultiClass;
+                        var dataName = _input;
+                        return new TableConstructor.Entry()
+                        {
+                            ExplicitKey = true,
+                            Key = new StringLiteral() { Value = dataName },
+                            Value = singleclass == false
+                                                ? new FunctionCall()
+                                                {
+                                                    Arguments = new List<IExpression>()
+                                                    {
+                                                        new StringLiteral()
+                                                        {
+                                                            Value = input.RequirePath
+                                                        }
+                                                    },
+                                                    Function = new Variable()
+                                                    {
+                                                        Name = "require",
+                                                    }
+                                                }
+                                                : new TableAccess()
+                                                {
+                                                    Table = new FunctionCall()
+                                                    {
+                                                        Arguments = new List<IExpression>()
+                                                        {
+                                                            new StringLiteral()
+                                                            {
+                                                                Value = input.RequirePath
+                                                            }
+                                                        },
+                                                        Function = new Variable()
+                                                        {
+                                                            Name = "require",
+                                                        }
+                                                    },
+                                                    Index = new StringLiteral()
+                                                    {
+                                                        Value = input.ClassName
+                                                    }
+                                                }
+                                
+                        };
+                    }).ToList()
+                }
+            }
+        };
+        
 
         if (dataNames.Count > 0)
         {
             var gameData = files.Find((artifact => artifact.fileName == "GameData"));
             var ploopModule = gameData.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
             var @class = ploopModule.Statements.Find((statement => statement is PloopClass)) as PloopClass;
+            
+            // @class.Statements.Insert(0, dataClassAssignment);
+            
             foreach (var statement in @class.Statements)
             {
                 if (statement is Assignment assignment && assignment.Targets.Exists((assignable =>
@@ -1443,122 +1519,172 @@ public class Processor
                         {
                             return true;
                         }
-
+        
                         return false;
                     })))
                 {
                     var functionDeclaration = assignment.Values[0] as FunctionDefinition;
-                    for (var i = 0; i < dataNames.Count; i++)
+
+                    functionDeclaration.Block.Statements.Insert(0, dataClassAssignment);
+                    functionDeclaration.Block.Statements.Insert(1, new GenericFor()
                     {
-                        var dataName = dataNames[i] + "Data";
-                        var moduleRequirePath = string.Empty;
-                        bool singleFileMultiplyClass = false;
-                        foreach (var moduleAndClass in moduleAndClasses)
+                        VariableNames = new List<string>(){"i","v"},
+                        Iterator =  new FunctionCall()
                         {
-                            var find = false;
-                            var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
-                            foreach (var exportVariable in exportableVariables)
+                            Function = new Variable()
                             {
-                                if (exportVariable.VariableName == dataName && exportVariable.IsClass)
-                                {
-                                    foreach (var _class in moduleAndClass.Classes)
-                                    {
-                                        if (_class.ClassName == dataName &&
-                                            (_class.IsMainPartialClass || !_class.IsPartialClass))
-                                        {
-                                            find = true;
-                                            moduleRequirePath = _class.RequirePath;
-                                            singleFileMultiplyClass = _class.singleFileMultiClass;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if (find)
-                                    break;
-                            }
-
-                            if (find)
-                                break;
-                        }
-
-                        functionDeclaration.Block.Statements.Insert(i, new Assignment()
-                        {
-                            Targets = new()
-                            {
-                                new TableAccess()
-                                {
-                                    Table = new Variable()
-                                    {
-                                        Name = "self"
-                                    },
-                                    Index = new StringLiteral()
-                                    {
-                                        Value = dataNames[i],
-                                    }
-                                }
+                                Name = "pairs"
                             },
-
-                            Values = singleFileMultiplyClass == false
-                                ? new List<IExpression>()
+                            Arguments = new List<IExpression>()
+                            {
+                               new TableAccess()
+                               {
+                                   Table = new Variable(){Name = "self"},
+                                   Index = new StringLiteral(){Value = "_ENV"}
+                               }
+                            }
+                        },
+                        Block = new Block()
+                        {
+                            Statements = new List<IStatement>()
+                            {
+                                new Assignment()
                                 {
-                                    new FunctionCall()
+                                    Targets = new List<IAssignable>()
                                     {
-                                        Function = new FunctionCall()
+                                        new TableAccess()
                                         {
-                                            Arguments = new List<IExpression>()
-                                            {
-                                                new StringLiteral()
-                                                {
-                                                    Value = moduleRequirePath
-                                                }
-                                            },
+                                            Table = new Variable(){Name = "self"},
+                                            Index = new Variable(){Name = "i"}
+                                        }
+                                    },
+                                    Values = new List<IExpression>()
+                                    {
+                                        new FunctionCall()
+                                        {
+                                            Arguments = new List<IExpression>(),
                                             Function = new Variable()
                                             {
-                                                Name = "require",
+                                                Name = "v"
                                             }
                                         }
                                     }
                                 }
-                                : new List<IExpression>()
-                                {
-                                    new FunctionCall()
-                                    {
-                                        Function = new TableAccess()
-                                        {
-                                            Table = new FunctionCall()
-                                            {
-                                                Arguments = new List<IExpression>()
-                                                {
-                                                    new StringLiteral()
-                                                    {
-                                                        Value = moduleRequirePath
-                                                    }
-                                                },
-                                                Function = new Variable()
-                                                {
-                                                    Name = "require",
-                                                }
-                                            },
-                                            Index = new StringLiteral()
-                                            {
-                                                Value = dataName
-                                            }
-                                        }
-                                    }
-                                }
-                        });
-                    }
+                            }
+                        }
+                    });
+                    
+                    // for (var i = 0; i < dataNames.Count; i++)
+                    // {
+                    //     var dataName = dataNames[i] + "Data";
+                    //     var moduleRequirePath = string.Empty;
+                    //     bool singleFileMultiplyClass = false;
+                    //     foreach (var moduleAndClass in moduleAndClasses)
+                    //     {
+                    //         var find = false;
+                    //         var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
+                    //         foreach (var exportVariable in exportableVariables)
+                    //         {
+                    //             if (exportVariable.VariableName == dataName && exportVariable.IsClass)
+                    //             {
+                    //                 foreach (var _class in moduleAndClass.Classes)
+                    //                 {
+                    //                     if (_class.ClassName == dataName &&
+                    //                         (_class.IsMainPartialClass || !_class.IsPartialClass))
+                    //                     {
+                    //                         find = true;
+                    //                         moduleRequirePath = _class.RequirePath;
+                    //                         singleFileMultiplyClass = _class.singleFileMultiClass;
+                    //                         break;
+                    //                     }
+                    //                 }
+                    //             }
+                    //
+                    //             if (find)
+                    //                 break;
+                    //         }
+                    //
+                    //         if (find)
+                    //             break;
+                    //     }
+                    //
+                    //     functionDeclaration.Block.Statements.Insert(i, new Assignment()
+                    //     {
+                    //         Targets = new()
+                    //         {
+                    //             new TableAccess()
+                    //             {
+                    //                 Table = new Variable()
+                    //                 {
+                    //                     Name = "self"
+                    //                 },
+                    //                 Index = new StringLiteral()
+                    //                 {
+                    //                     Value = dataNames[i],
+                    //                 }
+                    //             }
+                    //         },
+                    //
+                    //         Values = singleFileMultiplyClass == false
+                    //             ? new List<IExpression>()
+                    //             {
+                    //                 new FunctionCall()
+                    //                 {
+                    //                     Function = new FunctionCall()
+                    //                     {
+                    //                         Arguments = new List<IExpression>()
+                    //                         {
+                    //                             new StringLiteral()
+                    //                             {
+                    //                                 Value = moduleRequirePath
+                    //                             }
+                    //                         },
+                    //                         Function = new Variable()
+                    //                         {
+                    //                             Name = "require",
+                    //                         }
+                    //                     }
+                    //                 }
+                    //             }
+                    //             : new List<IExpression>()
+                    //             {
+                    //                 new FunctionCall()
+                    //                 {
+                    //                     Function = new TableAccess()
+                    //                     {
+                    //                         Table = new FunctionCall()
+                    //                         {
+                    //                             Arguments = new List<IExpression>()
+                    //                             {
+                    //                                 new StringLiteral()
+                    //                                 {
+                    //                                     Value = moduleRequirePath
+                    //                                 }
+                    //                             },
+                    //                             Function = new Variable()
+                    //                             {
+                    //                                 Name = "require",
+                    //                             }
+                    //                         },
+                    //                         Index = new StringLiteral()
+                    //                         {
+                    //                             Value = dataName
+                    //                         }
+                    //                     }
+                    //                 }
+                    //             }
+                    //     });
+                    // }
                 }
-
-
+        
+        
                 if (statement is Assignment assignment1 && assignment1.Targets.Exists((assignable =>
                     {
                         if (assignable is Variable variable && variable.Name == "OnEnterGame")
                         {
                             return true;
                         }
-
+        
                         return false;
                     })))
                 {
@@ -1749,7 +1875,6 @@ public class Processor
         }
     }
 
-
     /// <summary>
     /// 处理动态引入的类型
     /// </summary>
@@ -1758,6 +1883,8 @@ public class Processor
         //处理Ui
         var uis = new List<PloopClass>();
         var entityMenus = new List<PloopClass>();
+        var entityBtnDatas = new List<PloopClass>();
+        var condJudgeExps = new List<PloopClass>();
         foreach (var moduleAndClass in moduleAndClasses)
         {
             foreach (var _class in moduleAndClass.Classes)
@@ -1770,6 +1897,16 @@ public class Processor
                 if (_class.RequirePath.Contains("GameView/EntityMenu/"))
                 {
                     entityMenus.Add(_class);
+                }
+
+                if (_class.InheritClassName == "EntityButtonData" || _class.ClassName == "EntityButtonData")
+                {
+                    entityBtnDatas.Add(_class);
+                }
+
+                if (_class.InheritClassName == "CondJudgeExpBase")
+                {
+                    condJudgeExps.Add(_class);
                 }
             }
         }
@@ -1947,5 +2084,166 @@ public class Processor
         // {
         //     Console.WriteLine(ui.ClassName);
         // }
+        
+        
+        var entityButtonDataAssignment = new Assignment()
+        {
+            IsLocal = true,
+            Targets = new List<IAssignable>()
+            {
+                new Variable() { Name = "_ENV" }
+            },
+            Values = new List<IExpression>()
+            {
+                new TableConstructor()
+                {
+                    Entries = entityBtnDatas.Where((@class => @class.ClassName != "")).Select(input =>
+                    {
+                        var singleclass = input.singleFileMultiClass;
+                        return new TableConstructor.Entry()
+                        {
+                            ExplicitKey = true,
+                            Key = new StringLiteral() { Value = input.ClassName },
+                            Value = singleclass == false
+                                                ? new FunctionCall()
+                                                {
+                                                    Arguments = new List<IExpression>()
+                                                    {
+                                                        new StringLiteral()
+                                                        {
+                                                            Value = input.RequirePath
+                                                        }
+                                                    },
+                                                    Function = new Variable()
+                                                    {
+                                                        Name = "require",
+                                                    }
+                                                }
+                                                : new TableAccess()
+                                                {
+                                                    Table = new FunctionCall()
+                                                    {
+                                                        Arguments = new List<IExpression>()
+                                                        {
+                                                            new StringLiteral()
+                                                            {
+                                                                Value = input.RequirePath
+                                                            }
+                                                        },
+                                                        Function = new Variable()
+                                                        {
+                                                            Name = "require",
+                                                        }
+                                                    },
+                                                    Index = new StringLiteral()
+                                                    {
+                                                        Value = input.ClassName
+                                                    }
+                                                }
+                                
+                        };
+                    }).ToList()
+                }
+            }
+        };
+        
+        find = false;
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var ploopClass in moduleAndClass.Classes)
+            {
+                if (ploopClass.ClassName == "EntityMenuModule" && ploopClass.IsMainPartialClass)
+                {
+                    ploopClass.Statements.Insert(0, entityButtonDataAssignment);
+                    find = true;
+                    break;
+                }
+            }
+            if(find)
+                break;
+        }
+        Console.WriteLine(entityButtonDataAssignment);
+        
+        
+        
+        
+        var condJudgeExpAssignment = new Assignment()
+        {
+            IsLocal = true,
+            Targets = new List<IAssignable>()
+            {
+                new Variable() { Name = "_ENV" }
+            },
+            Values = new List<IExpression>()
+            {
+                new TableConstructor()
+                {
+                    Entries = condJudgeExps.Where((@class => @class.ClassName != "")).Select(input =>
+                    {
+                        var singleclass = input.singleFileMultiClass;
+                        return new TableConstructor.Entry()
+                        {
+                            ExplicitKey = true,
+                            Key = new StringLiteral() { Value = input.ClassName },
+                            Value = singleclass == false
+                                                ? new FunctionCall()
+                                                {
+                                                    Arguments = new List<IExpression>()
+                                                    {
+                                                        new StringLiteral()
+                                                        {
+                                                            Value = input.RequirePath
+                                                        }
+                                                    },
+                                                    Function = new Variable()
+                                                    {
+                                                        Name = "require",
+                                                    }
+                                                }
+                                                : new TableAccess()
+                                                {
+                                                    Table = new FunctionCall()
+                                                    {
+                                                        Arguments = new List<IExpression>()
+                                                        {
+                                                            new StringLiteral()
+                                                            {
+                                                                Value = input.RequirePath
+                                                            }
+                                                        },
+                                                        Function = new Variable()
+                                                        {
+                                                            Name = "require",
+                                                        }
+                                                    },
+                                                    Index = new StringLiteral()
+                                                    {
+                                                        Value = input.ClassName
+                                                    }
+                                                }
+                                
+                        };
+                    }).ToList()
+                }
+            }
+        };
+        
+        find = false;
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            foreach (var ploopClass in moduleAndClass.Classes)
+            {
+                if (ploopClass.ClassName == "CondJudgment")
+                {
+                    ploopClass.Statements.Insert(0, condJudgeExpAssignment);
+                    find = true;
+                    break;
+                }
+            }
+            if(find)
+                break;
+        }
+        Console.WriteLine(condJudgeExpAssignment);
+
     }
 }

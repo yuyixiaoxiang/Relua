@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using Lua.AST;
 
@@ -147,8 +148,8 @@ namespace Lua
         
         private static List<string> postcopyfiles = new List<string>()
         {
-             "EntityMenuModule.lua",
-             "CfgConditionBind.lua",
+             // "EntityMenuModule.lua",
+             // "CfgConditionBind.lua",
              "LuaObjectN.lua"
         };
             
@@ -202,7 +203,17 @@ namespace Lua
                 {
                     //CUSTOM GameView
                     var content = outfile.content;
-                    
+                    if (outfile.path.EndsWith("\\GameData.lua"))
+                    {
+                        var dataNames = Const.DataNames;
+                        var sb = new StringBuilder();
+                        foreach (var dataName in dataNames)
+                        {
+                            sb.AppendLine($"---@field {dataName} {dataName}Data");
+                        }
+                        content = content.Insert(content.IndexOf("local GameData = middleclass('GameData')"),sb.ToString());
+                    }
+
                     if (outfile.path.EndsWith("GameView.lua"))
                     {
                         content = content.Replace("Enum.GetEnumValues", "pairs");
@@ -245,6 +256,14 @@ namespace Lua
                     if (outfile.path.EndsWith("BuffAttributeModule.lua"))
                     {
                         content = content.Replace("GetStartIndex(sourceType[1])", "BuffAttributeModule.GetStartIndex(sourceType[1])");
+                    }
+
+                    if (outfile.path.EndsWith("DServerDataElement.lua"))
+                    {
+                        content = content.Replace("_ENV[", "DATA._ENV[");
+                        content = content.Replace("\"__\",", "\"\",");
+                        content = content.Replace("\"Data\"", "\"\"");
+                        
                     }
 
 
