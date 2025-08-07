@@ -29,10 +29,10 @@ public class PloopScanner
         "3rd",
         "DataTable",
         // "CommonExt/Logic/Check/mod/old",
-        "Event_Class.lua",
+        // "Event_Class.lua",
         "StateMachine.lua",
         "LuaObject.lua",
-        "MultiValueTable.lua",
+        // "MultiValueTable.lua",
     };
 
     public static List<ScanResult> ScanLuaFiles(string rootPath)

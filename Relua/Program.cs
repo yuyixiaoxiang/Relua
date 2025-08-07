@@ -138,18 +138,12 @@ namespace Lua
         private static List<string> fullcopyfiles = new List<string>()
         {
             "Procedure.lua",
-            // "GameModule.lua",
-            // "GameData.lua",
-            // "Core.lua",
-            "Game.lua",
-            // "GameView.lua",
-            
+            "Game.lua",   
         };
         
         private static List<string> postcopyfiles = new List<string>()
         {
-             // "EntityMenuModule.lua",
-             // "CfgConditionBind.lua",
+             "Event_Class.lua",
              "LuaObjectN.lua"
         };
             
@@ -264,6 +258,21 @@ namespace Lua
                         content = content.Replace("\"__\",", "\"\",");
                         content = content.Replace("\"Data\"", "\"\"");
                         
+                    }
+
+                    if (outfile.path.EndsWith("ViewBaseN.lua"))
+                    {
+                        content = content.Replace("EVENT:ObjAllEventPairs(self, __SaveEvent)", "EVENT:ObjAllEventPairs(self, ViewBaseN.__SaveEvent)");
+                    }
+
+                    if (outfile.path.EndsWith("Event_Class.lua"))
+                    {
+                        const string replaceStr = "local targetDic = __GetTargetList(hoster, target)";
+                        const string insertStr = "eventName_ = eventName_ or \"OnDataChanged\"\r\n\t";
+                        content = content.Insert(content.IndexOf(replaceStr), insertStr);
+                        content = content.Insert(content.LastIndexOf(replaceStr), insertStr);
+                        
+                        content = content.Replace("Dictionary()", "{}");
                     }
 
 
