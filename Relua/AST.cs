@@ -2117,26 +2117,26 @@ namespace Lua.AST
         {
             writer.WriteLine();
             //CUSTOM
-            if (ModuleName == "Game.Data.WorldMapData")
-            {
-                writer.WriteLine("""
-                                 local MapCityData = require("GameData/Map/city/MapCityData")
-                                 local MapNpcData = require("GameData/Map/world/MapNpcData")
-                                 local MapResData = require("GameData/Map/world/MapResData")
-                                 local MapTroopData = require("GameData/Map/world/MapTroopData")
-                                 local MapABuildingData = require("GameData/Map/world/MapABuildingData")
-                                 local CityTroopData = require("GameData/Map/obsolete/CityTroopData")
-                                 local MapBookmarkData = require("GameData/Map/world/MapBookmarkData")
-                                 local MapNBuildingData = require("GameData/Map/world/MapNBuildingData")
-                                 """);
-            }
+            // if (ModuleName == "Game.Data.WorldMapData")
+            // {
+            //     writer.WriteLine("""
+            //                      local MapCityData = require("GameData/Map/city/MapCityData")
+            //                      local MapNpcData = require("GameData/Map/world/MapNpcData")
+            //                      local MapResData = require("GameData/Map/world/MapResData")
+            //                      local MapTroopData = require("GameData/Map/world/MapTroopData")
+            //                      local MapABuildingData = require("GameData/Map/world/MapABuildingData")
+            //                      local CityTroopData = require("GameData/Map/obsolete/CityTroopData")
+            //                      local MapBookmarkData = require("GameData/Map/world/MapBookmarkData")
+            //                      local MapNBuildingData = require("GameData/Map/world/MapNBuildingData")
+            //                      """);
+            // }
 
-            if (ModuleName == "Game.Module.CityNodeState")
-            {
-                writer.WriteLine("""
-                                 local CityNodeStates
-                                 """);
-            }
+            // if (ModuleName == "Game.Module.CityNodeState")
+            // {
+            //     writer.WriteLine("""
+            //                      local CityNodeStates
+            //                      """);
+            // }
 
 
             var first = true;
@@ -2407,12 +2407,12 @@ namespace Lua.AST
             //                      """);
             // }
 
-            if (ClassName == "EntityMenuModule")
-            {
-                writer.WriteLine("""
-                                 local EntityMenuDetail = require("Common/GamePlay/GameModule/EntityMenu/EntityMenuDetail")
-                                 """);
-            }
+            // if (ClassName == "EntityMenuModule")
+            // {
+            //     writer.WriteLine("""
+            //                      local EntityMenuDetail = require("Common/GamePlay/GameModule/EntityMenu/EntityMenuDetail")
+            //                      """);
+            // }
 
             // if (RequirePath.EndsWith("HomeSceneModule_Operator"))
             // {
@@ -2571,6 +2571,7 @@ namespace Lua.AST
             if (IsMainPartialClass || !IsPartialClass)
             {
                 var property = Statements.Count(((statement => statement is PloopProperty)));
+                
                 if (true || property > 0)
                 {
                     writer.WriteLine();
@@ -2579,7 +2580,7 @@ namespace Lua.AST
                     //add the __index/__newindex
                     writer.WriteLine($@"
 function {ClassName}:__index(key)
-    local fieldName = '__' .. key:sub(1, 1):lower() .. key:sub(2) 
+    --local fieldName = '__' .. key:sub(1, 1):lower() .. key:sub(2) 
     local existField = true --rawget(self,fieldName) ~= nil
     local getFunc = rawget(self.class.__instanceDict,'__Get'..key)
     if existField and getFunc ~= nil then
@@ -2590,7 +2591,7 @@ end
             ");
                     writer.WriteLine($@"
 function {ClassName}:__newindex(key,value)
-    local fieldName = '__' .. key:sub(1, 1):lower() .. key:sub(2)
+    --local fieldName = '__' .. key:sub(1, 1):lower() .. key:sub(2)
     local existField = true-- rawget(self,fieldName) ~= nil
     local setFunc = rawget(self.class.__instanceDict,'__Set'..key)
     if existField and setFunc ~= nil then
