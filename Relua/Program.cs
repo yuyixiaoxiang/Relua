@@ -279,6 +279,12 @@ namespace Lua
                         content = content.Insert(0, "require(\"GameView/HeroView/tips_container_panel\")");
                     }
 
+                    if (outfile.path.EndsWith("CheckBuildings.lua"))
+                    {
+                        content = content.Insert(content.IndexOf("setmetatable(BuildTabType"),
+                            "CheckBuildings.BuildTabType = BuildTabType\n");
+                    }
+
                     Console.WriteLine($"rewriting {outfile.path}");
                     File.WriteAllText(outfile.path, content);    
                 }
