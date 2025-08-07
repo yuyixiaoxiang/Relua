@@ -137,8 +137,8 @@ namespace Lua
 
         private static List<string> fullcopyfiles = new List<string>()
         {
-            "Procedure.lua",
-            "Game.lua",   
+            // "Procedure.lua",
+            // "Game.lua",   
         };
         
         private static List<string> postcopyfiles = new List<string>()
@@ -270,26 +270,34 @@ namespace Lua
                         const string replaceStr = "local targetDic = __GetTargetList(hoster, target)";
                         const string insertStr = "eventName_ = eventName_ or \"OnDataChanged\"\r\n\t";
                         content = content.Insert(content.IndexOf(replaceStr), insertStr);
-                        content = content.Insert(content.LastIndexOf(replaceStr), insertStr);
-                        
+                        content = content.Insert(content.LastIndexOf(replaceStr), insertStr);   
                         content = content.Replace("Dictionary()", "{}");
                     }
 
-
-
+                    if (outfile.path.EndsWith("hero_skill_item.lua"))
+                    {
+                        content = content.Insert(0, "require(\"GameView/HeroView/tips_container_panel\")");
+                    }
 
                     Console.WriteLine($"rewriting {outfile.path}");
                     File.WriteAllText(outfile.path, content);    
                 }
             }
             //CUSTOM 
-            var luainit =Path.Combine(GetProjectDirectory(),"misc","luainit.lua");
-            var luainitcontent = File.ReadAllText(luainit);
-            File.WriteAllText(Path.Combine(Const.topLuaDir,"init.lua"), luainitcontent);
+            var luaFile =Path.Combine(GetProjectDirectory(),"misc","luainit.lua");
+            var luaContent = File.ReadAllText(luaFile);
+            File.WriteAllText(Path.Combine(Const.topLuaDir,"init.lua"), luaContent);
             
-            luainit =Path.Combine(GetProjectDirectory(),"misc","shopinit.lua");
-            luainitcontent = File.ReadAllText(luainit);
-            File.WriteAllText(Path.Combine(Const.topLuaDir,"GameModule/Shop","init.lua"), luainitcontent);
+            luaFile =Path.Combine(GetProjectDirectory(),"misc","shopinit.lua");
+            luaContent = File.ReadAllText(luaFile);
+            File.WriteAllText(Path.Combine(Const.topLuaDir,"GameModule/Shop","init.lua"), luaContent);
+            
+            //处理game.lua
+            // 
+            luaFile =Path.Combine(Const.topLuaDir,"Common/Logic","Game.lua");
+            luaContent = File.ReadAllText(luaFile);
+            luaContent = luaContent.Replace("PLoop(function(_ENV) _G[\"PROCEDURE\"] = Procedure(); end);", "_G[\"PROCEDURE\"] = require(\"Logic/Procedure\").Procedure()");
+            File.WriteAllText(luaFile, luaContent);
         }
         
         private static bool HasProjectFile(string directory)
