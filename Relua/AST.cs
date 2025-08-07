@@ -1120,11 +1120,11 @@ namespace Lua.AST
 
         public override void Write(IndentAwareTextWriter writer, object data)
         {
-            if (Redundant)
-            {
-                writer.Write("--return");
-                return;
-            }
+            // if (Redundant)
+            // {
+            //     writer.Write("--return");
+            //     return;
+            // }
 
             writer.Write("return");
             if (Expressions.Count > 0) writer.Write(" ");
