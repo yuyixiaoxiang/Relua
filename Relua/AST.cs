@@ -842,6 +842,34 @@ namespace Lua.AST
                 };
             }
             
+            //查找通过不传类名的方式调用类方法
+            if (Function is Variable _variable)
+            {
+                var name = _variable.Name;
+                var ploopClass = findPloopClassAncestor(parent);
+                if (ploopClass != null)
+                {
+                    //判断是否是类方法
+                    var functionNames = ploopClass.GetNeedUseClassNameFunctionNames();
+                    if (functionNames.Contains(name))
+                    {
+                        Console.WriteLine($"static class function:{ploopClass.ClassName} --> {name}");
+                    }
+                    else
+                    {
+                        // Console.WriteLine($"static class function:--> {name}");
+                    }
+                }
+                else
+                {
+                    // Console.WriteLine($"static class function:--> {name}");
+                }
+            }
+
+
+            //查找通过GetPosition(self)方式调用实例方法
+            
+            
             foreach (var argument in Arguments)
             {
                 new IntermediateNode(argument, "FunctionCallArg").CheckNode(context, this);
@@ -2193,6 +2221,37 @@ namespace Lua.AST
         public string MainPartialRequirePath = string.Empty;
         public List<string> SubPartialRequirePaths = new List<string>();
         public PloopClass MainPartialClass;
+
+        public List<string> GetNeedUseClassNameFunctionNames()
+        {
+            var functionNames = new List<string>();
+            var localAssignmentFields = new List<string>();
+            foreach (var statement in Statements)
+            {
+                if (statement is Assignment assignment)
+                {
+                    foreach (var _target in assignment.Targets)
+                    {
+                        if (_target is Variable variable)
+                        {
+                            if(assignment.IsLocal)
+                                localAssignmentFields.Add(variable.Name);
+                        }
+                    }
+                    
+                    if (!assignment.IsLocal  && assignment.Values[0] is FunctionDefinition functionDefinition)
+                    {
+                        if (assignment.Targets[0] is Variable variable2)
+                        {
+                            var funName = variable2.Name;
+                            if(localAssignmentFields.Contains(funName) == false)
+                                functionNames.Add(funName);   
+                        }
+                    }
+                }
+            }
+            return functionNames;
+        }
 
         public override void CheckNode(ICheckContext context, Node parent)
         {

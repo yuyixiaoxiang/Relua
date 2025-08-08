@@ -285,6 +285,29 @@ namespace Lua
                             "CheckBuildings.BuildTabType = BuildTabType\n");
                     }
 
+                    if (outfile.path.EndsWith("MapNodeViewBase.lua"))
+                    {
+                        content = content.Replace("local radiusValid = (((((delta_x ^ 2) + delta_y) ^ 2) > validDis) ^ 2)",
+                            "local radiusValid = (((delta_x^2) + delta_y^2) > validDis^2)");
+                    }
+
+                    if (outfile.path.EndsWith("AllianceBuildingModule.lua"))
+                    {
+                        content = content.Replace("return GetBuildingStatusTxt(status.status)", "return AllianceBuildingModule.GetBuildingStatusTxt(status.status)");
+                        content = content.Replace("return GetBuildingStatusTxt(status)", "return AllianceBuildingModule.GetBuildingStatusTxt(status)");
+                    }
+
+                    if (outfile.path.EndsWith("MapUtil.lua"))
+                    {
+                        content = content.Replace("local nodeView = GetCityNodeView(cityId, uId)", "local nodeView = MapUtil.GetCityNodeView(cityId, uId)");
+                    }
+
+                    if (outfile.path.EndsWith("PlaceBuildingModule.lua"))
+                    {
+                        content = content.Replace("if isCellCovered(cx, cy, radius, cell_center_x, cell_center_y, cell_size) then", 
+                            "if PlaceBuildingModule.isCellCovered(cx, cy, radius, cell_center_x, cell_center_y, cell_size) then");
+                    }
+
                     Console.WriteLine($"rewriting {outfile.path}");
                     File.WriteAllText(outfile.path, content);    
                 }
