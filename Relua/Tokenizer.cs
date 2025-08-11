@@ -99,6 +99,8 @@ namespace Lua {
             }
         }
 
+        public Token? CommentToken;
+
         public void Throw(string msg) {
             throw new TokenizerException(msg, CurrentLine, CurrentColumn);
         }
@@ -326,7 +328,10 @@ namespace Lua {
             return false;
         }
 
-        public Token NextToken() {
+        private Region commentRegion;
+        public Token NextToken()
+        {
+            CommentToken = null;
             if (_CachedPeekToken.HasValue) {
                 var tok = _CachedPeekToken.Value;
                 _CachedPeekToken = null;
@@ -339,7 +344,16 @@ namespace Lua {
 
             if (EOF) return Token.EOF;
 
-            while (c == '-' && Peek(1) == '-') {
+            
+            bool meetComment = false;
+            while (c == '-' && Peek(1) == '-')
+            {
+                if (meetComment == false)
+                {
+                    meetComment = true;
+                    commentRegion = StartRegion();
+                }
+                
                 Move(2);
 
                 if (!SkipMultilineComment()) {
@@ -347,11 +361,18 @@ namespace Lua {
                         Move(1);
                     }
                 }
-
-                if (EOF) return Token.EOF;
+                commentRegion.End();
+                if (EOF)
+                {
+                    
+                        CommentToken = new Token(TokenType.Comment,commentRegion.ToString(), commentRegion);    
+                    return Token.EOF;
+                }
                 SkipWhitespace();
                 c = CurChar;
             }
+            if(meetComment )
+                CommentToken = new Token(TokenType.Comment,commentRegion.ToString(), commentRegion);
 
             if (IsDigit(c)) {
                 Region reg;

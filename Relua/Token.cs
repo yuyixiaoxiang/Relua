@@ -7,6 +7,7 @@ namespace Lua {
         Number,
         Punctuation,
         Keyword,
+        Comment,
     }
 
     public struct Token {
@@ -52,6 +53,11 @@ namespace Lua {
         
         public bool IsKeyword(string value) {
             return Is(TokenType.Keyword, value);
+        }
+
+        public bool IsComment()
+        {
+            return Type == TokenType.Comment;
         }
     }
 }

@@ -11,7 +11,6 @@ namespace Lua.AST
         private Node _parent;
         private HashSet<Node> _children = new HashSet<Node>();
         public HashSet<Node> children => _children;
-
         public Node parent
         {
             get { return _parent; }
@@ -22,6 +21,9 @@ namespace Lua.AST
             }
         }
 
+        public string CommentText { get; set; }
+        
+        
         public virtual void LookupVariable(ICheckContext context, Node child, string variable)
         {
             parent?.LookupVariable(context, this, variable);
@@ -1740,6 +1742,8 @@ namespace Lua.AST
 
         public void WriteNamedFunctionStyle(IndentAwareTextWriter writer, string name, FunctionDefinition func)
         {
+            // if(string.IsNullOrEmpty(CommentText) == false)
+            //     writer.WriteLine(CommentText);
             writer.Write("function ");
             if (PloopClass != null && !IsLocal)
             {
@@ -2144,6 +2148,8 @@ namespace Lua.AST
         public override void Write(IndentAwareTextWriter writer, object data)
         {
             writer.WriteLine();
+            if(string.IsNullOrEmpty(CommentText) == false)
+                writer.WriteLine(CommentText);
             //CUSTOM
             // if (ModuleName == "Game.Data.WorldMapData")
             // {
@@ -2562,7 +2568,8 @@ namespace Lua.AST
 
 
 
-
+            if(string.IsNullOrEmpty(CommentText) == false)
+                writer.WriteLine(CommentText);
 
             writer.WriteLine($"--local {ClassName} = require(\"{RequirePath}\")");
             if (IsMainPartialClass || !IsPartialClass)

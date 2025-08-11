@@ -64,6 +64,8 @@ namespace Lua
         public Token CurToken;
         public Token LastToken;
 
+        public Token? CommentToken => Tokenizer.CommentToken;
+        
         public void Move()
         {
             if (CurToken.Type == TokenType.EOF) return;
@@ -675,7 +677,7 @@ namespace Lua
             var expr = ReadSecondaryExpression();
             return ReadComplexExpression(expr, 0, false);
         }
-
+        
         public Break ReadBreak()
         {
             if (!CurToken.IsKeyword("break")) ThrowExpect("break statement", CurToken);
@@ -895,6 +897,7 @@ namespace Lua
         public Assignment ReadNamedFunctionDefinition()
         {
             if (!CurToken.IsKeyword("function")) ThrowExpect("function", CurToken);
+            var commentText = CommentToken?.Value;
             Move();
             if (CurToken.Type != TokenType.Identifier) ThrowExpect("identifier", CurToken);
             IAssignable expr = new Variable { Name = CurToken.Value };
@@ -928,6 +931,7 @@ namespace Lua
             var func_def = ReadFunctionDefinition(start_from_params: true, self: is_method_def);
             return new Assignment
             {
+                CommentText = commentText,
                 Targets = new List<IAssignable> { expr },
                 Values = new List<IExpression> { func_def }
             };
@@ -1108,6 +1112,7 @@ namespace Lua
         public PloopModule ReadPloopModule()
         {
             if (!CurToken.IsKeyword("Module")) ThrowExpect("Module statement", CurToken);
+            var commentText = CommentToken?.Value;
             Move();
             var moduleName = ReadStringLiteral().Value;
             if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
@@ -1167,6 +1172,7 @@ namespace Lua
             
             return new PloopModule()
             {
+                CommentText = commentText,
                 ModuleName = moduleName,
                 Statements = Statements,
                 NamespaceFunction = _namespaceCall,
@@ -1182,6 +1188,7 @@ namespace Lua
         public PloopClass ReadPloopClass()
         {
             if (!CurToken.IsKeyword("class")) ThrowExpect("ploop class statement", CurToken);
+            var comentText = CommentToken?.Value;
             Move();
             var className = ReadStringLiteral().Value;
             if (!CurToken.IsPunctuation("(")) ThrowExpect("(", CurToken);
@@ -1252,6 +1259,7 @@ namespace Lua
 
             return new PloopClass()
             {
+                CommentText = comentText,
                 ClassName = className,
                 InheritClassName = inheritClass,
                 Statements = Statements,
@@ -1393,7 +1401,7 @@ namespace Lua
             {
                 return ReadPloopModule();
             }
-
+            
             if (CurToken.IsKeyword("class"))
             {
                 return ReadPloopClass();
