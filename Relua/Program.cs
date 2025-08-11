@@ -12,8 +12,8 @@ namespace Lua
         
         public static int Main(string[] args)
         {
-            // ProcessAllPloopClass();
-            // return default;
+            ProcessAllPloopClass();
+            return default;
             var testluafile = @"f:/lua2ts/infile.lua";
             var tokenizer = new Tokenizer(File.ReadAllText(testluafile));
             var parser = new Parser(tokenizer);

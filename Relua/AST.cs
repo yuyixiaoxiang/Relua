@@ -21,7 +21,38 @@ namespace Lua.AST
             }
         }
 
-        public string CommentText { get; set; }
+        private string _commentText;
+        public string CommentText { 
+            get { return _commentText; }
+            set
+            {
+                //注释逐行清洗一下,去除emmylua的注释,同时格式化注释
+                if (value == null)
+                    return;
+                var oldComment = value;
+                string[] lines = oldComment.Split('\n');
+                StringBuilder sb = new StringBuilder();
+                foreach (var line in lines)
+                {
+                    var　newline = line.Trim();
+                    if (newline.StartsWith("---@class")||
+                        newline.StartsWith("---@field")||
+                        newline.StartsWith("---@param self")
+                        )
+                        
+                        // newline.StartsWith("---@return"))
+                    {
+                        continue;
+                    }
+                    sb.AppendLine(newline);
+                }
+                var commentStr = sb.ToString();
+                commentStr = commentStr.TrimEnd('\r','\n');
+                _commentText = commentStr;
+                // _commentText = commentStr.Replace("\n", "\r\n");
+                // _commentText.Trim();
+            }
+        }
         
         
         public virtual void LookupVariable(ICheckContext context, Node child, string variable)
@@ -1062,6 +1093,8 @@ namespace Lua.AST
                 ent.Write(writer,
                     skip_key: ent.Key is NumberLiteral && ((NumberLiteral)ent.Key).Value == 1 && !ent.ExplicitKey);
                 writer.Write(" }");
+                if(string.IsNullOrEmpty(ent.CommentText) == false)
+                    writer.Write(ent.CommentText);
                 return;
             }
 
@@ -1084,6 +1117,8 @@ namespace Lua.AST
 
                 Entries[i].Write(writer, skip_key: is_sequential);
                 if (i < Entries.Count - 1) writer.Write(",");
+                if(string.IsNullOrEmpty(ent.CommentText) == false)
+                    writer.Write(ent.CommentText);
             }
 
             writer.DecreaseIndent();
@@ -1742,8 +1777,8 @@ namespace Lua.AST
 
         public void WriteNamedFunctionStyle(IndentAwareTextWriter writer, string name, FunctionDefinition func)
         {
-            // if(string.IsNullOrEmpty(CommentText) == false)
-            //     writer.WriteLine(CommentText);
+            if(string.IsNullOrEmpty(CommentText) == false)
+                writer.WriteLine(CommentText);
             writer.Write("function ");
             if (PloopClass != null && !IsLocal)
             {
@@ -3117,6 +3152,7 @@ end
                 
                 assignments.Add(new Assignment()
                 {
+                    CommentText = CommentText,
                     PloopClass = PloopClass,
                     Attribute = Attribute,
                     Targets = new List<IAssignable>()
@@ -3170,6 +3206,7 @@ end
 
                 assignments.Add(new Assignment()
                 {
+                    CommentText = CommentText,
                     PloopClass = PloopClass,
                     Attribute = Attribute,
                     Targets = new List<IAssignable>()
@@ -3229,6 +3266,7 @@ end
                 Debug.Assert(fieldStringLiteral != null, $"fieldStringLiteral is not null");
                 assignments.Add(new Assignment()
                 {
+                    CommentText = CommentText,
                     PloopClass = PloopClass,
                     Attribute = Attribute,
                     Targets = new List<IAssignable>()
@@ -3249,6 +3287,7 @@ end
                 Debug.Assert(fieldStringLiteral != null, $"fieldStringLiteral is not null");
                 assignments.Add(new Assignment()
                 {
+                    CommentText = CommentText,
                     Attribute = Attribute,
                     PloopClass = PloopClass,
                     Targets = new List<IAssignable>()
@@ -3365,7 +3404,8 @@ end
                     entry.Key = entry.Value;
                 }
             }
-
+            if(string.IsNullOrEmpty(CommentText) == false)
+                writer.WriteLine(CommentText);
             writer.Write($"{EnumName} = ");
             enumStruct.Write(writer, null);
             writer.WriteLine();

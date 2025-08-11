@@ -331,13 +331,12 @@ namespace Lua {
         private Region commentRegion;
         public Token NextToken()
         {
-            CommentToken = null;
             if (_CachedPeekToken.HasValue) {
                 var tok = _CachedPeekToken.Value;
                 _CachedPeekToken = null;
                 return tok;
             }
-
+            CommentToken = null;
             SkipWhitespace();
 
             var c = CurChar;

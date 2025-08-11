@@ -329,6 +329,12 @@ namespace Lua
                     cur_sequential_idx += 1;
                 }
 
+                if (CommentToken == null)
+                {
+                   var peekToken = PeekToken;
+                }
+                
+                ent.CommentText = CommentToken?.Value ?? "";
                 entries.Add(ent);
             }
 
@@ -346,7 +352,12 @@ namespace Lua
                     ent.Key = new NumberLiteral { Value = cur_sequential_idx };
                     cur_sequential_idx += 1;
                 }
+                if (CommentToken == null)
+                {
+                    var peekToken = PeekToken;
+                }
 
+                ent.CommentText = CommentToken?.Value ?? "";
                 entries.Add(ent);
 
                 //fix error use ; not ,
@@ -1274,6 +1285,7 @@ namespace Lua
         public PloopProperty ReadPloopProperty()
         {
             if (!CurToken.IsKeyword("property")) ThrowExpect("property statement", CurToken);
+            var commentText = CommentToken?.Value ?? string.Empty;
             Move();
             var propertyName = ReadStringLiteral().Value;
             if (!CurToken.IsPunctuation("{")) ThrowExpect("{", CurToken);
@@ -1282,6 +1294,7 @@ namespace Lua
 
             return new PloopProperty()
             {
+                CommentText = commentText,
                 PropertyName = propertyName,
                 PropertyTable = propertyStruct,
             };
@@ -1296,6 +1309,7 @@ namespace Lua
         public PloopEnum ReadPloopEnum()
         {
             if (!CurToken.IsKeyword("enum")) ThrowExpect("property statement", CurToken);
+            var commentText = CommentToken?.Value ?? string.Empty;
             Move();
             var enumName = ReadStringLiteral().Value;
             if (!CurToken.IsPunctuation("{")) ThrowExpect("{", CurToken);
@@ -1304,6 +1318,7 @@ namespace Lua
 
             return new PloopEnum()
             {
+                CommentText = commentText,
                 EnumName = enumName,
                 enumStruct = enumStruct,
             };
@@ -1374,6 +1389,7 @@ namespace Lua
 
             if (CurToken.IsKeyword("local"))
             {
+                var commentText = CommentToken;
                 Move();
                 if (CurToken.IsKeyword("function"))
                 {
