@@ -1200,38 +1200,38 @@ namespace Lua
                 Move();
                 inheritClass = ReadStringLiteral().Value;
                 //CUSTOM 
-                if (inheritClass == "ViewBase")
-                {
-                    inheritClass = "ViewBaseN";
-                }
-                else if (inheritClass == "ViewNode")
-                {
-                    inheritClass = "ViewNodeN";
-                }
-                else if (inheritClass == "LuaObject")
-                {
-                    inheritClass = "LuaObjectN";
-                }
-                else if (inheritClass == "IState")
-                {
-                    inheritClass = "IStateN";
-                }
-                else if (inheritClass == "IContext")
-                {
-                    inheritClass = "IContextN";
-                }
-                else if (inheritClass == "CommonContainer")
-                {
-                    inheritClass = "CommonContainerN";
-                }
-                else if (inheritClass == "SuperListViewContainer")
-                {
-                    inheritClass = "SuperListViewContainerN";
-                }
-                else if (inheritClass == "SuperTreeContainer")
-                {
-                    inheritClass = "SuperTreeContainerN";
-                }
+                // if (inheritClass == "ViewBase")
+                // {
+                //     inheritClass = "ViewBaseN";
+                // }
+                // else if (inheritClass == "ViewNode")
+                // {
+                //     inheritClass = "ViewNodeN";
+                // }
+                // else if (inheritClass == "LuaObject")
+                // {
+                //     inheritClass = "LuaObjectN";
+                // }
+                // else if (inheritClass == "IState")
+                // {
+                //     inheritClass = "IStateN";
+                // }
+                // else if (inheritClass == "IContext")
+                // {
+                //     inheritClass = "IContextN";
+                // }
+                // else if (inheritClass == "CommonContainer")
+                // {
+                //     inheritClass = "CommonContainerN";
+                // }
+                // else if (inheritClass == "SuperListViewContainer")
+                // {
+                //     inheritClass = "SuperListViewContainerN";
+                // }
+                // else if (inheritClass == "SuperTreeContainer")
+                // {
+                //     inheritClass = "SuperTreeContainerN";
+                // }
             }
 
             var Statements = new List<IStatement>();

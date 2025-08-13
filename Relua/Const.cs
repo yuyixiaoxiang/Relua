@@ -4,8 +4,8 @@ namespace Lua;
 
 public class Const
 {
-    public static string topLuaDir = "D:\\e-u3dclient\\Assets\\client-code\\LuaFramework\\Lua";
-
+    public static string fromTopLuaDir = "D:\\xiuxian_u3dclient2\\Assets\\client-code\\LuaFramework\\Lua";
+    public static string toTopLuaDir = "D:\\xiuxian_u3dclient\\Assets\\client-code\\LuaFramework\\Lua";
 
 
     public static List<string> DataNames
@@ -13,7 +13,7 @@ public class Const
         get
         {
             //处理GameData
-            var luaFilePath = Path.Combine(Const.topLuaDir, "GameData/init.lua");
+            var luaFilePath = Path.Combine(Const.fromTopLuaDir, "GameData/init.lua");
             // 读取Lua文件内容
            var  luaContent = File.ReadAllText(luaFilePath);
             // 匹配ModuleNames表内容的正则

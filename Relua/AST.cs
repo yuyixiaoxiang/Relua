@@ -142,18 +142,26 @@ namespace Lua.AST
         {
             "table", "ipairs", "logError", "math", "type", "tonumber", "pairs", "safe", "logWarn", "tostring", "VhLog",
             "logErrorEx", "debug",
-            "tostring", "logEx", "log", "protobuf", "showMsg", "string", "VhLogError"
+            "tostring", "logEx", "log", "protobuf", "showMsg", "string", "VhLogError","logZYB","setmetatable","getmetatable","showMsgCode","coroutine",
+            "print","Quaternion","unpack","defclass","table2string","require","Vector2","typeof","select","pcall","find","memoize","JSON","require",
+            "Mathf","_","logZYBError","package","module","next","rawget","new",
         };
 
         private HashSet<string> PLOOP_VARIABLES = new HashSet<string>()
         {
-            "System", "self",
+            "System", "self","_ENV","Dictionary","Enum","Boolean","String","Number",
         };
 
         private HashSet<string> GLOBALS_VARIABLES = new HashSet<string>()
         {
             "MODULE", "DATA", "EVENT", "NET", "VIEW", "g_Util", "NO_UPDATE", "ACTION", "ELEX_SDK", "Timer", "Time",
-            "EPSDK"
+            "EPSDK","EventDefine","ModuleNames","CONDITION","CHECK","Table","GameConfigManager","NetManagertoLua","UNITY_EDITOR","SDKtoLua",
+            "ServiceManagerLua","PlayerPrefsLua","UnityEngine","Any2String","CommonInterface4Lua","Vector3","Event","_G","CLIENT_MSG_ERROR_CODE",
+            "WATCHER","EntityUtilLua","UnityUtil","ELEX","ChattoLua","libx","CommonInterface4LuaAOT","TimelineUnit","FrameTimer","ServiceManager",
+            "UIConst","UIMapTracker","g_audioKit","UNITY_STANDALONE_WIN","UITracker","DeviceInfo","Localization","AndroidUtil","UNITY_WEBGL","WEIXINMINIGAME",
+            "LoadingControllerLua","MailtoLua","PROCEDURE","GameHotFixLua","NetPBCManager","CommonInterface4CS","UIControlType","Quality4Lua","GameObject",
+            "GPMHelper","Utility","g_panelMgr","NumUtil","LuaHelper","SceneMgrLua","AudioEvents","TWEEN"
+            
         };
 
         private HashSet<string> OMIT_EXPORTABLE_VARIABLES = new()
@@ -162,7 +170,7 @@ namespace Lua.AST
         };
 
 
-        public void AddRequiredVariable(string variable)
+        public void AddRequiredVariable(string variable) 
         {
             if (Tokenizer.RESERVED_KEYWORDS.Contains(variable))
                 return;
@@ -192,12 +200,12 @@ namespace Lua.AST
             return exportableVariables;
         }
 
-        public override string ToString()
-        {
-            return
-                $"RequireVariables:\n\t{string.Join("\n\t", requiredVariables)}" +
-                $"\nExportableVariables:\n\t{string.Join("\n\t", exportableVariables)}";
-        }
+        // public override string ToString()
+        // {
+        //     return
+        //         $"RequireVariables:\n\t{string.Join("\n\t", requiredVariables)}" +
+        //         $"\nExportableVariables:\n\t{string.Join("\n\t", exportableVariables)}";
+        // }
     }
 
     /// <summary>
@@ -2282,6 +2290,23 @@ namespace Lua.AST
                     }
                 }
             }
+            //查找当前类所有方法的名字 
+            foreach (var statement in Statements)
+            {
+                if (statement is Assignment assignment && assignment.IsFunctionAssignment)
+                {
+                    if (assignment.Targets[0] is Variable variable2)
+                    {
+                        if (variable == variable2.Name)
+                        {
+                            return;
+                        }
+                    }    
+                }
+            }
+
+
+
 
             base.LookupVariable(context, child, variable);
         }
@@ -2756,7 +2781,7 @@ end
 
         public override void CheckNode(ICheckContext context, Node parent)
         {
-            AnalysisExpressions();
+            // AnalysisExpressions();
             this.parent = parent;
             PropertyTable.CheckNode(context, this);
         }

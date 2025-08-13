@@ -27,11 +27,11 @@ public class PloopScanner
     private static readonly List<string> SkipPaths = new List<string>()
     {
         "3rd",
-        "DataTable",
+        // "DataTable",
         // "CommonExt/Logic/Check/mod/old",
         // "Event_Class.lua",
-        "StateMachine.lua",
-        "LuaObject.lua",
+        // "StateMachine.lua",
+        // "LuaObject.lua",
         // "MultiValueTable.lua",
     };
 
