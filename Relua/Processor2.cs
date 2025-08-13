@@ -1388,6 +1388,7 @@ public class Processor2
         var entityMenus = new List<PloopClass>();
         var entityBtnDatas = new List<PloopClass>();
         var condJudgeExps = new List<PloopClass>();
+        var msgItems = new List<PloopClass>();
         foreach (var moduleAndClass in moduleAndClasses)
         {
             foreach (var _class in moduleAndClass.Classes)
@@ -1411,9 +1412,15 @@ public class Processor2
                 {
                     condJudgeExps.Add(_class);
                 }
+
+                if (_class.RequirePath.Contains("GameView/Msg/mod"))
+                {
+                    msgItems.Add(_class);
+                }
             }
         }
 
+        //ui 
         var requireUIs = uis.Where((@class => @class.ClassName != "$Templete$")).Select(input =>
         {
             var singleclass = input.singleFileMultiClass;
@@ -1428,11 +1435,7 @@ public class Processor2
                                    }
                                
                                """;
-
-        // Console.WriteLine(requireUITable);
-
-        const string FINDSTR = "class \"GameView\" (function(_ENV)";
-
+        string FINDSTR = "class \"GameView\" (function(_ENV)";
         var gameViewPath = Path.Combine(Const.toTopLuaDir, "Common/GamePlay/GameView.lua");
         var gameViewStr = File.ReadAllText(gameViewPath);
         var indexOf = gameViewStr.IndexOf(FINDSTR) + FINDSTR.Length;
@@ -1441,7 +1444,70 @@ public class Processor2
             "if   _ENV[name] == nil then\n                require(_LAZY_REQUIRE[name])\n            end\n");
         File.WriteAllText(gameViewPath,gameViewStr);
 
+        //entity menu
+        var requireEntityMenus = entityMenus.Where((@class => @class.ClassName != "entity_menu_panel")).Select(input =>
+        {
+            var singleclass = input.singleFileMultiClass;
+            return $"""
+                            {input.ClassName} = "{input.RequirePath}"
+                    """;
+        }).ToList();
+        var requireEntityMenuTable = $$"""
+                               
+                                   local _LAZY_REQUIRE = {
+                                   {{string.Join(",\n", requireEntityMenus)}}
+                                   }
 
+                               """;
+        
+        FINDSTR = "inherit \"ViewBase\"";
+        var entityMenuPanelPath = Path.Combine(Const.toTopLuaDir, "GameView/EntityMenu/core/entity_menu_panel.lua");
+        var entityMenuPaneStr = File.ReadAllText(entityMenuPanelPath);
+        indexOf = entityMenuPaneStr.IndexOf(FINDSTR) + FINDSTR.Length;
+        entityMenuPaneStr = entityMenuPaneStr.Insert(indexOf, requireEntityMenuTable);
+        entityMenuPaneStr = entityMenuPaneStr.Insert(entityMenuPaneStr.IndexOf("local __creator = _ENV[lua_name];"),
+            "if   _ENV[lua_name] == nil then\n                require(_LAZY_REQUIRE[lua_name])\n            end\n");
+        File.WriteAllText(entityMenuPanelPath,entityMenuPaneStr);
+        
+        //msg items
+        var requireMsgItems = msgItems.Where((@class => @class.ClassName != "")).Select(input =>
+        {
+            var singleclass = input.singleFileMultiClass;
+            return $"""
+                            {input.ClassName} = "{input.RequirePath}"
+                    """;
+        }).ToList();
+        var requireMsgItemsTable = $$"""
+                                     
+                                         local _LAZY_REQUIRE = {
+                                         {{string.Join(",\n", requireMsgItems)}}
+                                         }
+
+                                     """;
+        
+        FINDSTR = "inherit \"ViewBase\"";
+        var msgPanelPath = Path.Combine(Const.toTopLuaDir, "GameView/Msg/msg_panel.lua");
+        var msgPaneStr = File.ReadAllText(msgPanelPath);
+        indexOf = msgPaneStr.IndexOf(FINDSTR) + FINDSTR.Length;
+        msgPaneStr = msgPaneStr.Insert(indexOf, requireMsgItemsTable);
+        msgPaneStr = msgPaneStr.Insert(msgPaneStr.IndexOf("local itemClass = itemClassName and _ENV[itemClassName]"),
+            "if   _ENV[itemClassName] == nil then\n                require(_LAZY_REQUIRE[itemClassName])\n            end\n");
+        File.WriteAllText(msgPanelPath,msgPaneStr);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         // var entityMenuAssignment = new Assignment()
         // {
         //     IsLocal = true,
