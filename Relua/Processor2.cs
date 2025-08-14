@@ -1389,6 +1389,7 @@ public class Processor2
         var entityBtnDatas = new List<PloopClass>();
         var condJudgeExps = new List<PloopClass>();
         var msgItems = new List<PloopClass>();
+        var cfgConditionClass = new List<PloopClass>();
         foreach (var moduleAndClass in moduleAndClasses)
         {
             foreach (var _class in moduleAndClass.Classes)
@@ -1417,9 +1418,22 @@ public class Processor2
                 {
                     msgItems.Add(_class);
                 }
+
+                if (_class.InheritClassName == "ConditionBase")
+                {
+                    cfgConditionClass.Add(_class);
+                }
             }
         }
 
+        //gameview/init
+        var gameviewInitPath = Path.Combine(Const.toTopLuaDir, "GameView/init.lua");
+        var gameViewInitStr = File.ReadAllText(gameviewInitPath);
+        
+        gameViewInitStr = gameViewInitStr.Insert(gameViewInitStr.IndexOf("-- 通用的界面，手动"),
+            "do return end\n");
+        File.WriteAllText(gameviewInitPath,gameViewInitStr);
+        
         //ui 
         var requireUIs = uis.Where((@class => @class.ClassName != "$Templete$")).Select(input =>
         {
@@ -1494,20 +1508,110 @@ public class Processor2
             "if   _ENV[itemClassName] == nil then\n                require(_LAZY_REQUIRE[itemClassName])\n            end\n");
         File.WriteAllText(msgPanelPath,msgPaneStr);
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        //处理confCondition
+
+        var cfgConditionTables = cfgConditionClass.Where((@class => true)).Select((input) =>
+        {
+            var conditionTypeStr = string.Empty;   
+            foreach (var statement in input.Statements)
+            {
+                if (statement is Assignment assignment)
+                {
+                    if (assignment.Targets[0] is Variable variable && variable.Name == "__ctor")
+                    {
+                        if (assignment.Values[0] is FunctionDefinition functionDefinition)
+                        {
+                            foreach (var statement1 in functionDefinition.Block.Statements)
+                            {
+                                if (statement1 is Assignment assignment1)
+                                {
+                                    // self.__condition_type = ConditionType.DIG_SPEED_COUNT
+                                    if (assignment1.Targets[0] is TableAccess tableAccess && 
+                                        tableAccess.Table is Variable variable1 && variable1.Name == "self" && 
+                                        tableAccess.Index is StringLiteral index1 && index1.Value == "__condition_type")
+                                    {
+                                        conditionTypeStr = assignment1.Values[0].ToString();
+                                    }
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                }
+            }
+            Debug.Assert(conditionTypeStr.Length != 0);
+            return $$"""
+                            [{{conditionTypeStr}}] = {
+                                ClassName = "{{input.ClassName}}",
+                                RequirePath = "{{input.RequirePath}}",
+                            }
+                    """;
+        });
+        var requireCfgConditionTable = $$"""
+                                     
+                                         local _LAZY_REQUIRE = {
+                                         {{string.Join(",\n", cfgConditionTables)}}
+                                         }
+
+                                     """;
+       // Console.WriteLine(requireCfgConditionTable);
+       var cfgConditionBindPath = Path.Combine(Const.toTopLuaDir, "CommonExt/Logic/CfgCondition/CfgConditionBind.lua");
+       var cfgConditionBindStr = File.ReadAllText(cfgConditionBindPath);
+       cfgConditionBindStr = cfgConditionBindStr.Insert(cfgConditionBindStr.IndexOf("class \"CfgCondition\"(function(_ENV)"),requireCfgConditionTable);
+
+       FINDSTR = "inherit \"LuaObject\"";
+       cfgConditionBindStr = cfgConditionBindStr.Insert(cfgConditionBindStr.IndexOf(FINDSTR)+FINDSTR.Length, """
+                                                                             
+                                                                             __Indexer__()
+                                                                             property "Condition_type_class" { field = "__Condition_type_class", type = Table, default = {},
+                                                                                                get = function(self, conditionType)
+                                                                                                     if self.__Condition_type_class[conditionType] then
+                                                                                                         return self.__Condition_type_class[conditionType]
+                                                                                                     end
+                                                                                                    local LazyRequire = _LAZY_REQUIRE[conditionType]
+                                                                                                    if(_ENV[LazyRequire.ClassName] == nil) then
+                                                                                                        require(LazyRequire.RequirePath)
+                                                                                                    end
+                                                                                                     local classValue = _ENV[LazyRequire.ClassName]
+                                                                                                    local value = classValue();
+                                                                                                    if value or value.ConditionType ~= "BaseType" then
+                                                                                                        self.__Condition_type_class[value.ConditionType] = value;
+                                                                                                    else
+                                                                                                        logError("create conditionClass error!! name:" .. classValue);
+                                                                                                    end
+                                                                                                    return value
+                                                                                                end,
+                                                                                                set = false, -- 外部不允许修改
+                                                                             }
+                                                                             
+                                                                             """);
+
+
+
+
+       var splits = cfgConditionBindStr.Split("\r\n").ToList();
+       var _index = 0;
+       for (var i = 0; i < splits.Count; i++)
+       {
+           if (splits[i].Contains("local value;"))
+           {
+               _index = i;
+               break;
+           }
+       }
+
+       splits.Insert(_index, "--[[");
+       splits.Insert(_index+10, "--]]");
+       cfgConditionBindStr = string.Join("\r\n", splits);
+       File.WriteAllText(cfgConditionBindPath,cfgConditionBindStr);
+
+       
+       var cfgConditionPath = Path.Combine(Const.toTopLuaDir, "Common/Logic/CfgCondition/core/CfgCondition.lua");
+       string cfgConditionstr = File.ReadAllText(cfgConditionPath);
+       cfgConditionstr = cfgConditionstr.Replace("local condition_class = self.__Condition_type_class[conditionType]", "local condition_class = self.Condition_type_class[conditionType]");
+       File.WriteAllText(cfgConditionPath,cfgConditionstr);
+
         // var entityMenuAssignment = new Assignment()
         // {
         //     IsLocal = true,
