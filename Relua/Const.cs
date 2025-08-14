@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace Lua;
 
@@ -45,5 +46,24 @@ public class Const
             }
             return dataNames;
         }
+    }
+    
+    public static string GetProjectDirectory([CallerFilePath]string callerFilePath = "")
+    {
+        // 从调用此方法的源文件路径推断项目目录
+        string directory = Path.GetDirectoryName(callerFilePath);
+        
+        // 向上查找到项目根目录（包含 .csproj 文件的目录）
+        while (directory != null && !HasProjectFile(directory))
+        {
+            directory = Directory.GetParent(directory)?.FullName;
+        }
+        
+        return directory;
+    }
+    
+    private static bool HasProjectFile(string directory)
+    {
+        return Directory.GetFiles(directory, "*.sln").Length > 0;
     }
 }

@@ -133,8 +133,8 @@ public class Processor2
         PostprocessModuleAndPartialClass();
         // PostProcessMainSingletonClass();
         PostProcessDynamicClass();
-        
-        
+        PostCopy();
+
         //outout 
         List<(string path, string content)> outputs = new List<(string path, string content)>();
         foreach (var file in files)
@@ -144,7 +144,7 @@ public class Processor2
                 content: file.Block.ToString()
             ));
         }
-        
+
         return outputs;
     }
 
@@ -403,7 +403,7 @@ public class Processor2
                     // {
                     //     subPartialClasses.Add(_class);
                     // }
-                    
+
                     if (kv.Key == "ConditionBase" && _class.FileName == "ConditionJump")
                     {
                         subPartialClasses.Add(_class);
@@ -511,7 +511,7 @@ public class Processor2
                 }
             }
         }
-        
+
         //check Nested class 
         foreach (var moduleAndClass in moduleAndClasses)
         {
@@ -521,7 +521,7 @@ public class Processor2
                 Debug.Assert(nestedclass.Count == 0, $"{_ploopClass.RequirePath},nestedclass.Count == 0");
             }
         }
-        
+
         //处理自动导入
         HashSet<string> autoRequireNotFind = new HashSet<string>();
         foreach (var file in files)
@@ -533,7 +533,7 @@ public class Processor2
             var needRequireFile = new Dictionary<string, List<ModuleAndClass>>();
             var needRequreStrs = file.CheckContext.GetRequiredVariables();
             var needAutoRequirePaths = new HashSet<string>();
-            
+
             //首先处理基类的导入
             foreach (var moduleAndClass in moduleAndClasses)
             {
@@ -546,10 +546,11 @@ public class Processor2
                             needAutoRequirePaths.Add(_ploopClass.InheritRequirePath);
                         }
                     }
+
                     break;
                 }
             }
-            
+
             foreach (var _needRequreStr in needRequreStrs)
             {
                 var needRequreStr = _needRequreStr;
@@ -613,7 +614,7 @@ public class Processor2
                     if (requireFile != null)
                     {
                         var requirePath = requireFile.file.requirePath;
-                        
+
                         //CUSTOM
                         // if (file.fileName == "WorldMapModule" && (needRequreStr.EndsWith("Component") ||
                         //                                           needRequreStr.EndsWith("View") ||
@@ -630,7 +631,8 @@ public class Processor2
                 else
                 {
                     //如果是配置表
-                    if (needRequreStr.StartsWith("Conf") && File.Exists($"{Const.fromTopLuaDir}\\DataTable\\{needRequreStr}.lua"))
+                    if (needRequreStr.StartsWith("Conf") &&
+                        File.Exists($"{Const.fromTopLuaDir}\\DataTable\\{needRequreStr}.lua"))
                     {
                         //配置表存在
                         needAutoRequirePaths.Add($"DataTable/{needRequreStr}");
@@ -638,14 +640,14 @@ public class Processor2
                     else
                     {
                         Console.WriteLine($"AutoRequire,Not find:{file.outPath} {needRequreStr}");
-                        autoRequireNotFind.Add(needRequreStr);    
+                        autoRequireNotFind.Add(needRequreStr);
                     }
                 }
             }
 
             if (needAutoRequirePaths.Count > 0)
             {
-                NeedRequireClass(file,needAutoRequirePaths.ToList());
+                NeedRequireClass(file, needAutoRequirePaths.ToList());
             }
         }
 
@@ -655,25 +657,26 @@ public class Processor2
     private void NeedRequireClass(LuaArtifact file, List<string> requirePaths)
     {
         var sourcePath = file.srcPath;
-        sourcePath = sourcePath.Replace("/","\\");
+        sourcePath = sourcePath.Replace("/", "\\");
         var targetPath = sourcePath.Replace(Const.fromTopLuaDir, Const.toTopLuaDir);
-        
-        if(targetPath.Contains("GameView") == false)
+
+        if (targetPath.Contains("GameView") == false)
             return;
-        
-        
+
+
         var allLines = File.ReadAllLines(targetPath).ToList();
         for (var index = 0; index < requirePaths.Count; index++)
         {
             var requireFunc = $"require(\"{requirePaths[index]}\")";
-            allLines.Insert(index,requireFunc);    
+            allLines.Insert(index, requireFunc);
         }
+
         File.WriteAllLines(targetPath, allLines);
     }
 
     private void PostProcessMainSingletonClass()
     {
-          //处理gamemodule
+        //处理gamemodule
         string luaFilePath = Path.Combine(Const.fromTopLuaDir, "GameModule/init.lua");
         // 读取Lua文件内容
         string luaContent = File.ReadAllText(luaFilePath);
@@ -915,12 +918,12 @@ public class Processor2
                 if (dataNames.Exists((s => $"{s}Data" == ploopClass.ClassName)) &&
                     ploopClass.RequirePath.Contains("GameData/"))
                 {
-                    if(ploopClass.IsMainPartialClass || !ploopClass.IsPartialClass)
+                    if (ploopClass.IsMainPartialClass || !ploopClass.IsPartialClass)
                         dataClass.Add(ploopClass);
                 }
             }
         }
-        
+
         var dataClassAssignment = new Assignment()
         {
             // IsLocal = true,
@@ -928,8 +931,8 @@ public class Processor2
             {
                 new TableAccess()
                 {
-                    Table = new Variable(){Name = "self"},
-                    Index = new StringLiteral(){Value = "_ENV"}
+                    Table = new Variable() { Name = "self" },
+                    Index = new StringLiteral() { Value = "_ENV" }
                 }
             },
             Values = new List<IExpression>()
@@ -949,13 +952,15 @@ public class Processor2
                                     if (ploopClass.IsMainPartialClass || !ploopClass.IsPartialClass)
                                         input = ploopClass;
                                 }
-                                if(input != null)
+
+                                if (input != null)
                                     break;
                             }
-                            if(input != null)
+
+                            if (input != null)
                                 break;
                         }
-                        
+
                         var singleclass = input.singleFileMultiClass;
                         var dataName = _input;
                         return new TableConstructor.Entry()
@@ -963,57 +968,57 @@ public class Processor2
                             ExplicitKey = true,
                             Key = new StringLiteral() { Value = dataName },
                             Value = singleclass == false
-                                                ? new FunctionCall()
-                                                {
-                                                    Arguments = new List<IExpression>()
-                                                    {
-                                                        new StringLiteral()
-                                                        {
-                                                            Value = input.RequirePath
-                                                        }
-                                                    },
-                                                    Function = new Variable()
-                                                    {
-                                                        Name = "require",
-                                                    }
-                                                }
-                                                : new TableAccess()
-                                                {
-                                                    Table = new FunctionCall()
-                                                    {
-                                                        Arguments = new List<IExpression>()
-                                                        {
-                                                            new StringLiteral()
-                                                            {
-                                                                Value = input.RequirePath
-                                                            }
-                                                        },
-                                                        Function = new Variable()
-                                                        {
-                                                            Name = "require",
-                                                        }
-                                                    },
-                                                    Index = new StringLiteral()
-                                                    {
-                                                        Value = input.ClassName
-                                                    }
-                                                }
-                                
+                                ? new FunctionCall()
+                                {
+                                    Arguments = new List<IExpression>()
+                                    {
+                                        new StringLiteral()
+                                        {
+                                            Value = input.RequirePath
+                                        }
+                                    },
+                                    Function = new Variable()
+                                    {
+                                        Name = "require",
+                                    }
+                                }
+                                : new TableAccess()
+                                {
+                                    Table = new FunctionCall()
+                                    {
+                                        Arguments = new List<IExpression>()
+                                        {
+                                            new StringLiteral()
+                                            {
+                                                Value = input.RequirePath
+                                            }
+                                        },
+                                        Function = new Variable()
+                                        {
+                                            Name = "require",
+                                        }
+                                    },
+                                    Index = new StringLiteral()
+                                    {
+                                        Value = input.ClassName
+                                    }
+                                }
+
                         };
                     }).ToList()
                 }
             }
         };
-        
+
 
         if (dataNames.Count > 0)
         {
             var gameData = files.Find((artifact => artifact.fileName == "GameData"));
             var ploopModule = gameData.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
             var @class = ploopModule.Statements.Find((statement => statement is PloopClass)) as PloopClass;
-            
+
             // @class.Statements.Insert(0, dataClassAssignment);
-            
+
             foreach (var statement in @class.Statements)
             {
                 if (statement is Assignment assignment && assignment.Targets.Exists((assignable =>
@@ -1022,7 +1027,7 @@ public class Processor2
                         {
                             return true;
                         }
-        
+
                         return false;
                     })))
                 {
@@ -1031,8 +1036,8 @@ public class Processor2
                     functionDeclaration.Block.Statements.Insert(0, dataClassAssignment);
                     functionDeclaration.Block.Statements.Insert(1, new GenericFor()
                     {
-                        VariableNames = new List<string>(){"i","v"},
-                        Iterator =  new FunctionCall()
+                        VariableNames = new List<string>() { "i", "v" },
+                        Iterator = new FunctionCall()
                         {
                             Function = new Variable()
                             {
@@ -1040,11 +1045,11 @@ public class Processor2
                             },
                             Arguments = new List<IExpression>()
                             {
-                               new TableAccess()
-                               {
-                                   Table = new Variable(){Name = "self"},
-                                   Index = new StringLiteral(){Value = "_ENV"}
-                               }
+                                new TableAccess()
+                                {
+                                    Table = new Variable() { Name = "self" },
+                                    Index = new StringLiteral() { Value = "_ENV" }
+                                }
                             }
                         },
                         Block = new Block()
@@ -1057,8 +1062,8 @@ public class Processor2
                                     {
                                         new TableAccess()
                                         {
-                                            Table = new Variable(){Name = "self"},
-                                            Index = new Variable(){Name = "i"}
+                                            Table = new Variable() { Name = "self" },
+                                            Index = new Variable() { Name = "i" }
                                         }
                                     },
                                     Values = new List<IExpression>()
@@ -1076,7 +1081,7 @@ public class Processor2
                             }
                         }
                     });
-                    
+
                     // for (var i = 0; i < dataNames.Count; i++)
                     // {
                     //     var dataName = dataNames[i] + "Data";
@@ -1179,15 +1184,15 @@ public class Processor2
                     //     });
                     // }
                 }
-        
-        
+
+
                 if (statement is Assignment assignment1 && assignment1.Targets.Exists((assignable =>
                     {
                         if (assignable is Variable variable && variable.Name == "OnEnterGame")
                         {
                             return true;
                         }
-        
+
                         return false;
                     })))
                 {
@@ -1429,11 +1434,11 @@ public class Processor2
         //gameview/init
         var gameviewInitPath = Path.Combine(Const.toTopLuaDir, "GameView/init.lua");
         var gameViewInitStr = File.ReadAllText(gameviewInitPath);
-        
+
         gameViewInitStr = gameViewInitStr.Insert(gameViewInitStr.IndexOf("-- 通用的界面，手动"),
             "do return end\n");
-        File.WriteAllText(gameviewInitPath,gameViewInitStr);
-        
+        File.WriteAllText(gameviewInitPath, gameViewInitStr);
+
         //ui 
         var requireUIs = uis.Where((@class => @class.ClassName != "$Templete$")).Select(input =>
         {
@@ -1447,7 +1452,7 @@ public class Processor2
                                    local _LAZY_REQUIRE = {
                                    {{string.Join(",\n", requireUIs)}}
                                    }
-                               
+
                                """;
         string FINDSTR = "class \"GameView\" (function(_ENV)";
         var gameViewPath = Path.Combine(Const.toTopLuaDir, "Common/GamePlay/GameView.lua");
@@ -1456,7 +1461,7 @@ public class Processor2
         gameViewStr = gameViewStr.Insert(indexOf, requireUITable);
         gameViewStr = gameViewStr.Insert(gameViewStr.IndexOf("local viewClass = _ENV[name]"),
             "if   _ENV[name] == nil then\n                require(_LAZY_REQUIRE[name])\n            end\n");
-        File.WriteAllText(gameViewPath,gameViewStr);
+        File.WriteAllText(gameViewPath, gameViewStr);
 
         //entity menu
         var requireEntityMenus = entityMenus.Where((@class => @class.ClassName != "entity_menu_panel")).Select(input =>
@@ -1467,13 +1472,13 @@ public class Processor2
                     """;
         }).ToList();
         var requireEntityMenuTable = $$"""
-                               
-                                   local _LAZY_REQUIRE = {
-                                   {{string.Join(",\n", requireEntityMenus)}}
-                                   }
+                                       
+                                           local _LAZY_REQUIRE = {
+                                           {{string.Join(",\n", requireEntityMenus)}}
+                                           }
 
-                               """;
-        
+                                       """;
+
         FINDSTR = "inherit \"ViewBase\"";
         var entityMenuPanelPath = Path.Combine(Const.toTopLuaDir, "GameView/EntityMenu/core/entity_menu_panel.lua");
         var entityMenuPaneStr = File.ReadAllText(entityMenuPanelPath);
@@ -1481,8 +1486,8 @@ public class Processor2
         entityMenuPaneStr = entityMenuPaneStr.Insert(indexOf, requireEntityMenuTable);
         entityMenuPaneStr = entityMenuPaneStr.Insert(entityMenuPaneStr.IndexOf("local __creator = _ENV[lua_name];"),
             "if   _ENV[lua_name] == nil then\n                require(_LAZY_REQUIRE[lua_name])\n            end\n");
-        File.WriteAllText(entityMenuPanelPath,entityMenuPaneStr);
-        
+        File.WriteAllText(entityMenuPanelPath, entityMenuPaneStr);
+
         //msg items
         var requireMsgItems = msgItems.Where((@class => @class.ClassName != "")).Select(input =>
         {
@@ -1498,7 +1503,7 @@ public class Processor2
                                          }
 
                                      """;
-        
+
         FINDSTR = "inherit \"ViewBase\"";
         var msgPanelPath = Path.Combine(Const.toTopLuaDir, "GameView/Msg/msg_panel.lua");
         var msgPaneStr = File.ReadAllText(msgPanelPath);
@@ -1506,13 +1511,13 @@ public class Processor2
         msgPaneStr = msgPaneStr.Insert(indexOf, requireMsgItemsTable);
         msgPaneStr = msgPaneStr.Insert(msgPaneStr.IndexOf("local itemClass = itemClassName and _ENV[itemClassName]"),
             "if   _ENV[itemClassName] == nil then\n                require(_LAZY_REQUIRE[itemClassName])\n            end\n");
-        File.WriteAllText(msgPanelPath,msgPaneStr);
+        File.WriteAllText(msgPanelPath, msgPaneStr);
 
         //处理confCondition
 
         var cfgConditionTables = cfgConditionClass.Where((@class => true)).Select((input) =>
         {
-            var conditionTypeStr = string.Empty;   
+            var conditionTypeStr = string.Empty;
             foreach (var statement in input.Statements)
             {
                 if (statement is Assignment assignment)
@@ -1526,8 +1531,8 @@ public class Processor2
                                 if (statement1 is Assignment assignment1)
                                 {
                                     // self.__condition_type = ConditionType.DIG_SPEED_COUNT
-                                    if (assignment1.Targets[0] is TableAccess tableAccess && 
-                                        tableAccess.Table is Variable variable1 && variable1.Name == "self" && 
+                                    if (assignment1.Targets[0] is TableAccess tableAccess &&
+                                        tableAccess.Table is Variable variable1 && variable1.Name == "self" &&
                                         tableAccess.Index is StringLiteral index1 && index1.Value == "__condition_type")
                                     {
                                         conditionTypeStr = assignment1.Values[0].ToString();
@@ -1540,77 +1545,98 @@ public class Processor2
                     }
                 }
             }
+
             Debug.Assert(conditionTypeStr.Length != 0);
             return $$"""
-                            [{{conditionTypeStr}}] = {
-                                ClassName = "{{input.ClassName}}",
-                                RequirePath = "{{input.RequirePath}}",
-                            }
-                    """;
+                             [{{conditionTypeStr}}] = {
+                                 ClassName = "{{input.ClassName}}",
+                                 RequirePath = "{{input.RequirePath}}",
+                             }
+                     """;
         });
         var requireCfgConditionTable = $$"""
-                                     
-                                         local _LAZY_REQUIRE = {
-                                         {{string.Join(",\n", cfgConditionTables)}}
-                                         }
+                                         
+                                             local _LAZY_REQUIRE = {
+                                             {{string.Join(",\n", cfgConditionTables)}}
+                                             }
 
-                                     """;
-       // Console.WriteLine(requireCfgConditionTable);
-       var cfgConditionBindPath = Path.Combine(Const.toTopLuaDir, "CommonExt/Logic/CfgCondition/CfgConditionBind.lua");
-       var cfgConditionBindStr = File.ReadAllText(cfgConditionBindPath);
-       cfgConditionBindStr = cfgConditionBindStr.Insert(cfgConditionBindStr.IndexOf("class \"CfgCondition\"(function(_ENV)"),requireCfgConditionTable);
+                                         """;
+        // Console.WriteLine(requireCfgConditionTable);
+        var cfgConditionBindPath = Path.Combine(Const.toTopLuaDir, "CommonExt/Logic/CfgCondition/CfgConditionBind.lua");
+        var cfgConditionBindStr = File.ReadAllText(cfgConditionBindPath);
+        cfgConditionBindStr =
+            cfgConditionBindStr.Insert(cfgConditionBindStr.IndexOf("class \"CfgCondition\"(function(_ENV)"),
+                requireCfgConditionTable);
 
-       FINDSTR = "inherit \"LuaObject\"";
-       cfgConditionBindStr = cfgConditionBindStr.Insert(cfgConditionBindStr.IndexOf(FINDSTR)+FINDSTR.Length, """
-                                                                             
-                                                                             __Indexer__()
-                                                                             property "Condition_type_class" { field = "__Condition_type_class", type = Table, default = {},
-                                                                                                get = function(self, conditionType)
-                                                                                                     if self.__Condition_type_class[conditionType] then
-                                                                                                         return self.__Condition_type_class[conditionType]
-                                                                                                     end
-                                                                                                    local LazyRequire = _LAZY_REQUIRE[conditionType]
-                                                                                                    if(_ENV[LazyRequire.ClassName] == nil) then
-                                                                                                        require(LazyRequire.RequirePath)
-                                                                                                    end
-                                                                                                     local classValue = _ENV[LazyRequire.ClassName]
-                                                                                                    local value = classValue();
-                                                                                                    if value or value.ConditionType ~= "BaseType" then
-                                                                                                        self.__Condition_type_class[value.ConditionType] = value;
-                                                                                                    else
-                                                                                                        logError("create conditionClass error!! name:" .. classValue);
-                                                                                                    end
-                                                                                                    return value
-                                                                                                end,
-                                                                                                set = false, -- 外部不允许修改
-                                                                             }
-                                                                             
-                                                                             """);
+        FINDSTR = "inherit \"LuaObject\"";
+        cfgConditionBindStr = cfgConditionBindStr.Insert(cfgConditionBindStr.IndexOf(FINDSTR) + FINDSTR.Length, """
+
+            __Indexer__()
+            property "Condition_type_class" { field = "__Condition_type_class", type = Table, default = {},
+                               get = function(self, conditionType)
+                                    if self.__Condition_type_class[conditionType] then
+                                        return self.__Condition_type_class[conditionType]
+                                    end
+                                   local LazyRequire = _LAZY_REQUIRE[conditionType]
+                                   if(_ENV[LazyRequire.ClassName] == nil) then
+                                       require(LazyRequire.RequirePath)
+                                   end
+                                    local classValue = _ENV[LazyRequire.ClassName]
+                                   local value = classValue();
+                                   if value or value.ConditionType ~= "BaseType" then
+                                       self.__Condition_type_class[value.ConditionType] = value;
+                                   else
+                                       logError("create conditionClass error!! name:" .. classValue);
+                                   end
+                                   return value
+                               end,
+                               set = false, -- 外部不允许修改
+            }
+
+            """);
 
 
 
 
-       var splits = cfgConditionBindStr.Split("\r\n").ToList();
-       var _index = 0;
-       for (var i = 0; i < splits.Count; i++)
-       {
-           if (splits[i].Contains("local value;"))
-           {
-               _index = i;
-               break;
-           }
-       }
+        var splits = cfgConditionBindStr.Split("\r\n").ToList();
+        var _index = 0;
+        for (var i = 0; i < splits.Count; i++)
+        {
+            if (splits[i].Contains("local value;"))
+            {
+                _index = i;
+                break;
+            }
+        }
 
-       splits.Insert(_index, "--[[");
-       splits.Insert(_index+10, "--]]");
-       cfgConditionBindStr = string.Join("\r\n", splits);
-       File.WriteAllText(cfgConditionBindPath,cfgConditionBindStr);
+        splits.Insert(_index, "--[[");
+        splits.Insert(_index + 10, "--]]");
+        cfgConditionBindStr = string.Join("\r\n", splits);
+        File.WriteAllText(cfgConditionBindPath, cfgConditionBindStr);
 
-       
-       var cfgConditionPath = Path.Combine(Const.toTopLuaDir, "Common/Logic/CfgCondition/core/CfgCondition.lua");
-       string cfgConditionstr = File.ReadAllText(cfgConditionPath);
-       cfgConditionstr = cfgConditionstr.Replace("local condition_class = self.__Condition_type_class[conditionType]", "local condition_class = self.Condition_type_class[conditionType]");
-       File.WriteAllText(cfgConditionPath,cfgConditionstr);
+
+        var cfgConditionPath = Path.Combine(Const.toTopLuaDir, "Common/Logic/CfgCondition/core/CfgCondition.lua");
+        string cfgConditionstr = File.ReadAllText(cfgConditionPath);
+        cfgConditionstr = cfgConditionstr.Replace("local condition_class = self.__Condition_type_class[conditionType]",
+            "local condition_class = self.Condition_type_class[conditionType]");
+        File.WriteAllText(cfgConditionPath, cfgConditionstr);
+
+        var cfgConditionInitPath = Path.Combine(Const.toTopLuaDir, "CommonExt/Logic/CfgCondition/init.lua");
+        var cfgConditionInitStr = File.ReadAllText(cfgConditionInitPath);
+        var cfgConditionInitsplits = cfgConditionInitStr.Split("\r\n").ToList();
+        for (int i = 0; i < cfgConditionInitsplits.Count; i++)
+        {
+            var line = cfgConditionInitsplits[i];
+            if (line.Contains("CommonExt/Logic/CfgCondition/mod/"))
+            {
+                cfgConditionInitsplits[i] = line.Insert(0, "--");
+            }
+        }
+
+        cfgConditionInitStr = string.Join("\r\n", cfgConditionInitsplits);
+        File.WriteAllText(cfgConditionInitPath, cfgConditionInitStr);
+
+
 
         // var entityMenuAssignment = new Assignment()
         // {
@@ -1857,4 +1883,16 @@ public class Processor2
         // Console.WriteLine(condJudgeExpAssignment);
 
     }
+
+    private void PostCopy()
+    {
+        var luaFile =Path.Combine(Const.GetProjectDirectory(),"postcopylua","GameData.lua");
+        var luaContent = File.ReadAllText(luaFile);
+        File.WriteAllText(Path.Combine(Const.toTopLuaDir,"Common/GamePlay/GameData.lua"), luaContent);
+            
+        luaFile =Path.Combine(Const.GetProjectDirectory(),"postcopylua","GameModule.lua");
+        luaContent = File.ReadAllText(luaFile);
+        File.WriteAllText(Path.Combine(Const.toTopLuaDir,"Common/GamePlay/GameModule.lua"), luaContent);
+    }
+
 }

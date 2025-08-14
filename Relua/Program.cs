@@ -162,7 +162,7 @@ namespace Lua
                 if (fullcopyfiles.Exists(s => Path.GetFileName(outpath) == s))
                 {
                     Console.WriteLine($"full copy file: {outpath}");
-                    var copyfile =Path.Combine(GetProjectDirectory(),"fullcopylua",Path.GetFileName(outpath));
+                    var copyfile =Path.Combine(Const.GetProjectDirectory(),"fullcopylua",Path.GetFileName(outpath));
                     var content = File.ReadAllText(copyfile);
                     File.WriteAllText(outpath, content);
                     continue;
@@ -192,7 +192,7 @@ namespace Lua
                 if (postcopyfiles.Exists(s => Path.GetFileName(outfile.path) == s))
                 {
                     Console.WriteLine($"post copy file: {Path.GetFileName(outfile.path)}");
-                    var copyfile =Path.Combine(GetProjectDirectory(),"postcopylua",Path.GetFileName(outfile.path));
+                    var copyfile =Path.Combine(Const.GetProjectDirectory(),"postcopylua",Path.GetFileName(outfile.path));
                     var content = File.ReadAllText(copyfile);
                     File.WriteAllText(outfile.path, content);
                 }
@@ -316,11 +316,11 @@ namespace Lua
                 }
             }
             //CUSTOM 
-            var luaFile =Path.Combine(GetProjectDirectory(),"misc","luainit.lua");
+            var luaFile =Path.Combine(Const.GetProjectDirectory(),"misc","luainit.lua");
             var luaContent = File.ReadAllText(luaFile);
             File.WriteAllText(Path.Combine(Const.fromTopLuaDir,"init.lua"), luaContent);
             
-            luaFile =Path.Combine(GetProjectDirectory(),"misc","shopinit.lua");
+            luaFile =Path.Combine(Const.GetProjectDirectory(),"misc","shopinit.lua");
             luaContent = File.ReadAllText(luaFile);
             File.WriteAllText(Path.Combine(Const.fromTopLuaDir,"GameModule/Shop","init.lua"), luaContent);
             
@@ -347,7 +347,7 @@ namespace Lua
                 if (fullcopyfiles.Exists(s => Path.GetFileName(outpath) == s))
                 {
                     Console.WriteLine($"full copy file: {outpath}");
-                    var copyfile =Path.Combine(GetProjectDirectory(),"fullcopylua",Path.GetFileName(outpath));
+                    var copyfile =Path.Combine(Const.GetProjectDirectory(),"fullcopylua",Path.GetFileName(outpath));
                     var content = File.ReadAllText(copyfile);
                     File.WriteAllText(outpath, content);
                     continue;
@@ -373,7 +373,7 @@ namespace Lua
                 if (postcopyfiles.Exists(s => Path.GetFileName(outfile.path) == s))
                 {
                     Console.WriteLine($"post copy file: {Path.GetFileName(outfile.path)}");
-                    var copyfile =Path.Combine(GetProjectDirectory(),"postcopylua",Path.GetFileName(outfile.path));
+                    var copyfile =Path.Combine(Const.GetProjectDirectory(),"postcopylua",Path.GetFileName(outfile.path));
                     var content = File.ReadAllText(copyfile);
                     File.WriteAllText(outfile.path, content);
                 }
@@ -497,11 +497,11 @@ namespace Lua
                 }
             }
             //CUSTOM 
-            var luaFile =Path.Combine(GetProjectDirectory(),"misc","luainit.lua");
+            var luaFile =Path.Combine(Const.GetProjectDirectory(),"misc","luainit.lua");
             var luaContent = File.ReadAllText(luaFile);
             File.WriteAllText(Path.Combine(Const.fromTopLuaDir,"init.lua"), luaContent);
             
-            luaFile =Path.Combine(GetProjectDirectory(),"misc","shopinit.lua");
+            luaFile =Path.Combine(Const.GetProjectDirectory(),"misc","shopinit.lua");
             luaContent = File.ReadAllText(luaFile);
             File.WriteAllText(Path.Combine(Const.fromTopLuaDir,"GameModule/Shop","init.lua"), luaContent);
             
@@ -513,23 +513,8 @@ namespace Lua
             File.WriteAllText(luaFile, luaContent);
         }
         
-        private static bool HasProjectFile(string directory)
-        {
-            return Directory.GetFiles(directory, "*.sln").Length > 0;
-        }
         
-        public static string GetProjectDirectory([CallerFilePath]string callerFilePath = "")
-        {
-            // 从调用此方法的源文件路径推断项目目录
-            string directory = Path.GetDirectoryName(callerFilePath);
         
-            // 向上查找到项目根目录（包含 .csproj 文件的目录）
-            while (directory != null && !HasProjectFile(directory))
-            {
-                directory = Directory.GetParent(directory)?.FullName;
-            }
-        
-            return directory;
-        }
+
     }
 }
