@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using Lua.AST;
 
@@ -18,6 +19,10 @@ public class Processor2
         public string outPath;
         public Block Block;
         public ICheckContext CheckContext;
+        /// <summary>
+        /// 需要require other file
+        /// </summary>
+        public List<string> needRequireOtherFile = new List<string>();
     }
 
     private List<LuaArtifact> files = new List<LuaArtifact>();
@@ -94,7 +99,31 @@ public class Processor2
                 File.WriteAllText(filePath, modifiedContent);
             }
         }
+
+        if (filePath.EndsWith("CfgConditionBind.lua"))
+        {
+            string pattern = @"local\s+__activeConditionClass\s*=\s*{(?:[^{}]*|{[^{}]*})*}";
+            
+            
+            string luaContent = File.ReadAllText(filePath);
+
+            
+
+            // 使用正则表达式提取
+            Match match = Regex.Match(luaContent, pattern);
+
+            if (match.Success)
+            {
+                string extractedCode = match.Value;
+                string modifiedContent = Regex.Replace(luaContent, pattern, "", RegexOptions.Singleline);
+                File.WriteAllText(filePath, modifiedContent);
+            }
+            
+            
+        }
+        
     }
+
 
     /// <summary>
     /// process all lua files to ast
@@ -359,19 +388,19 @@ public class Processor2
             {
                 Console.WriteLine($"=>{_class.RequirePath}");
                 //CUSTOM
-                if (_class.ClassName == "CfgCondition")
-                {
-                    if (_class.FileName == "CfgConditionBind")
-                    {
-                        mainPartialClass = _class;
-                    }
-                    else
-                    {
-                        subPartialClasses.Add(_class);
-                    }
-
-                    continue;
-                }
+                // if (_class.ClassName == "CfgCondition")
+                // {
+                //     if (_class.FileName == "CfgConditionBind")
+                //     {
+                //         mainPartialClass = _class;
+                //     }
+                //     else
+                //     {
+                //         subPartialClasses.Add(_class);
+                //     }
+                //
+                //     continue;
+                // }
 
                 if (_class.ClassName == _class.FileName)
                 {
@@ -436,6 +465,38 @@ public class Processor2
                 }
             }
         }
+        //处理分布类,主类自动导入分布类
+        foreach (var moduleAndClass in moduleAndClasses)
+        {
+            var file = moduleAndClass.file;
+            foreach (var _class in moduleAndClass.Classes)
+            {
+                if (_class.IsMainPartialClass)
+                {
+                    var subPartialRequirePaths = _class.SubPartialRequirePaths;
+                    
+                    var sourcePath = file.srcPath;
+                    sourcePath = sourcePath.Replace("/", "\\");
+                    var targetPath = sourcePath.Replace(Const.fromTopLuaDir, Const.toTopLuaDir);
+                    
+                    var allText = File.ReadAllText(targetPath);
+                    var sb = new StringBuilder();
+                    for (var index = 0; index < subPartialRequirePaths.Count; index++)
+                    {
+                        var line = subPartialRequirePaths[index];
+                        // var requireFunc = $"require(\"{line}\")";
+                        sb.AppendLine($"--require partial class: {line}");
+                        // var requireFunc = $"if not package.loaded[\"{line}\"] then\n\trequire(\"{line}\")\nend";
+                        var requireFunc = $"require(\"{line}\")";
+                        sb.AppendLine(requireFunc);
+                    }
+                    allText = allText.Insert(0, sb.ToString());
+                    File.WriteAllText(targetPath, allText);
+                }
+            }
+        }
+        
+        
 
         Console.WriteLine($"-------------------------------sameClassNameButNotPartial---------------");
         foreach (var _class in sameClassNameButNotPartial)
@@ -532,18 +593,21 @@ public class Processor2
 
             var needRequireFile = new Dictionary<string, List<ModuleAndClass>>();
             var needRequreStrs = file.CheckContext.GetRequiredVariables();
-            var needAutoRequirePaths = new HashSet<string>();
+            var needAutoRequirePaths = new HashSet<(string info,string requirePath)>();
 
             //首先处理基类的导入
+            ModuleAndClass currModuleAndClass = null;
             foreach (var moduleAndClass in moduleAndClasses)
             {
                 if (moduleAndClass.file == file)
                 {
+                    currModuleAndClass = moduleAndClass;
                     foreach (var _ploopClass in moduleAndClass.Classes)
                     {
                         if (_ploopClass.InheritClass != null)
                         {
-                            needAutoRequirePaths.Add(_ploopClass.InheritRequirePath);
+                            if(_ploopClass.InheritClass.RequirePath != file.requirePath)
+                                needAutoRequirePaths.Add(("--require inheritClass",_ploopClass.InheritRequirePath));
                         }
                     }
 
@@ -554,7 +618,7 @@ public class Processor2
             foreach (var _needRequreStr in needRequreStrs)
             {
                 var needRequreStr = _needRequreStr;
-
+                
                 foreach (var moduleAndClass in moduleAndClasses)
                 {
                     var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
@@ -598,10 +662,12 @@ public class Processor2
                             }
                         }
                     }
-
+                    //这里拦截一下是否是本模块或者是否存在分布类关系
                     if (requireFile.file == file)
                         continue;
-
+                    if(currModuleAndClass.Classes.Count>0 && requireFile.Classes.Count>0 &&
+                       currModuleAndClass.Classes[0].ClassName == requireFile.Classes[0].ClassName)
+                        continue;
                     // PloopClass needRequireClass = null;
                     // foreach (var _ploopClass in requireFile.Classes)
                     // {
@@ -624,7 +690,7 @@ public class Processor2
                         // }
                         // else
                         {
-                            needAutoRequirePaths.Add(requirePath);
+                            needAutoRequirePaths.Add(($"--require variable:{needRequreStr}",requirePath));
                         }
                     }
                 }
@@ -635,7 +701,7 @@ public class Processor2
                         File.Exists($"{Const.fromTopLuaDir}\\DataTable\\{needRequreStr}.lua"))
                     {
                         //配置表存在
-                        needAutoRequirePaths.Add($"DataTable/{needRequreStr}");
+                        needAutoRequirePaths.Add(($"--require variable:{needRequreStr}",$"DataTable/{needRequreStr}"));
                     }
                     else
                     {
@@ -652,26 +718,112 @@ public class Processor2
         }
 
         Console.WriteLine($"\n\nAutoRequireNotFind:{string.Join(",", autoRequireNotFind)}");
+        
+        //判断是否有循环导入
+
+
+        foreach (var file in files)
+        {
+            foreach (var otherfilePath in file.needRequireOtherFile)
+            {
+                if(otherfilePath.StartsWith("DataTable/"))
+                    continue;
+                LuaArtifact otherFile = null;
+                foreach (var file1 in files)
+                {
+                    if (file1.requirePath == otherfilePath)
+                    {
+                        otherFile = file1;
+                        break;
+                    }
+                }
+
+                if (otherFile.needRequireOtherFile.Contains(file.requirePath))
+                {
+                    Console.WriteLine($"require loop: {file.requirePath } {otherFile.requirePath}");
+                }
+            }
+        }
+        
     }
 
-    private void NeedRequireClass(LuaArtifact file, List<string> requirePaths)
+    
+    
+    
+    private void NeedRequireClass(LuaArtifact file, List<(string info,string requirePath)> requirePaths)
     {
+        file.needRequireOtherFile.AddRange(requirePaths.ConvertAll((input => input.requirePath)));
+        
         var sourcePath = file.srcPath;
         sourcePath = sourcePath.Replace("/", "\\");
         var targetPath = sourcePath.Replace(Const.fromTopLuaDir, Const.toTopLuaDir);
 
-        if (targetPath.Contains("GameView") == false)
-            return;
+        // if (targetPath.Contains("GameView") == false)
+        //     return;
 
+        bool isWorldMapModule = file.srcPath.EndsWith("WorldMapModule.lua");
+        bool isPveDGuestData = file.srcPath.EndsWith("PveDGuestData.lua");
+        
+        
 
-        var allLines = File.ReadAllLines(targetPath).ToList();
+        var allText = File.ReadAllText(targetPath);
+        var sb = new StringBuilder();
+        var customSb = new StringBuilder();
         for (var index = 0; index < requirePaths.Count; index++)
         {
-            var requireFunc = $"require(\"{requirePaths[index]}\")";
-            allLines.Insert(index, requireFunc);
+            var line = requirePaths[index];
+            if(line.requirePath == "Logic/Procedure")
+                continue;
+            // if (line.requirePath == "GameData/EnumData")
+            //     continue;
+            if (line.requirePath == "GameModule/Map/MapUtil")
+                continue;
+
+            var requireInfo = line.info; 
+            // var requireFunc = $"if not package.loaded[\"{line.requirePath}\"] then\n\trequire(\"{line.requirePath}\")\nend";
+            var requireFunc = $"require(\"{line.requirePath}\")";
+            
+            //CUSTOM 
+            if (isWorldMapModule)
+            {
+                if (requireFunc.Contains("MapViewPortChangedHandler") ||
+                    requireFunc.Contains("GameModule/Map/MapComponent/")||
+                    requireFunc.Contains("GameModule/Map/MapUnit/"))
+                {
+                    customSb.AppendLine(requireInfo);
+                    customSb.AppendLine(requireFunc);
+                    continue;
+                }
+            }
+            else if (isPveDGuestData)
+            {
+                if (requireFunc.Contains("GameData/PveDungeonQuest"))
+                {
+                    customSb.AppendLine(requireInfo);
+                    customSb.AppendLine(requireFunc);
+                    continue;
+                }
+            }
+
+
+            sb.AppendLine(requireInfo);
+            sb.AppendLine(requireFunc);
         }
 
-        File.WriteAllLines(targetPath, allLines);
+        allText = allText.Insert(0, sb.ToString());
+
+        if (isWorldMapModule)
+        {
+            const string filter = "function RegisterComponent(self)";
+            allText = allText.Insert(allText.IndexOf(filter)+filter.Length, "\n"+customSb.ToString());
+        }
+        else if (isPveDGuestData)
+        {
+            const string filter = "function Create(cfg)";
+            allText = allText.Insert(allText.IndexOf(filter)+filter.Length, "\n"+customSb.ToString());
+        }
+        
+        File.WriteAllText(targetPath, allText);
     }
 
     private void PostProcessMainSingletonClass()

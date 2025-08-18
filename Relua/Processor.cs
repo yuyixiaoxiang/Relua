@@ -386,19 +386,19 @@ public class Processor
             {
                 Console.WriteLine($"=>{_class.RequirePath}");
                 //CUSTOM
-                if (_class.ClassName == "CfgCondition")
-                {
-                    if (_class.FileName == "CfgConditionBind")
-                    {
-                        mainPartialClass = _class;
-                    }
-                    else
-                    {
-                        subPartialClasses.Add(_class);
-                    }
-
-                    continue;
-                }
+                // if (_class.ClassName == "CfgCondition")
+                // {
+                //     if (_class.FileName == "CfgConditionBind")
+                //     {
+                //         mainPartialClass = _class;
+                //     }
+                //     else
+                //     {
+                //         subPartialClasses.Add(_class);
+                //     }
+                //
+                //     continue;
+                // }
 
                 if (_class.ClassName == _class.FileName)
                 {
