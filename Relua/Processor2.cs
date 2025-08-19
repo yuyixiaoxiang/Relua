@@ -1096,6 +1096,33 @@ public class Processor2
         entityMenuPaneStr = entityMenuPaneStr.Insert(entityMenuPaneStr.IndexOf("local __creator = _ENV[lua_name];"),
             "if   _ENV[lua_name] == nil then\n                require(_LAZY_REQUIRE[lua_name])\n            end\n");
         File.WriteAllText(entityMenuPanelPath, entityMenuPaneStr);
+        
+        
+        
+        //entity btn data
+        var requireEntityBtnDatas = entityBtnDatas.Where((@class => @class.ClassName != "")).Select(input =>
+        {
+            var singleclass = input.singleFileMultiClass;
+            return $"""
+                            {input.ClassName} = "{input.RequirePath}"
+                    """;
+        }).ToList();
+        var requireEntityBtnDatasTable = $$"""
+                                       
+                                           local _LAZY_REQUIRE = {
+                                           {{string.Join(",\n", requireEntityBtnDatas)}}
+                                           }
+
+                                       """;
+
+        FINDSTR = "class \"EntityMenuModule\" (function(_ENV)";
+        var EntityMenuModulPath = Path.Combine(Const.toTopLuaDir, "Common/GamePlay/GameModule/EntityMenu/EntityMenuModule.lua");
+        var EntityMenuModulStr = File.ReadAllText(EntityMenuModulPath);
+        indexOf = EntityMenuModulStr.IndexOf(FINDSTR) + FINDSTR.Length;
+        EntityMenuModulStr = EntityMenuModulStr.Insert(indexOf, requireEntityBtnDatasTable);
+        EntityMenuModulStr = EntityMenuModulStr.Insert(EntityMenuModulStr.IndexOf("local __creator = _ENV[logic_lua];"),
+            "if _ENV[logic_lua] == nil then\n                require(_LAZY_REQUIRE[logic_lua])\n            end\n");
+        File.WriteAllText(EntityMenuModulPath, EntityMenuModulStr);
 
         //msg items
         var requireMsgItems = msgItems.Where((@class => @class.ClassName != "")).Select(input =>
@@ -1248,7 +1275,7 @@ public class Processor2
         //处理common_prompt_panel
         var commonPromptPanelPath = Path.Combine(Const.toTopLuaDir, "GameView/CommonPrompt/common_prompt_panel.lua");
         string commonPromptPanelstr = File.ReadAllText(commonPromptPanelPath);
-        const string insertStr = """
+        string insertStr = """
                                  
                                                  if _ENV[assetName] == nil then
                                  	                require("GameView/CommonPrompt/"..assetName)
@@ -1257,10 +1284,21 @@ public class Processor2
                                  	                end
                                                  end
                                  """;
-        const string findStr = "local assetName = asset.name;";
+        string findStr = "local assetName = asset.name;";
         commonPromptPanelstr = commonPromptPanelstr.Insert(commonPromptPanelstr.IndexOf(findStr)+findStr.Length,insertStr);
         File.WriteAllText(commonPromptPanelPath, commonPromptPanelstr);
-        
+        //处理CondJudgment
+        var CondJudgmentPath = Path.Combine(Const.toTopLuaDir, "Common/Logic/Condition/core/CondJudgment.lua");
+        string CondJudgmentstr = File.ReadAllText(CondJudgmentPath);
+        insertStr = """
+                                 if _ENV[cond_type] == nil then
+                                     require("Common/Logic/Condition/type/"..cond_type)
+                                 end
+                                 
+                                 """;
+        findStr = "local class_ = _ENV[cond_type]";
+        CondJudgmentstr = CondJudgmentstr.Insert(CondJudgmentstr.IndexOf(findStr),insertStr);
+        File.WriteAllText(CondJudgmentPath, CondJudgmentstr);
     }
 
     private void PostCopy()
