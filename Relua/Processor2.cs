@@ -649,12 +649,14 @@ public class Processor2
             {
                 if (needRequireFile.ContainsKey(needRequreStr))
                 {
+                    var findmultiply = false;
                     if (needRequireFile[needRequreStr].Count > 1)
                     {
-                        Console.WriteLine($"AutoRequire,find multiply:{file.outPath} {needRequreStr}");
+                        findmultiply = true;
+                        
                     }
                     //尝试自动require lua file 
-
+                    
                     var requireFile = needRequireFile[needRequreStr][0];
                     foreach (var _moduleAndClass in needRequireFile[needRequreStr])
                     {
@@ -663,10 +665,18 @@ public class Processor2
                             if (_class.IsMainPartialClass)
                             {
                                 requireFile = _moduleAndClass;
+                                findmultiply = false;
                                 break;
                             }
                         }
                     }
+
+                    if (findmultiply)
+                    {
+                        Console.WriteLine($"AutoRequire,find multiply:{needRequreStr}," +
+                                          $"[{string.Join(",",needRequireFile[needRequreStr].ConvertAll((input => input.file.fileName)))}]");
+                    }
+
                     //这里拦截一下是否是本模块或者是否存在分布类关系
                     if (requireFile.file == file)
                         continue;
