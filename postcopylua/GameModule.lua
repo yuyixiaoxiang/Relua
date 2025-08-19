@@ -24,16 +24,16 @@ Module "Game.Module" (function(_ENV)
 		for i, name in ipairs(ModuleNames) do 
 			property (name) { field = table.concat({"__", name}), type = ClassType, set = false,
 							  get = function(self)
-					local __name = table.concat({"__", name}) 
-					if self[__name] == nil then
-						self[__name] = _ENV[table.concat({name, "Module"})]()
-						if _hasEnterGame then
-							safe.callFunc(self[__name], "OnEnterGame");
-						end
-					end
-					
-					return self[__name]
-			end 
+								local __name = table.concat({"__", name}) 
+								if self[__name] == nil then
+									require(_LAZY_REQUIRE[table.concat({name, "Module"})])
+									self[__name] = _ENV[table.concat({name, "Module"})]()
+									if _hasEnterGame then
+										safe.callFunc(self[__name], "OnEnterGame");
+									end
+								end	
+								return self[__name]
+							  end 
 			}
 		end 
 		
@@ -46,9 +46,9 @@ Module "Game.Module" (function(_ENV)
 			--		self.__System = SystemModule();
 			--		self.__Message = MessageModule();
 			-- 自动初始化各模块
-			--for i, name in ipairs(ModuleNames) do
-			--	self[table.concat({"__", name})] = _ENV[table.concat({name, "Module"})](); -- 实例化各玩法模块并保存 
-			--end
+			for i, name in ipairs(ModuleNames) do
+				self[table.concat({"__", name})] = _ENV[table.concat({name, "Module"})](); -- 实例化各玩法模块并保存 
+			end
 			EVENT:AddListener(self, EventDefine.OnEnterGame, self.OnEnterGame)
 			return self;
 		end

@@ -20,6 +20,7 @@ Module "Game.Data" (function(_ENV)
 							  get = function(self)
 								  local __name = table.concat({"__", name})
 								  if self[__name] == nil then
+									  require(_LAZY_REQUIRE[table.concat({name, "Data"})])
 									  self[__name] = _ENV[table.concat({name, "Data"})]()
 									  if _hasEnterGame then
 										  safe.callFunc(self[__name], "OnEnterGame");
