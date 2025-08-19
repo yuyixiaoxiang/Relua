@@ -673,7 +673,7 @@ public class Processor2
 
                     if (findmultiply)
                     {
-                        Console.WriteLine($"AutoRequire,find multiply:{needRequreStr}," +
+                        Console.WriteLine($"AutoRequire,find multiply:{file.fileName}->{needRequreStr}," +
                                           $"[{string.Join(",",needRequireFile[needRequreStr].ConvertAll((input => input.file.fileName)))}]");
                     }
 
