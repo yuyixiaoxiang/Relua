@@ -482,7 +482,7 @@ public class Processor2
                     {
                         var line = subPartialRequirePaths[index];
                         // var requireFunc = $"require(\"{line}\")";
-                        sb.AppendLine($"--require partial class: {line}");
+                        sb.AppendLine($"--require partial class");
                         // var requireFunc = $"if not package.loaded[\"{line}\"] then\n\trequire(\"{line}\")\nend";
                         var requireFunc = $"require(\"{line}\")";
                         sb.AppendLine(requireFunc);
@@ -593,7 +593,7 @@ public class Processor2
 
             var needRequireFile = new Dictionary<string, List<ModuleAndClass>>();
             var needRequreStrs = file.CheckContext.GetRequiredVariables();
-            var needAutoRequirePaths = new HashSet<(string info,string requirePath)>();
+            var needAutoRequirePaths = new Dictionary<string,string>();
 
             //首先处理基类的导入
             ModuleAndClass currModuleAndClass = null;
@@ -606,8 +606,13 @@ public class Processor2
                     {
                         if (_ploopClass.InheritClass != null)
                         {
-                            if(_ploopClass.InheritClass.RequirePath != file.requirePath)
-                                needAutoRequirePaths.Add(("--require inheritClass",_ploopClass.InheritRequirePath));
+                            if (_ploopClass.InheritClass.RequirePath != file.requirePath)
+                            {
+                                if (!needAutoRequirePaths.ContainsKey(_ploopClass.InheritRequirePath))
+                                {
+                                    needAutoRequirePaths.Add(_ploopClass.InheritRequirePath,"--require inheritClass");    
+                                }
+                            }
                         }
                     }
 
@@ -668,29 +673,16 @@ public class Processor2
                     if(currModuleAndClass.Classes.Count>0 && requireFile.Classes.Count>0 &&
                        currModuleAndClass.Classes[0].ClassName == requireFile.Classes[0].ClassName)
                         continue;
-                    // PloopClass needRequireClass = null;
-                    // foreach (var _ploopClass in requireFile.Classes)
-                    // {
-                    //     if (_ploopClass.ClassName == needRequreStr)
-                    //     {
-                    //         needRequireClass = _ploopClass;
-                    //     }
-                    // }
-
                     if (requireFile != null)
                     {
                         var requirePath = requireFile.file.requirePath;
-
-                        //CUSTOM
-                        // if (file.fileName == "WorldMapModule" && (needRequreStr.EndsWith("Component") ||
-                        //                                           needRequreStr.EndsWith("View") ||
-                        //                                           needRequreStr.EndsWith("ChangedHandler")))
-                        // {
-                        //     needRequirePaths.Add(requirePath);
-                        // }
-                        // else
+                        if (needAutoRequirePaths.ContainsKey(requirePath))
                         {
-                            needAutoRequirePaths.Add(($"--require variable:{needRequreStr}",requirePath));
+                            needAutoRequirePaths[requirePath] += $",{needRequreStr}";
+                        }
+                        else
+                        {
+                            needAutoRequirePaths.Add(requirePath,$"--require variable:{needRequreStr}");
                         }
                     }
                 }
@@ -701,7 +693,15 @@ public class Processor2
                         File.Exists($"{Const.fromTopLuaDir}\\DataTable\\{needRequreStr}.lua"))
                     {
                         //配置表存在
-                        needAutoRequirePaths.Add(($"--require variable:{needRequreStr}",$"DataTable/{needRequreStr}"));
+                        var dataTablePath = $"DataTable/{needRequreStr}";
+                        if (needAutoRequirePaths.ContainsKey(dataTablePath))
+                        {
+                            needAutoRequirePaths[dataTablePath] += $",{needRequreStr}";
+                        }
+                        else
+                        {
+                            needAutoRequirePaths.Add(dataTablePath,$"--require variable:{needRequreStr}");
+                        }
                     }
                     else
                     {
@@ -713,7 +713,7 @@ public class Processor2
 
             if (needAutoRequirePaths.Count > 0)
             {
-                NeedRequireClass(file, needAutoRequirePaths.ToList());
+                NeedRequireClass(file, needAutoRequirePaths);
             }
         }
 
@@ -750,9 +750,9 @@ public class Processor2
     
     
     
-    private void NeedRequireClass(LuaArtifact file, List<(string info,string requirePath)> requirePaths)
+    private void NeedRequireClass(LuaArtifact file, Dictionary<string,string> requirePaths)
     {
-        file.needRequireOtherFile.AddRange(requirePaths.ConvertAll((input => input.requirePath)));
+        file.needRequireOtherFile.AddRange(requirePaths.Keys);
         
         var sourcePath = file.srcPath;
         sourcePath = sourcePath.Replace("/", "\\");
@@ -769,20 +769,16 @@ public class Processor2
         var allText = File.ReadAllText(targetPath);
         var sb = new StringBuilder();
         var customSb = new StringBuilder();
-        for (var index = 0; index < requirePaths.Count; index++)
+
+        foreach (var kv in requirePaths)
         {
-            var line = requirePaths[index];
-            if(line.requirePath == "Logic/Procedure")
+            // var line = requirePaths[index];
+            if(kv.Key == "Logic/Procedure")
                 continue;
             // if (line.requirePath == "GameData/EnumData")
             //     continue;
-            // if (line.requirePath == "GameModule/Map/MapUtil")
-            //     continue;
-
-            var requireInfo = line.info; 
-            // var requireFunc = $"if not package.loaded[\"{line.requirePath}\"] then\n\trequire(\"{line.requirePath}\")\nend";
-            var requireFunc = $"require(\"{line.requirePath}\")";
-            
+            var requireInfo = kv.Value;
+            var requireFunc = $"require(\"{kv.Key}\")";
             //CUSTOM 
             if (isWorldMapModule)
             {
@@ -980,134 +976,20 @@ public class Processor2
             const string INSERT_STR = "class \"GameData\" (function(_ENV)";
             content = content.Insert(content.IndexOf(INSERT_STR)+INSERT_STR.Length,"\n"+lazyRequireTable);
             File.WriteAllText(gameDataPath, content);
+            //处理gamedata/init文件 
+            var gameDataInitPath = Path.Combine(Const.toTopLuaDir, "GameData/init.lua");
+            var gamedatainitcontent = File.ReadAllText(gameDataInitPath);
+            const string FIND_STR = "require \"Common/GamePlay/GameData\"";
+            gamedatainitcontent = gamedatainitcontent.Insert(gamedatainitcontent.IndexOf(FIND_STR)+FIND_STR.Length,"\n"+"do return end");
+            File.WriteAllText(gameDataInitPath, gamedatainitcontent);
         }
-
         
-
-        // //处理GameNet
-        // luaFilePath = Path.Combine(Const.fromTopLuaDir, "GameNet/init.lua");
-        // // 读取Lua文件内容
-        // luaContent = File.ReadAllText(luaFilePath);
-        // // 匹配ModuleNames表内容的正则
-        // pattern = @"NetNames\s*=\s*{([\s\S]*?)}";
-        //
-        // match = Regex.Match(luaContent, pattern);
-        //
-        // List<string> netNames = new List<string>();
-        // if (match.Success)
-        // {
-        //     // 获取表中的值
-        //     string tableContent = match.Groups[1].Value;
-        //
-        //     // 根据逗号和换行分割值，并去掉空格和引号
-        //     string[] values = tableContent
-        //         .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-        //     foreach (var value in values)
-        //     {
-        //         // 去掉两侧的空格、换行符以及引号
-        //         string cleanedValue = value
-        //             .Trim() // 修剪空格及换行符
-        //             .Trim('\"') // 去掉双引号
-        //             .Replace("\r", "")
-        //             .Replace("\n", "");
-        //         // Console.WriteLine(cleanedValue);
-        //         if (string.IsNullOrEmpty(cleanedValue) == false)
-        //             netNames.Add(cleanedValue);
-        //     }
-        // }
-        //
-        // if (netNames.Count > 0)
-        // {
-        //     var gameData = files.Find((artifact => artifact.fileName == "Core"));
-        //     var ploopModule = gameData.Block.Statements.Find((statement => statement is PloopModule)) as PloopModule;
-        //     var @class = ploopModule.Statements.Find((statement => statement is PloopClass)) as PloopClass;
-        //     foreach (var statement in @class.Statements)
-        //     {
-        //         if (statement is Assignment assignment && assignment.Targets.Exists((assignable =>
-        //             {
-        //                 if (assignable is Variable variable && variable.Name == "__ctor")
-        //                 {
-        //                     return true;
-        //                 }
-        //
-        //                 return false;
-        //             })))
-        //         {
-        //             var functionDeclaration = assignment.Values[0] as FunctionDefinition;
-        //             for (var i = 0; i < netNames.Count; i++)
-        //             {
-        //                 var netName = netNames[i];
-        //                 var moduleRequirePath = string.Empty;
-        //                 foreach (var moduleAndClass in moduleAndClasses)
-        //                 {
-        //                     var find = false;
-        //                     var exportableVariables = moduleAndClass.file.CheckContext.GetExportableVariables();
-        //                     foreach (var exportVariable in exportableVariables)
-        //                     {
-        //                         if (exportVariable.VariableName == netName && exportVariable.IsClass)
-        //                         {
-        //                             foreach (var _class in moduleAndClass.Classes)
-        //                             {
-        //                                 if (_class.ClassName == netName &&
-        //                                     (_class.IsMainPartialClass || !_class.IsPartialClass))
-        //                                 {
-        //                                     find = true;
-        //                                     moduleRequirePath = _class.RequirePath;
-        //                                     break;
-        //                                 }
-        //                             }
-        //                         }
-        //
-        //                         if (find)
-        //                             break;
-        //                     }
-        //
-        //                     if (find)
-        //                         break;
-        //                 }
-        //
-        //                 functionDeclaration.Block.Statements.Insert(i, new Assignment()
-        //                 {
-        //                     Targets = new()
-        //                     {
-        //                         new TableAccess()
-        //                         {
-        //                             Table = new Variable()
-        //                             {
-        //                                 Name = "self"
-        //                             },
-        //                             Index = new StringLiteral()
-        //                             {
-        //                                 Value = netNames[i],
-        //                             }
-        //                         }
-        //                     },
-        //
-        //                     Values = new List<IExpression>()
-        //                     {
-        //                         new FunctionCall()
-        //                         {
-        //                             Function = new FunctionCall()
-        //                             {
-        //                                 Arguments = new List<IExpression>()
-        //                                 {
-        //                                     new StringLiteral()
-        //                                     {
-        //                                         Value = moduleRequirePath
-        //                                     }
-        //                                 },
-        //                                 Function = new Variable()
-        //                                 {
-        //                                     Name = "require",
-        //                                 }
-        //                             }
-        //                         }
-        //                     }
-        //                 });
-        //             }
-        //         }
-        //     }
-        // }
+        
+        //屏蔽掉datatable配置表的导入
+        var initPath = Path.Combine(Const.toTopLuaDir, "init.lua");
+        var initcontent = File.ReadAllText(initPath);
+        initcontent = initcontent.Replace("require \"DataTable/init\" -- 数据表","--require \"DataTable/init\" -- 数据表");
+        File.WriteAllText(initPath, initcontent);
     }
 
     /// <summary>
@@ -1362,6 +1244,23 @@ public class Processor2
 
         cfgConditionInitStr = string.Join("\r\n", cfgConditionInitsplits);
         File.WriteAllText(cfgConditionInitPath, cfgConditionInitStr);
+        
+        //处理common_prompt_panel
+        var commonPromptPanelPath = Path.Combine(Const.toTopLuaDir, "GameView/CommonPrompt/common_prompt_panel.lua");
+        string commonPromptPanelstr = File.ReadAllText(commonPromptPanelPath);
+        const string insertStr = """
+                                 
+                                                 if _ENV[assetName] == nil then
+                                 	                require("GameView/CommonPrompt/"..assetName)
+                                 	                if _ENV[assetName] == nil then
+                                 		                require "GameView/CommonPrompt/common_prompt_item"	
+                                 	                end
+                                                 end
+                                 """;
+        const string findStr = "local assetName = asset.name;";
+        commonPromptPanelstr = commonPromptPanelstr.Insert(commonPromptPanelstr.IndexOf(findStr)+findStr.Length,insertStr);
+        File.WriteAllText(commonPromptPanelPath, commonPromptPanelstr);
+        
     }
 
     private void PostCopy()
