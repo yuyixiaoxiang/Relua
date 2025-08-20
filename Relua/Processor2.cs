@@ -584,6 +584,7 @@ public class Processor2
         }
 
         //处理自动导入
+        var multiplyRequireVariables = new Dictionary<string, string>();
         HashSet<string> autoRequireNotFind = new HashSet<string>();
         foreach (var file in files)
         {
@@ -655,24 +656,54 @@ public class Processor2
                         findmultiply = true;
                         
                     }
-                    //尝试自动require lua file 
-                    
-                    var requireFile = needRequireFile[needRequreStr][0];
-                    foreach (var _moduleAndClass in needRequireFile[needRequreStr])
+                    //尝试自动require lua file
+                    ModuleAndClass requireFile = null;
+                    //首先判断是否是同一个文件
+                    foreach (var moduleAndClass in needRequireFile[needRequreStr])
                     {
-                        foreach (var _class in _moduleAndClass.Classes)
+                        if (moduleAndClass.file == file)
                         {
-                            if (_class.IsMainPartialClass)
-                            {
-                                requireFile = _moduleAndClass;
-                                findmultiply = false;
-                                break;
-                            }
+                            requireFile = moduleAndClass;
+                            findmultiply = false;
+                            break;
                         }
                     }
 
+                    if (requireFile == null)
+                    {
+                        foreach (var _moduleAndClass in needRequireFile[needRequreStr])
+                        {
+                            foreach (var _class in _moduleAndClass.Classes)
+                            {
+                                if (_class.IsMainPartialClass)
+                                {
+                                    requireFile = _moduleAndClass;
+                                    findmultiply = false;
+                                    break;
+                                }
+                            }
+                        }    
+                    }
+
+                    if (requireFile == null)
+                    {
+                        //默认取第一个
+                        requireFile = needRequireFile[needRequreStr][0];
+                    }
+                    
+                    //CUSTOM 
+                    // if (needRequreStr == "NormalState")
+                    // {
+                    //     var _ = file.fileName;
+                    // }
+                    
                     if (findmultiply)
                     {
+                        if (multiplyRequireVariables.ContainsKey(needRequreStr) == false)
+                        {
+                            multiplyRequireVariables.Add(needRequreStr,$"[{string.Join(",",needRequireFile[needRequreStr].ConvertAll((input => input.file.fileName)))}]");
+                        }
+
                         Console.WriteLine($"AutoRequire,find multiply:{file.fileName}->{needRequreStr}," +
                                           $"[{string.Join(",",needRequireFile[needRequreStr].ConvertAll((input => input.file.fileName)))}]");
                     }
@@ -720,7 +751,7 @@ public class Processor2
                     }
                 }
             }
-
+            
             if (needAutoRequirePaths.Count > 0)
             {
                 NeedRequireClass(file, needAutoRequirePaths);
@@ -728,7 +759,10 @@ public class Processor2
         }
 
         Console.WriteLine($"\n\nAutoRequireNotFind:{string.Join(",", autoRequireNotFind)}");
-        
+        foreach (var kv in multiplyRequireVariables)
+        {
+            Console.WriteLine($"MultiplyRequire===:{kv.Key}->{kv.Value}");        
+        }
         //判断是否有循环导入
 
 
