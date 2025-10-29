@@ -19,7 +19,40 @@ Module "Game.Module" (function(_ENV)
 	class "GameModule" (function(_ENV)
 	
 		local InitModuleNames = {
-            
+             "Msg",
+            "SceneMgr",
+            --"Pve",
+            "Recruit",
+            --"Dungeon",
+            "GameReconnectNet",
+            --"Commander",
+            --"DungeonMatch",
+            "HudFly",
+            "Chat",
+            "Recharge",
+            "Unlock",
+            "MapHub",
+            "SelfCity",
+            "WorldMap",
+            "Alliance",
+            "Barracks",
+            "HomeScene",
+            "Guide",
+            "ProtectFarmer",
+            "GuideView",
+            "BuildNum",
+            --"PveDPlay",
+            --"Rescue",
+            --"DrillGround",
+            --"WorldProvince",
+            --"PveFlame",
+            --"TroopLine",
+            --"WorldBoss",
+            "JumpToGuide",
+            --"AllianceBoss",
+            "ConditionTrigger",
+            "Mail",
+            "BlockClick",
         }
 
 		local _hasEnterGame = false;
