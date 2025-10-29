@@ -5,8 +5,8 @@ namespace Lua;
 
 public class Const
 {
-    public static string fromTopLuaDir = "D:\\xiuxian_u3dclient2\\Assets\\client-code\\LuaFramework\\Lua";
-    public static string toTopLuaDir = "D:\\xiuxian_u3dclient\\Assets\\client-code\\LuaFramework\\Lua";
+    public static string fromTopLuaDir = "D:\\gigclient\\Assets\\client-code\\LuaFramework\\Lua";
+    public static string toTopLuaDir = "D:\\gig-u3dclient\\Assets\\client-code\\LuaFramework\\Lua";
 
 
     public static List<string> DataNames

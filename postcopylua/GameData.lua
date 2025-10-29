@@ -14,6 +14,12 @@ Module "Game.Data" (function(_ENV)
 	
 	---@class GameData
 	class "GameData" (function(_ENV)
+		
+		--立即require的module
+        local InitDataNames = {
+            
+        }
+
 		local _hasEnterGame = false;
 		for i, name in ipairs(DataNames) do
 			property (name) { field = table.concat({"__", name}), type = ClassType, set = false,
@@ -36,10 +42,11 @@ Module "Game.Data" (function(_ENV)
 		function __ctor(self)
 		end
 		
+
 		function Init(self)
-			--for i, name in ipairs(DataNames) do
-			--	self[table.concat({"__", name})] = _ENV[table.concat({name, "Data"})](); -- 实例化各玩法模块并保存
-			--end
+            for _, name in ipairs(InitDataNames) do
+                local _ = self[name]
+            end
 			EVENT:AddListener(self, EventDefine.OnEnterGame, self.OnEnterGame)
 			return self;
 		end
@@ -47,19 +54,20 @@ Module "Game.Data" (function(_ENV)
 		-- 登录游戏 收到第一天初始化数据前必走;
 		function OnEnterGame(self)
 			_hasEnterGame = true
-			for i, name in ipairs(DataNames) do 
-				--VhLog("#ConnectGame# OnEnterGame() " , table.concat({"__", name}))
-				if self[table.concat({"__", name})] then
-					safe.callFunc(self[table.concat({"__", name})], "OnEnterGame");
+			for _, name in ipairs(DataNames) do
+                local inst = self[table.concat({"__", name})]
+				if inst then
+					safe.callFunc(inst, "OnEnterGame");
 				end
 			end 
 		end
 
 		-- 切账号、返回登录走;
 		function OnClearAll(self)
-			for i, name in ipairs(ModuleNames) do
-				if self[table.concat({"__", name})] then
-					safe.callFunc(self[table.concat({"__", name})], "OnClearAll");
+			for _, name in ipairs(DataNames) do
+                local inst = self[table.concat({"__", name})] 
+				if inst then
+					safe.callFunc(inst, "OnClearAll");
 				end
 			end
 		end

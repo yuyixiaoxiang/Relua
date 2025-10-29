@@ -17,8 +17,11 @@ Module "Game.Module" (function(_ENV)
 
 	---@class GameModule
 	class "GameModule" (function(_ENV)
-	--	property "System" { field = "__System", type = ClassType, set = false }
-	--	property "Message" { field = "__Message", type = ClassType, set = false }
+	
+		local InitModuleNames = {
+            
+        }
+
 		local _hasEnterGame = false;
 		-- 自动生成各玩法模块
 		for i, name in ipairs(ModuleNames) do 
@@ -41,14 +44,10 @@ Module "Game.Module" (function(_ENV)
 		end
 		
 		function Init(self)
-			
-			-- 手动生成
-			--		self.__System = SystemModule();
-			--		self.__Message = MessageModule();
-			-- 自动初始化各模块
-			for i, name in ipairs(ModuleNames) do
-				self[table.concat({"__", name})] = _ENV[table.concat({name, "Module"})](); -- 实例化各玩法模块并保存 
-			end
+			for _, name in ipairs(InitModuleNames) do
+                local _ = self[name]
+            end
+            
 			EVENT:AddListener(self, EventDefine.OnEnterGame, self.OnEnterGame)
 			return self;
 		end

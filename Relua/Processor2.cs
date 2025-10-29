@@ -151,7 +151,7 @@ public class Processor2
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine($"{file.srcPath} {e}");
             }
         }
         
@@ -962,7 +962,13 @@ public class Processor2
             content = content.Insert(content.IndexOf(INSERT_STR)+INSERT_STR.Length,"\n"+lazyRequireTable);
             File.WriteAllText(gameModulePath, content);
         }
-
+        //处理gamedata/init文件
+        string FIND_STR = "require \"Common/GamePlay/GameModule/ModuleDefine\"";
+        luaContent = luaContent.Insert(luaContent.IndexOf(FIND_STR)+FIND_STR.Length,"\n"+"require \"GameModule/Map/MapUtil4CS\"");
+        FIND_STR = "require \"GameModule/Map/MapUtil4CS\";";
+        luaContent = luaContent.Insert(luaContent.IndexOf(FIND_STR)+FIND_STR.Length,"\n"+"do return end");
+        File.WriteAllText(luaFilePath, luaContent);
+        
         //处理GameData
         List<string> dataNames = Const.DataNames;
         if (dataNames.Count > 0)
@@ -1023,7 +1029,7 @@ public class Processor2
             //处理gamedata/init文件 
             var gameDataInitPath = Path.Combine(Const.toTopLuaDir, "GameData/init.lua");
             var gamedatainitcontent = File.ReadAllText(gameDataInitPath);
-            const string FIND_STR = "require \"Common/GamePlay/GameData\"";
+             FIND_STR = "require \"Common/GamePlay/GameData\"";
             gamedatainitcontent = gamedatainitcontent.Insert(gamedatainitcontent.IndexOf(FIND_STR)+FIND_STR.Length,"\n"+"do return end");
             File.WriteAllText(gameDataInitPath, gamedatainitcontent);
         }
@@ -1354,6 +1360,12 @@ public class Processor2
         luaFile =Path.Combine(Const.GetProjectDirectory(),"postcopylua","GameModule.lua");
         luaContent = File.ReadAllText(luaFile);
         File.WriteAllText(Path.Combine(Const.toTopLuaDir,"Common/GamePlay/GameModule.lua"), luaContent);
+        
+        
+        luaFile =Path.Combine(Const.GetProjectDirectory(),"postcopylua","init.lua");
+        luaContent = File.ReadAllText(luaFile);
+        File.WriteAllText(Path.Combine(Const.toTopLuaDir,"CommonExt/Logic/init.lua"), luaContent);
+        
     }
 
 }
