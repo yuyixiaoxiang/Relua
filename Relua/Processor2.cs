@@ -963,11 +963,14 @@ public class Processor2
             File.WriteAllText(gameModulePath, content);
         }
         //处理gamedata/init文件
+        var gameModuleInitPath = Path.Combine(Const.toTopLuaDir, "GameModule/init.lua");
+        var gameModuleinitcontent = File.ReadAllText(gameModuleInitPath);
+        
         string FIND_STR = "require \"Common/GamePlay/GameModule/ModuleDefine\"";
-        luaContent = luaContent.Insert(luaContent.IndexOf(FIND_STR)+FIND_STR.Length,"\n"+"require \"GameModule/Map/MapUtil4CS\"");
-        FIND_STR = "require \"GameModule/Map/MapUtil4CS\";";
-        luaContent = luaContent.Insert(luaContent.IndexOf(FIND_STR)+FIND_STR.Length,"\n"+"do return end");
-        File.WriteAllText(luaFilePath, luaContent);
+        gameModuleinitcontent = gameModuleinitcontent.Insert(gameModuleinitcontent.IndexOf(FIND_STR)+FIND_STR.Length,"\n"+"require \"GameModule/Map/MapUtil4CS\"");
+        FIND_STR = "require \"GameModule/Map/MapUtil4CS\"";
+        gameModuleinitcontent = gameModuleinitcontent.Insert(gameModuleinitcontent.IndexOf(FIND_STR)+FIND_STR.Length,"\n"+"do return end");
+        File.WriteAllText(gameModuleInitPath, gameModuleinitcontent);
         
         //处理GameData
         List<string> dataNames = Const.DataNames;
