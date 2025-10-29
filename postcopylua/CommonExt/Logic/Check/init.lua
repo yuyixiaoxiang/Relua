@@ -1,0 +1,29 @@
+--require("Common/Logic/Check/init")
+-- 拓展
+require("CommonExt/Logic/Check/CheckConst")
+--require("CommonExt/Logic/Check/CheckSystem_Init")
+
+-- 红点系统按照功能模块区分;
+--require("CommonExt/Logic/Check/mod/CheckTest");
+--require("CommonExt/Logic/Check/mod/CheckTriggers");
+--require("CommonExt/Logic/Check/mod/CheckTasks");
+--require("CommonExt/Logic/Check/mod/CheckActivityFrame");
+--require("CommonExt/Logic/Check/mod/CheckVip");
+--require("CommonExt/Logic/Check/mod/CheckHud");
+--require("CommonExt/Logic/Check/mod/CheckBookmark");
+--require("CommonExt/Logic/Check/mod/old/CheckBuildings");
+--require("CommonExt/Logic/Check/mod/CheckPve");
+--require("CommonExt/Logic/Check/mod/CheckPveBox");
+--require("CommonExt/Logic/Check/mod/CheckAlliance");
+--require("CommonExt/Logic/Check/mod/CheckMainUiMix");
+--require("CommonExt/Logic/Check/mod/CheckRecharge");
+--require("CommonExt/Logic/Check/mod/CheckUnlockEvent");
+--
+--require("CommonExt/Logic/Check/mod/CheckCityFogOpen");
+--require("CommonExt/Logic/Check/mod/CheckKvk");
+--require("CommonExt/Logic/Check/mod/CheckHero");
+--require("CommonExt/Logic/Check/mod/CheckRecruit");
+--require("CommonExt/Logic/Check/mod/CheckScience");
+--require("CommonExt/Logic/Check/mod/CheckStamina");
+--
+--require("CommonExt/Logic/Check/mod/CheckMails");

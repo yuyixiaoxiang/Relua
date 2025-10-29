@@ -1365,10 +1365,18 @@ public class Processor2
         File.WriteAllText(Path.Combine(Const.toTopLuaDir,"Common/GamePlay/GameModule.lua"), luaContent);
         
         
-        luaFile =Path.Combine(Const.GetProjectDirectory(),"postcopylua","init.lua");
+        luaFile =Path.Combine(Const.GetProjectDirectory(),"postcopylua","CommonExt/Logic/init.lua");
         luaContent = File.ReadAllText(luaFile);
         File.WriteAllText(Path.Combine(Const.toTopLuaDir,"CommonExt/Logic/init.lua"), luaContent);
         
+        
+        luaFile =Path.Combine(Const.GetProjectDirectory(),"postcopylua","CommonExt/Logic/Trigger/init.lua");
+        luaContent = File.ReadAllText(luaFile);
+        File.WriteAllText(Path.Combine(Const.toTopLuaDir,"CommonExt/Logic/Trigger/init.lua"), luaContent);
+        
+        luaFile =Path.Combine(Const.GetProjectDirectory(),"postcopylua","CommonExt/Logic/Check/init.lua");
+        luaContent = File.ReadAllText(luaFile);
+        File.WriteAllText(Path.Combine(Const.toTopLuaDir,"CommonExt/Logic/Check/init.lua"), luaContent);
     }
 
 }
