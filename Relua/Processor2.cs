@@ -1122,7 +1122,7 @@ public class Processor2
         var indexOf = gameViewStr.IndexOf(FINDSTR) + FINDSTR.Length;
         gameViewStr = gameViewStr.Insert(indexOf, requireUITable);
         gameViewStr = gameViewStr.Insert(gameViewStr.IndexOf("local viewClass = _ENV[name]"),
-            "if   _ENV[name] == nil then\n                require(_LAZY_REQUIRE[name])\n            end\n");
+            "if _ENV[name] == nil then\n                if _LAZY_REQUIRE[name] ~= nil then\n                    require(_LAZY_REQUIRE[name])    \n                end\n            end");
         File.WriteAllText(gameViewPath, gameViewStr);
 
         //entity menu
