@@ -1061,7 +1061,7 @@ public class Processor2
         {
             foreach (var _class in moduleAndClass.Classes)
             {
-                if (_class.InheritClassName == "ViewBase")
+                if (_class.InheritClassName == "ViewBase" || _class.RequirePath.StartsWith("GameView/"))
                 {
                     uis.Add(_class);
                 }
