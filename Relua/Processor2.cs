@@ -1267,6 +1267,9 @@ public class Processor2
                                         return self.__Condition_type_class[conditionType]
                                     end
                                    local LazyRequire = _LAZY_REQUIRE[conditionType]
+                                   if LazyRequire == nil then
+                                        return nil
+                                   end
                                    if(_ENV[LazyRequire.ClassName] == nil) then
                                        require(LazyRequire.RequirePath)
                                    end
